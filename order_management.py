@@ -263,7 +263,7 @@ class Order_management :
         
         stoploos = round(round(0.05*round(avg_price/0.05),2)*((100+exit_percent)/100),1)
         
-        trigger_price =round(stoploos-0.1,2) # 0.05 is the diffrance betweeen limit price and trigger price
+        trigger_price =round(stoploos-0.05,2) # 0.05 is the diffrance betweeen limit price and trigger price
         sl_placed,order_number = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price , qty=qty, ticker =ticker , transaction_type = transaction_type, tag = tag+'_sl')
         if sl_placed:
             self.entry_id [str(self.date )].update_one({ "entry_tag": tag}, { "$set": { F.exit_orderid : order_number,  F.exit_orderid_status :  F.open , F.exit_price:stoploos, F.exit_tag: tag+'_sl'} } )

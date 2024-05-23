@@ -52,7 +52,7 @@ class Checking:
         #     emergency_bot(f'problem in wait_n_trade for : {F.NineFourtyFive} \nReason :{e}')
 
         try:
-            self.check_ltp_above_sl()
+            self.check_ltp_above_sl(pending_order,filled_order)
         except Exception as e:
             emergency_bot(f'problem in check_ltp_above_sl\nReason :{e}')
             
@@ -252,18 +252,23 @@ class Checking:
                 sl_price = filled_order[filled_order[F.order_id]==i[F.exit_orderid]].iloc[0][F.price]
                 self.entry_id[str(self.date)].update_one({ F.entry_orderid :{'$eq':i[ F.entry_orderid]}},{"$set": { F.exit_orderid_status :F.closed, F.exit_price:sl_price, F.exit_reason: F.sl_hit, F.exit_time: self.current_time}})
 
-    def check_ltp_above_sl(self):
+    def check_ltp_above_sl(self,pending_order,filled_order):
         myquery = {'$or': [{ F.exit_orderid_status : F.open},{ F.exit_orderid_status : F.re_entry_open}]}
         db_data = self.entry_id[str(self.date)].find(myquery)
+        
         for i in db_data:
             ltp = get_ltp(i[F.token],self.broker_name)
             sl_price = i[ F.exit_price]
-
-            if ltp>sl_price:
-                new_price  =round(abs(sl_price)-abs(ltp-sl_price)/2,1)
+            print(1)
+            if ltp<sl_price:
+                new_price  =round(abs(sl_price) - abs(ltp - sl_price)/2 ,1)
+                print(2)
                 try:
                     remaning_qty = i[F.qty]
-                    order_numer = OrderExecuation(self.broker_name, self.broker_session).modify_order(order_id = i[F.exit_orderid],new_price=new_price,quantity = quantity)
+                    print(3)
+                    qty = pending_order[pending_order[F.order_id]==row[F.exit_orderid]].iloc[0][F.qty]
+                    print(f'order_id = {i[F.exit_orderid]},new_price={new_price},quantity = {qty}')
+                    order_numer = OrderExecuation(self.broker_name, self.broker_session).modify_order(order_id = i[F.exit_orderid],new_price=new_price,quantity = qty)
                     logger_bot(f"ltp is above stoploss  \nMessage :{order_numer} order modified\nTicker: {i[ F.ticker ]}\nPrice : {new_price}")
                     self.entry_id[str(self.date)].update_one({ F.exit_orderid : i[F.exit_orderid]}, { "$set": { F.exit_price : new_price } }) # it will update updated price to database
                 except Exception as e:
@@ -271,6 +276,7 @@ class Checking:
 
             else :
                 print('-----------',ltp,sl_price,i[F.exit_orderid])
+                pass
 
     # def is_loss_above_limit(self,pl):
     #     if  pl<(-acoount_balance*(2/100)):

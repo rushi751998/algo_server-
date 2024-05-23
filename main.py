@@ -1,7 +1,13 @@
 
 from broker import Login, get_symbol, Order_details, Socket_handling
 from checking import Checking
-from utils import get_ist_now,is_hoilyday,is_market_time,env_variables as env ,get_db, Fields as F
+from utils import (get_ist_now,
+                   is_hoilyday,
+                   is_market_time,
+                   sleep_till_next_day,
+                   env_variables as env ,
+                   get_db, Fields as F)
+
 from telegram_bot import emergency_bot
 from order_management import Order_management
 from neo_api_client import NeoAPI
@@ -24,7 +30,6 @@ exit_orders = '15:01'
 logout_session = '15:15'
 
 
-thread_list = []
 
 def order_placer(option_type,option_price,loop_no,stratagy,exit_percent,transaction_type,broker_name,broker_session):
                 ticker,ltp = get_symbol(option_type,option_price,broker_name)
@@ -44,8 +49,8 @@ def placing(**kwargs):
             
             ce_thread = Thread(target=order_placer,kwargs={ F.option_type: F.CE,'option_price' :150,F.loop_no : i, F.stratagy :  F.NineTwenty,F.exit_percent : 50, F.transaction_type :  F.Sell,F.broker_name:broker_name,F.broker_session : broker_session})
             pe_thread = Thread(target=order_placer,kwargs={ F.option_type: F.PE,'option_price' :150,F.loop_no : i, F.stratagy :  F.NineTwenty,F.exit_percent : 50, F.transaction_type :  F.Sell,F.broker_name:broker_name,F.broker_session : broker_session})
-            thread_list.append(ce_thread)
-            thread_list.append(pe_thread)
+            env.thread_listlistlist.append(ce_thread)
+            env.thread_list.append(pe_thread)
             ce_thread.start()
             pe_thread.start()
             # ce_thread = order_placer(option_type= F.CE,option_price =150,loop_no = i,stratagy =  F.NineTwenty,exit_percent = 50,transaction_type  =  F.Sell, broker_name = kwargs[F.broker_name], broker_session = kwargs[F.broker_session])
@@ -55,8 +60,8 @@ def placing(**kwargs):
         for i in range(1):
             ce_thread = Thread(target=order_placer,kwargs={ F.option_type: F.CE,'option_price' :125,F.loop_no : i, F.stratagy :  F.NineThirty,F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
             pe_thread = Thread(target=order_placer,kwargs={ F.option_type: F.PE,'option_price' :125,F.loop_no : i, F.stratagy :  F.NineThirty,F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
-            thread_list.append(ce_thread)
-            thread_list.append(pe_thread)
+            env.thread_list.append(ce_thread)
+            env.thread_list.append(pe_thread)
             ce_thread.start()
             pe_thread.start()
             
@@ -64,8 +69,8 @@ def placing(**kwargs):
         for i in range(1):
             ce_thread = Thread(target=order_placer,kwargs={ F.option_type: F.CE,'option_price' :100,F.loop_no : i, F.stratagy :  F.NineFourtyFive,F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
             pe_thread = Thread(target=order_placer,kwargs={ F.option_type: F.PE,'option_price' :100,F.loop_no : i, F.stratagy :  F.NineFourtyFive,F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
-            thread_list.append(ce_thread)
-            thread_list.append(pe_thread)
+            env.thread_list.append(ce_thread)
+            env.thread_list.append(pe_thread)
             ce_thread.start()
             pe_thread.start()
             
@@ -73,8 +78,8 @@ def placing(**kwargs):
         for i in range(1):
             ce_thread = Thread(target=order_placer,kwargs={ F.option_type: F.CE,'option_price' :125,F.loop_no : i, F.stratagy :  F.TenThirty,F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
             pe_thread = Thread(target=order_placer,kwargs={ F.option_type: F.PE,'option_price' :125,F.loop_no : i, F.stratagy :  F.TenThirty,F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
-            thread_list.append(ce_thread)
-            thread_list.append(pe_thread)
+            env.thread_list.append(ce_thread)
+            env.thread_list.append(pe_thread)
             ce_thread.start()
             pe_thread.start()
             
@@ -82,8 +87,8 @@ def placing(**kwargs):
         for i in range(1):
             ce_thread = Thread(target=order_placer,kwargs={ F.option_type: F.CE,'option_price' :125,F.loop_no : i, F.stratagy :  F.Eleven, F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
             pe_thread = Thread(target=order_placer,kwargs={ F.option_type: F.PE,'option_price' :125,F.loop_no : i, F.stratagy :  F.Eleven, F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
-            thread_list.append(ce_thread)
-            thread_list.append(pe_thread)
+            env.thread_list.append(ce_thread)
+            env.thread_list.append(pe_thread)
             ce_thread.start()
             pe_thread.start()
 
@@ -91,13 +96,13 @@ def placing(**kwargs):
         cancel_pending_order()
         ce_thread = Thread(target=Order_management(broker_name,broker_session).exit_orders_dayend,args=(F.CE))
         pe_thread = Thread(target=Order_management(broker_name,broker_session).exit_orders_dayend,args=(F.PE))
-        thread_list.append(ce_thread)
-        thread_list.append(pe_thread)
+        env.thread_list.append(ce_thread)
+        env.thread_list.append(pe_thread)
         ce_thread.start()
         pe_thread.start()
 
     elif current_time==logout_session:
-        for thread in thread_list:
+        for thread in env.thread_list:
             thread.join()
             
         pass
@@ -130,42 +135,48 @@ if __name__ == '__main__':
         
             
     while True:
-        is_env = env.load_env_variable()
-        start_time = get_ist_now().second
-        current_time = dt.strftime(get_ist_now(),'%H:%M')
+        date = dt.today().date()
         
-        hoilyday,holiday_reason = is_hoilyday()
-        event_list = [first_order,second_order,third_order,fourth_order,fifth_order,exit_orders,logout_session]
-        
-        
-        if (current_time in event_list) and is_env: 
+        if not env.env_variable_initilised and (env.today != date):
+            is_env = env.load_env_variable()
+            hoilyday,holiday_reason = is_hoilyday()
+            event_list = [first_order,second_order,third_order,fourth_order,fifth_order,exit_orders,logout_session]
             broker_name = env.broker_name
-            if not hoilyday:
-                is_login,broker_session = Login().setup()
-                if is_login:
-                    set_thread = Thread(target=Socket_handling(F.kotak_neo,broker_session).start_socket()) 
-                    thread_list.append(set_thread)       
-                    set_thread.start()
-                    time.sleep(10)     
-
-                    placing_thread = Thread(target=placing, kwargs={'current_time':current_time,F.broker_name:broker_name,F.broker_session:broker_session})
-                    thread_list.append(placing_thread)
-                    # placing_thread.start()
-                
-            else : 
-                emergency_bot(f"Today is holiday beacause : {holiday_reason}")
-                time.sleep(24*60*60)  # Sleep till next day
-                # time.sleep(5)
-                pass
+            is_login,broker_session = Login().setup()
+            
         else : 
-            if is_market_time:
-                checking_thread = Thread(target=Checking(broker_session=broker_session,broker_name=broker_name).check())
-                checking_thread.start()
-            else :
-                time.sleep((30*60)+(60*60*8)+(60*60*9)) #It will sleep till next day
-                
-        time.sleep(60 - (get_ist_now().second - start_time))
-        
+            start_time = get_ist_now().second
+            current_time = dt.strftime(get_ist_now(),'%H:%M')
+            
+            if current_time in event_list: 
+                if is_market_time() and not hoilyday :
+                    if is_login:
+                        start_socket_thread = Thread(name='socket_thread',target=Socket_handling(F.kotak_neo,broker_session).start_socket()) 
+                        if not start_socket_thread.is_alive() :
+                            env.thread_list.append(start_socket_thread)       
+                            start_socket_thread.start()
+                            time.sleep(10)      
+                        else : 
+                            placing_thread = Thread(target=placing, kwargs={'current_time':current_time,F.broker_name:broker_name,F.broker_session:broker_session})
+                            env.thread_list.append(placing_thread)
+                            # placing_thread.start()
+                    else : 
+                        is_login,broker_session = Login().setup()
+                else : 
+                    emergency_bot(f"Today is holiday beacause : {holiday_reason}")
+                    sleep_till_next_day()  
+                    # time.sleep(5)
+                    pass
+            else : 
+                if is_market_time() and not hoilyday:
+                    checking_thread = Thread(target=Checking(broker_session=broker_session,broker_name=broker_name).check())
+                    checking_thread.start()
+                    time.sleep(60 - (get_ist_now().second - start_time))
+                else :
+                    sleep_till_next_day()
+
+            
+            
             
             
             

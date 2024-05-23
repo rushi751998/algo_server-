@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 from telegram_bot import logger_bot,emergency_bot
 import ast
 import datetime
+import time
 
 kotak_transaction_type_dict= {
                             'Buy' : 'B',
@@ -64,12 +65,21 @@ def is_hoilyday() :
         
 def is_market_time():
     current_time = dt.today().time()
-    start_time = datetime.time(hour=9,minute=15,second=0)
+    start_time = datetime.time(hour=9,minute=16,second=0)
     end_time = datetime.time(hour=15,minute=30,second=0)
     if (current_time > start_time) and (current_time < end_time):
         return True
     else : 
         return False
+  
+def sleep_till_next_day():
+    now= dt.now()
+    tomorow_9am = (now + timedelta(days=1)).replace(hour=9,minute=0,second=0)
+    total_seconds = (tomorow_9am-now).total_seconds()
+    logger_bot('Market is offline.. Going to sleep till next day')
+    time.sleep(total_seconds)
+
+
         
 def get_ist_now():
     return dt.now() + timedelta(0)
@@ -116,6 +126,9 @@ def set_coloumn_name(df,broker_name):
 
 class env_variables:
     env_variable_initilised = False
+    today = None
+    thread_list = []
+    
     mongodb_link : str
     consumer_key : str
     secretKey : str
@@ -143,6 +156,8 @@ class env_variables:
         load_dotenv() 
         
         self.env_variable_initilised= True
+        self.thread_list = []
+        self.today = dt.today().date()
         
         self.mongodb_link =os.environ['mongodb_link'] 
         self.consumer_key =os.environ['consumer_key'] 
