@@ -14,14 +14,14 @@ from telegram_bot import emergency_bot
 # from main import entry_id
 
 
-class Checking(Checking_Engine):
+class Checking:
     
     def __init__(self,broker_session,broker_name):
         self.broker_session = broker_session 
         self.broker_name= broker_name 
         self.current_time = dt.now()
-        self.date = dt.today().date
-        self.entry_id = get_db
+        self.date = dt.today().date()
+        self.entry_id = get_db()
     
     def check(self):
         
@@ -29,31 +29,32 @@ class Checking(Checking_Engine):
         all_orders,filled_order,pending_order = order_details.order_book()
         all_positions,open_position,closed_position = order_details.position_book()
         
+        updated = True
 
         try:
             self.day_tracker()
         except Exception as e:
-            emergency_bot('problem in day_tracker',e)
+            emergency_bot(f'problem in day_tracker \nReason :{e}')
 
         try:
             self.fifty_per_management(pending_order,filled_order,F.NineTwenty)
         except Exception as e:
-            emergency_bot(f'problem in fifty_per_management for : {F.NineTwenty} \nreason :{e}')
+            emergency_bot(f'problem in fifty_per_management for : {F.NineTwenty} \nReason :{e}')
 
-        try:
-            self.re_entry_management(pending_order,filled_order,F.NineThirty)
-        except Exception as e:
-            emergency_bot(f'problem in re_entry_management for : {F.NineThirty} \nreason :{e}')
+        # try:
+        #     self.re_entry_management(pending_order,filled_order,F.NineThirty)
+        # except Exception as e:
+        #     emergency_bot(f'problem in re_entry_management for : {F.NineThirty} \nReason :{e}')
 
-        try:
-            self.wait_n_trade(pending_order,filled_order,F.NineFourtyFive)
-        except Exception as e:
-            emergency_bot(f'problem in wait_n_trade for : {F.NineFourtyFive} \nreason :{e}')
+        # try:
+        #     self.wait_n_trade(pending_order,filled_order,F.NineFourtyFive)
+        # except Exception as e:
+        #     emergency_bot(f'problem in wait_n_trade for : {F.NineFourtyFive} \nReason :{e}')
 
         try:
             self.check_ltp_above_sl()
         except Exception as e:
-            emergency_bot('problem in check_ltp_above_sl',e)
+            emergency_bot(f'problem in check_ltp_above_sl\nReason :{e}')
             
         # try:
         #     self.is_loss_above_limit(pl)
@@ -65,14 +66,14 @@ class Checking(Checking_Engine):
         try:
             myquery = {'$or': [{F.exit_orderid_status : F.open},{F.exit_orderid_status : F.re_entry_open}]}
             db_data = self.entry_id[str(self.date)].find(myquery)
+            # print(pd.DataFrame(db_data))
             for i in db_data:
                 ltp = get_ltp(i[F.token], self.broker_name)
-                pl =  round( (ltp-i[ F.entry_price])*i[F.qty])
+                pl =  round((i[ F.entry_price]-ltp)*i[F.qty])
                 # print('order_id: ',i[F.exit_orderid] )
                 self.entry_id[str(self.date)].update_one({F.exit_orderid :i[F.exit_orderid]},{'$push': {F.recording: {'Time':self.current_time, 'pl': pl}}}) #procuction
+                print('\n---------------- data updated ------------------')
                 # entry_id[str(date)].update_one({ F.ticker :i[ F.ticker ]},{'$push': {F.recording: {'Time':current_time , 'pl': pl,'datetime':dt.now()}}})
-                # print('---------------- data updated ------------------')
-
         except Exception as e :
             emergency_bot(f"Problem in : day_tracker() each leg \nMessage : {e}" )
 
@@ -114,7 +115,7 @@ class Checking(Checking_Engine):
 
 
     def fifty_per_management(self,pending_order,filled_order,stratagy):
-        NineTwenty_db = self.entry_id[str(self.self.date)].find({ F.stratagy: {'$eq':stratagy}})
+        NineTwenty_db = self.entry_id[str(self.date)].find({ F.stratagy: {'$eq':stratagy}})
         pending_order_list = pending_order[F.order_id].to_list()
         for i in NineTwenty_db:
             if i[F.exit_orderid] not in pending_order_list :
@@ -253,7 +254,7 @@ class Checking(Checking_Engine):
 
     def check_ltp_above_sl(self):
         myquery = {'$or': [{ F.exit_orderid_status : F.open},{ F.exit_orderid_status : F.re_entry_open}]}
-        db_data = entry_id[str(self.date)].find(myquery)
+        db_data = self.entry_id[str(self.date)].find(myquery)
         for i in db_data:
             ltp = get_ltp(i[F.token],self.broker_name)
             sl_price = i[ F.exit_price]

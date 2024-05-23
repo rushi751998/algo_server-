@@ -149,7 +149,8 @@ if __name__ == '__main__':
                     time.sleep(10)     
 
                     placing_thread = Thread(target=placing, kwargs={'current_time':current_time,F.broker_name:broker_name,F.broker_session:broker_session})
-                    placing_thread.start()
+                    thread_list.append(placing_thread)
+                    # placing_thread.start()
                 
             else : 
                 emergency_bot(f"Today is holiday beacause : {holiday_reason}")
@@ -158,9 +159,10 @@ if __name__ == '__main__':
                 pass
         else : 
             if is_market_time:
-                # checking_thread = Thread(target=Checking(broker_session=broker_session,broker_name=broker_name).check())
-                # checking_thread.start()
-                pass
+                checking_thread = Thread(target=Checking(broker_session=broker_session,broker_name=broker_name).check())
+                checking_thread.start()
+            else :
+                time.sleep((30*60)+(60*60*8)+(60*60*9)) #It will sleep till next day
                 
         time.sleep(60 - (get_ist_now().second - start_time))
         
