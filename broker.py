@@ -65,14 +65,14 @@ class Order_details :
             try :
                 responce = self.broker_session.order_report()
                 responce_code =  None if responce[F.stCode] == 200 else emergency_bot(f"Not able to get orderook due to : {order_staus_dict[responce[F.stCode] ]}")
-                all_orders = pd.DataFrame(responce[F.data])[[F.nOrdNo,'ordDtTm','trdSym','tok',F.qty,'fldQty','prc','trnsTp','prod' ,'exSeg','ordSt','stkPrc','optTp','brdLtQty','expDt','GuiOrdId']]
+                all_orders = pd.DataFrame(responce[F.data])[[F.nOrdNo,'ordDtTm','trdSym','tok',F.qty,'fldQty','avgPrc','trnsTp','prod' ,'exSeg','ordSt','stkPrc','optTp','brdLtQty','expDt','GuiOrdId']]
+               
+                
                 all_positions = set_coloumn_name(all_orders,self.broker_name)
                 all_orders = all_orders[all_orders['exchange_segement']=='nse_fo']
                 filled_order = all_orders[all_orders['order_status']=='complete']
                 # pending_order = all_orders[all_orders['order_status'] == 'open']
                 pending_order = all_orders[all_orders['order_status'].isin(['trigger pending','open'])]
-                
-                print('trigger pending : ' ,pending_order[['order_status']])
                 return  all_orders,filled_order,pending_order
             except KeyError:
                 print('KeyError in order_book')

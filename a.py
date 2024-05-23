@@ -53,10 +53,16 @@ import pandas as pd
         
 future_token,broker_session = Login().setup()
 
-# from broker import Order_details,Socket_handling
+from broker import Order_details,Socket_handling
 # Socket_handling(F.kotak_neo,broker_session).start_socket()
 
 all_orders,filled_order,pending_order = Order_details(broker_session,F.kotak_neo).order_book()
+all_orders.to_csv('order.csv')
+market_execute_price = all_orders#[all_orders[F.order_id] == '240523000390928'].iloc[0]#[F.price]
+print( f"Final market price : ", market_execute_price )
+
+
+
 
 # print(pending_order)
 

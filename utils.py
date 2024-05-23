@@ -88,7 +88,7 @@ def set_coloumn_name(df,broker_name):
             'tok':'symbol_token',
             'qty':'qty',
             'fldQty':'filled_qty',
-            'prc':'price',
+            'avgPrc':'price',
             'trnsTp':'transaction_type',
             'prod' :'product',
             'exSeg':'exchange_segement',
@@ -167,51 +167,58 @@ class env_variables:
         return True
     
 class Fields : 
-    kotak_neo = 'kotak_neo'
-    broker_name ='broker_name'
-    broker_session = 'broker_session'
-    nOrdNo = 'nOrdNo'
-    order_id = 'order_id'
-    ticker = 'ticker'
+    
+    # Entry Fields
     entry_orderid = 'entry_orderid'
     entry_price_initial = 'entry_price_initial'
-    sl_orderid = 'sl_orderid'
-    sl_price = 'sl_price'
-    sl_price_initial = 'sl_price_initial'
-    sl_percent = 'sl_percent'
-    qty = 'qty'
-    transaction_type = 'transaction_type'
-    data = 'data'
-    token = 'token'
-    
-    tag = 'tag'
+    entry_order_count = 'entry_order_count'
+    entry_order_execuation_type = 'entry_order_execuation_type'
+    entry_price = 'entry_price'
+    entry_time = 'entry_time'
+    entry_orderid_status = 'entry_orderid_status'
     entry_tag = 'entry_tag'
-    sl_tag = 'sl_tag' 
     
-    loop_no = 'loop_no'
-    stCode = 'stCode'
-    price = 'price'
+    # Exit Field
+    exit_orderid = 'exit_orderid'
+    exit_price_initial = 'exit_price_initial'
+    exit_order_count = 'exit_order_count'
+    exit_order_execuation_type = 'exit_order_execuation_type'
+    exit_reason = 'exit_reason'
+    exit_price = 'exit_price'
+    exit_time = 'exit_time'
+    exit_orderid_status = 'exit_orderid_status'
+    exit_tag = 'exit_tag' 
+    exit_price = 'exit_price'
+    exit_percent = 'exit_percent'
+    
+    # Common firlds in orders
+    qty = 'qty'
     Buy = 'Buy'
     Sell = 'Sell'
+    price = 'price'
+    loop_no = 'loop_no'
+    recording = 'recording'
+    charges = 'charges'
+    drift_points = 'drift_points'
+    drift_rs = 'drift_rs'
+    transaction_type = 'transaction_type'
+    stCode = 'stCode'
     CE = 'CE'
     PE = 'PE'
+    
+    # Order Status with reason
+    limit_order = 'limit_order'
+    market_order = 'market_order'
+    
     open = "open"
-    pending_order = 'pending_order'
     re_entry_open = 're_entry_open'
+    pending_order = 'pending_order'
     reentry_pending_order = 'reentry_pending_order'
     closed = 'closed'
     placed_sucessfully = 'placed_sucessfully'
     sl_hit = 'sl_hit'
-     
-    option_type = 'option_type'
-    entry_price = 'entry_price'
-    entry_time = 'entry_time'
-    sl_orderid_status = 'sl_orderid_status'
-    entry_orderid_status = 'entry_orderid_status'
-    exit_reason = 'exit_reason'
-    exit_price = 'exit_price'
-    exit_time = 'exit_time'
     
+    # Staratgy Names
     stratagy = 'stratagy'
     NineTwenty = 'NineTwenty'
     NineThirty =  'NineThirty'
@@ -219,7 +226,17 @@ class Fields :
     TenThirty = 'TenThirty'
     Eleven = 'Eleven'
     
-    recording = 'recording'
-    charges = 'charges'
-    drift_points = 'drift_points'
-    drift_rs = 'drift_rs'
+    # Other
+    kotak_neo = 'kotak_neo'
+    broker_name ='broker_name'
+    broker_session = 'broker_session'
+    nOrdNo = 'nOrdNo'
+    order_id = 'order_id'
+    ticker = 'ticker'
+    data = 'data'
+    token = 'token'
+    tag = 'tag'
+    option_type = 'option_type'
+    
+    
+    
