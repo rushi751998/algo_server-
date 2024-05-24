@@ -58,9 +58,9 @@ class Order_details :
 
     def order_book(self):
         if  self.broker_name == F.kotak_neo   :
+            responce = self.broker_session.order_report()
             try :
-                responce = self.broker_session.order_report()
-                responce_code =  None if responce[F.stCode] == 200 else emergency_bot(f"Not able to get orderook due to : {order_staus_dict[responce[F.stCode] ]}")
+                # responce_code =  None if responce[F.stCode] == 200 else emergency_bot(f"Not able to get orderook due to : {order_staus_dict[responce[F.stCode] ]}")
                 all_orders = pd.DataFrame(responce[F.data])[[F.nOrdNo,'ordDtTm','trdSym','tok',F.qty,'fldQty','avgPrc','trnsTp','prod' ,'exSeg','ordSt','stkPrc','optTp','brdLtQty','expDt','GuiOrdId']]
                
                 
@@ -69,14 +69,14 @@ class Order_details :
                 filled_order = all_orders[all_orders['order_status']=='complete']
                 # pending_order = all_orders[all_orders['order_status'] == 'open']
                 pending_order = all_orders[all_orders['order_status'].isin(['trigger pending','open'])]
-                return  all_orders,filled_order,pending_order
+                return  True,all_orders,filled_order,pending_order
             except KeyError:
                 print('KeyError in order_book')
                 # return all_orders,filled_order,pending_order
 
             except Exception as e:
-                emergency_bot(f'Not albe o get orderbook\nMessage : {e}')
-                # return all_orders,filled_order,pending_order
+                emergency_bot(f'Not albe o get orderbook\nMessage : {e},{responce["errMsg"]}')
+                return False,all_orders,filled_order,pending_order
             
        
 
@@ -108,11 +108,16 @@ class Socket_handling:
         self._lock = threading.Lock()  # Lock for synchronizing access
         self.broker_name= broker_name
         self.broker_session = broker_session
+        self.is_prepared = False
     
     def start_socket(self):
-        df, future_token = self.prepare_option_chain_Future_token()
-        with self._lock:
-                    self.future_token=  future_token
+        if not self.is_prepared : 
+            df, future_token,is_prepared = self.prepare_option_chain_Future_token()
+            with self._lock:
+                        self.future_token = future_token
+                        self.is_prepared = is_prepared
+                    
+                    
         
         if self.broker_name == F.kotak_neo : 
             token_list = [{"instrument_token":i,"exchange_segment":'nse_fo'} for i in option_chain.keys()]
@@ -189,7 +194,7 @@ class Socket_handling:
                     ticker_to_token[row['instrumentName']]=row['instrumentToken']
 
                 logger_bot('prepared opetion chain')
-                return df, future_token
+                return df, future_token,True
 
 def get_option_chain():
     return option_chain

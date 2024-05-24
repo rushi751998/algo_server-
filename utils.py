@@ -128,6 +128,7 @@ class env_variables:
     env_variable_initilised = False
     today = None
     thread_list = []
+    socket_thread = None
     
     mongodb_link : str
     consumer_key : str

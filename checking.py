@@ -7,7 +7,7 @@ from  datetime import datetime as dt
 import pymongo
 from order_management import Order_management
 from utils import get_db, Fields as F
-from telegram_bot import emergency_bot
+from telegram_bot import emergency_bot,logger_bot
 
 
 
@@ -26,36 +26,36 @@ class Checking:
     def check(self):
         
         order_details =  Order_details(self.broker_session,self.broker_name)
-        all_orders,filled_order,pending_order = order_details.order_book()
+        is_not_empty,all_orders,filled_order,pending_order = order_details.order_book()
         all_positions,open_position,closed_position = order_details.position_book()
-        
-        updated = True
 
-        try:
-            self.day_tracker()
-        except Exception as e:
-            emergency_bot(f'problem in day_tracker \nReason :{e}')
+        if is_not_empty :
+            try:
+                self.day_tracker()
+            except Exception as e:
+                emergency_bot(f'problem in day_tracker \nReason :{e}')
 
-        try:
-            self.fifty_per_management(pending_order,filled_order,F.NineTwenty)
-        except Exception as e:
-            emergency_bot(f'problem in fifty_per_management for : {F.NineTwenty} \nReason :{e}')
+            try:
+                self.fifty_per_management(pending_order,filled_order,F.NineTwenty)
+            except Exception as e:
+                emergency_bot(f'problem in fifty_per_management for : {F.NineTwenty} \nReason :{e}')
 
-        # try:
-        #     self.re_entry_management(pending_order,filled_order,F.NineThirty)
-        # except Exception as e:
-        #     emergency_bot(f'problem in re_entry_management for : {F.NineThirty} \nReason :{e}')
+            try:
+                self.re_entry_management(pending_order,filled_order,F.NineThirty)
+            except Exception as e:
+                emergency_bot(f'problem in re_entry_management for : {F.NineThirty} \nReason :{e}')
 
-        # try:
-        #     self.wait_n_trade(pending_order,filled_order,F.NineFourtyFive)
-        # except Exception as e:
-        #     emergency_bot(f'problem in wait_n_trade for : {F.NineFourtyFive} \nReason :{e}')
+            # try:
+            #     self.wait_n_trade(pending_order,filled_order,F.NineFourtyFive)
+            # except Exception as e:
+            #     emergency_bot(f'problem in wait_n_trade for : {F.NineFourtyFive} \nReason :{e}')
 
-        try:
-            self.check_ltp_above_sl(pending_order,filled_order)
-        except Exception as e:
-            emergency_bot(f'problem in check_ltp_above_sl\nReason :{e}')
-            
+            try:
+                self.check_ltp_above_sl(pending_order,filled_order)
+            except Exception as e:
+                emergency_bot(f'problem in check_ltp_above_sl\nReason :{e}')
+        else :
+            pass
         # try:
         #     self.is_loss_above_limit(pl)
         # except Exception as e:
@@ -123,7 +123,7 @@ class Checking:
                 exit_time = self.current_time
                 sl_orderid_status = F.closed
                 exit_reason =  F.sl_hit
-                self.entry_id[str(self.date)].update_one({  F.entry_orderid : i[ F.entry_orderid]}, { "$set": { F.exit_orderid_status : sl_orderid_status, F.exit_reason:exit_reason, F.exit_price:float(sl_price), F.exit_time:str(exit_time)} } )
+                self.entry_id[str(self.date)].update_one({  F.entry_orderid : i[ F.entry_orderid]}, { "$set": { F.exit_orderid_status : sl_orderid_status, F.exit_reason:exit_reason, F.exit_order_execuation_type : F.limit_order, F.exit_price:float(sl_price), F.exit_time:str(exit_time)} } )
 
             else:
                 pass
@@ -259,23 +259,24 @@ class Checking:
         for i in db_data:
             ltp = get_ltp(i[F.token],self.broker_name)
             sl_price = i[ F.exit_price]
-            print(1)
-            if ltp<sl_price:
-                new_price  =round(abs(sl_price) - abs(ltp - sl_price)/2 ,1)
-                print(2)
-                try:
-                    remaning_qty = i[F.qty]
-                    print(3)
-                    qty = pending_order[pending_order[F.order_id]==row[F.exit_orderid]].iloc[0][F.qty]
-                    print(f'order_id = {i[F.exit_orderid]},new_price={new_price},quantity = {qty}')
-                    order_numer = OrderExecuation(self.broker_name, self.broker_session).modify_order(order_id = i[F.exit_orderid],new_price=new_price,quantity = qty)
+            if ltp>sl_price:
+                new_price = round(abs(sl_price) + abs(ltp - sl_price)/2 ,1)
+
+                remaning_qty = i[F.qty]
+
+                qty = pending_order[pending_order[F.order_id]==i[F.exit_orderid]].iloc[0][F.qty]
+                print(f'order_id = {i[F.exit_orderid]},new_price={new_price},quantity = {qty}')
+                is_modified,order_numer = OrderExecuation(self.broker_name, self.broker_session).modify_order(order_id = i[F.exit_orderid], new_price=new_price, quantity = qty)
+                if is_modified :
                     logger_bot(f"ltp is above stoploss  \nMessage :{order_numer} order modified\nTicker: {i[ F.ticker ]}\nPrice : {new_price}")
                     self.entry_id[str(self.date)].update_one({ F.exit_orderid : i[F.exit_orderid]}, { "$set": { F.exit_price : new_price } }) # it will update updated price to database
-                except Exception as e:
-                    emergency_bot(f'Not able to modify sl in check_ltp_above_sl\nMessage : {e}')
+                else : 
+                    emergency_bot(f'Not able to modify sl in check_ltp_above_sl\nMessage : {order_numer}') 
+                    
+
 
             else :
-                print('-----------',ltp,sl_price,i[F.exit_orderid])
+                # print('-----------',ltp,sl_price,i[F.exit_orderid])
                 pass
 
     # def is_loss_above_limit(self,pl):

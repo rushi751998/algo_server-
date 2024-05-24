@@ -26,7 +26,7 @@ class Order_management :
             # print(is_order_placed,order_number)        
             if is_order_placed : 
                 time.sleep(5)
-                all_orders,filled_order,pending_order = order_details =  Order_details(self.broker_session,self.broker_name).order_book()
+                is_not_empty,all_orders,filled_order,pending_order = order_details =  Order_details(self.broker_session,self.broker_name).order_book()
                 all_filled_orders = pending_order[F.order_id].to_list()+filled_order[F.order_id].to_list()
                 
                 # print('pending_order',pending_order)
@@ -85,9 +85,9 @@ class Order_management :
             is_order_placed,order_number  = OrderExecuation(self.broker_name, self.broker_session).place_order(price,trigger_price,qty,ticker,transaction_type,tag)
             if is_order_placed : 
                 time.sleep(5)
-                all_orders,filled_order,pending_order = order_book()
+                is_not_empty,all_orders,filled_order,pending_order = order_details =  Order_details(self.broker_session,self.broker_name).order_book()
                 all_filled_orders = pending_order[F.order_id].to_list()+filled_order[F.order_id].to_list()
-                if order_numberin in all_filled_orders:
+                if order_number in all_filled_orders:
                     order = {
                             F.entry_time:str(dt.now()),
                             F.ticker  : ticker,
@@ -116,8 +116,8 @@ class Order_management :
                             F.exit_reason : '---',              # sl_hit/day_end
                             F.entry_order_count : 0,
                             F.stratagy : stratagy,
-                            F.loop_no:loop_no,
-                            F.exit_percent:exit_percentnt,
+                            F.loop_no : loop_no,
+                            F.exit_percent : exit_percent,
                             F.charges : 0,
                             F.drift_points : 0,
                             F.drift_rs : 0,
@@ -128,7 +128,7 @@ class Order_management :
 
                     self.entry_id [str(self.date )].insert_one(order)
                     logger_bot(f"NineThirty order placed SucessFully !!! \nMessage : {order_number}")
-                    self.smart_executer(stratagy=stratagy,exit_percent=exit_percentnt,option_type=option_type)
+                    self.smart_executer(stratagy=stratagy,exit_percent=exit_percent,option_type=option_type)
             elif not is_order_placed :
                     emergency_bot(f'Not able to palce NineThirty order \nmessage : {order_number}')
 
@@ -139,7 +139,7 @@ class Order_management :
             is_order_placed,order_number  = OrderExecuation(self.broker_name, self.broker_session).place_order(price,trigger_price,qty,ticker,transaction_type,tag)
             if is_order_placed : 
                 time.sleep(5)
-                all_orders,filled_order,pending_order = order_book()
+                is_not_empty,all_orders,filled_order,pending_order = order_details =  Order_details(self.broker_session,self.broker_name).order_book()
                 all_filled_orders = pending_order[F.order_id].to_list()+filled_order[F.order_id].to_list()
                 if order_number in all_filled_orders:
                     order = { 
@@ -190,7 +190,7 @@ class Order_management :
     def smart_executer(self,stratagy,exit_percent,option_type) :
         while True:
             order_details =  Order_details(self.broker_session,self.broker_name)
-            all_orders,filled_order,pending_order = order_details.order_book()
+            is_not_empty,all_orders,filled_order,pending_order = order_details.order_book()
             myquery = { F.stratagy: { "$eq": stratagy }, F.option_type: { "$eq": option_type } , F.entry_orderid_status: {"$eq":  F.pending_order }}
             db_data = self.entry_id [str(self.date )].find(myquery)
             pending_orders_db = pd.DataFrame(db_data)
@@ -230,7 +230,7 @@ class Order_management :
                         remaning_qty = pending_order[pending_order[F.order_id]==row[F.entry_orderid]].iloc[0][F.qty]
                         is_modified, order_number = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[ F.entry_orderid], new_price =0 ,quantity = remaning_qty,trigger_price =0, order_type = "MKT")
                         order_details =  Order_details(self.broker_session,self.broker_name)
-                        all_orders,filled_order,pending_order = order_details.order_book()
+                        is_not_empty,all_orders,filled_order,pending_order = order_details.order_book()
                         market_execute_price = filled_order[filled_order[F.order_id] == order_number].iloc[0][F.price]
                         print( f"Final market price : ", market_execute_price )
                         if is_modified :
@@ -266,7 +266,7 @@ class Order_management :
         trigger_price =round(stoploos-0.05,2) # 0.05 is the diffrance betweeen limit price and trigger price
         sl_placed,order_number = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price , qty=qty, ticker =ticker , transaction_type = transaction_type, tag = tag+'_sl')
         if sl_placed:
-            self.entry_id [str(self.date )].update_one({ "entry_tag": tag}, { "$set": { F.exit_orderid : order_number,  F.exit_orderid_status :  F.open , F.exit_price:stoploos, F.exit_tag: tag+'_sl'} } )
+            self.entry_id [str(self.date )].update_one({ "entry_tag": tag}, { "$set": { F.exit_orderid : order_number,  F.exit_orderid_status :  F.open , F.exit_price : stoploos, F.exit_price_initial : stoploos, F.exit_tag: tag+'_sl'} } )
             logger_bot(f"Sl order palced Sucessfully !!! \nOrder Number : {order_number}\nPrice : {stoploos}")
 
         elif not sl_placed:

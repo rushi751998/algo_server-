@@ -52,17 +52,40 @@ import pandas as pd
 
         
 future_token,broker_session = Login().setup()
+from threading import Thread
 
 from broker import Order_details,Socket_handling
+from execuations import OrderExecuation
 # Socket_handling(F.kotak_neo,broker_session).start_socket()
 
 from checking import Checking
 
-a = Checking(broker_session, F.kotak_neo).check()
+def a ():
+    Socket_handling(F.kotak_neo,broker_session).start_socket()
 
+start_socket_thread = Thread(name='socket_thread',target=a) 
+start_socket_thread.start()
 
-# print(pending_order)
+print(start_socket_thread.is_alive())
 
-    
-            
+# import threading
+# import time
+
+# def example_thread():
+#     time.sleep(5)
+
+# # Create a thread
+# thread = threading.Thread(target=example_thread)
+
+# # Start the thread
+# thread.start()
+
+# # Check if the thread is alive
+# print("Thread is alive:", thread.is_alive())
+
+# # Wait for the thread to complete
+# thread.join()
+
+# # Check if the thread is alive again
+# print("Thread is alive:", thread.is_alive())
 
