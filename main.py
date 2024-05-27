@@ -14,8 +14,6 @@ from neo_api_client import NeoAPI
 import time,re,pymongo,os ,pandas as pd 
 from threading import Thread
 import threading
-from dateutil.relativedelta import relativedelta
-from datetime import timedelta
 from  datetime import datetime as dt
 pd.options.mode.chained_assignment = None # it is mandatory
 
@@ -32,8 +30,10 @@ exit_orders = '15:01'
 logout_session = '15:15'
 
 def socket_thread_fun(**kwargs):
-    Socket_handling(F.kotak_neo,broker_session).start_socket()
-    
+    Socket_handling(broker_name,broker_session).start_socket()
+
+def checking_thread_fun(**kwargs):
+    Checking(broker_session,broker_name).check()
 
 def order_placer(option_type,option_price,loop_no,stratagy,exit_percent,transaction_type,broker_name,broker_session):
                 ticker,ltp = get_symbol(option_type,option_price,broker_name)
@@ -60,7 +60,7 @@ def placing(**kwargs):
 
     elif current_time==second_order:
         for i in range(1):
-            i = 4
+            i = 3
             ce_thread = Thread(target=order_placer,kwargs={ F.option_type: F.CE,'option_price' :125, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:  kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
             pe_thread = Thread(target=order_placer,kwargs={ F.option_type: F.PE,'option_price' :125, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:  kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
             env.thread_list.append(ce_thread)
@@ -118,7 +118,73 @@ def placing(**kwargs):
 
 
 if __name__ == '__main__':
-    
+
+    while True:
+        date = dt.today().date()
+        
+        if not env.env_variable_initilised and (env.today != date):
+            print(1)
+            is_env = env.load_env_variable()
+            hoilyday, holiday_reason = is_hoilyday()
+            event_list = [login,first_order, second_order, third_order, fourth_order, fifth_order, exit_orders, logout_session]
+            broker_name = env.broker_name
+            is_login, broker_session = Login().setup()
+            
+            start_socket_thread = Thread(name='socket_thread', target=socket_thread_fun, kwargs={'broker_session': broker_session,'broker_name': broker_name})
+            env.thread_list.append(start_socket_thread)
+            start_socket_thread.start()
+            is_socket_alive = start_socket_thread.is_alive()
+            
+            # print(env.thread_list)
+            time.sleep(20)
+            
+            
+            
+        if is_market_time() and not hoilyday:
+            
+            start_time = get_ist_now().second
+            current_time = dt.strftime(get_ist_now(), '%H:%M')
+
+                
+            if is_socket_alive and (current_time in event_list ):
+                print(3)
+                placing_thread = Thread(target=placing, kwargs={'current_time': current_time, 'broker_name': broker_name, 'broker_session': broker_session})
+                env.thread_list.append(placing_thread)
+                # placing_thread.start()
+                
+            if is_socket_alive:
+                print(4)
+                checking_thread = Thread(name='socket_thread', target=checking_thread_fun, kwargs={'broker_name': broker_name, 'broker_session': broker_session})
+                env.thread_list.append(checking_thread)
+                checking_thread.start()
+                
+                # print(env.thread_list)
+                time.sleep(60 - (get_ist_now().second - start_time))
+                
+            else : 
+                start_socket_thread = Thread(name='socket_thread', target=socket_thread_fun, kwargs={'broker_name': broker_name, 'broker_session': broker_session})
+                env.thread_list.append(start_socket_thread)
+                start_socket_thread.start()
+                print(5)
+            
+            
+                                
+        if not is_market_time() or hoilyday:
+            
+            if hoilyday:
+                emergency_bot(f"Today is holiday because: {holiday_reason}")
+                sleep_till_next_day()
+                
+            if not is_market_time():
+                emergency_bot("Market is stopped, going to sleep")
+                sleep_till_next_day()
+
+
+
+
+        
+        
+        
     # is_env = env.load_env_variable()
     # broker_name = env.broker_name
     # start_time = get_ist_now().second
@@ -134,69 +200,6 @@ if __name__ == '__main__':
             
     #         placing_thread = placing(current_time,broker_name,broker_session)
 
-            
-
-            
-    while True:
-        date = dt.today().date()
-        
-        
-         
-        
-        if not env.env_variable_initilised and (env.today != date):
-            is_env = env.load_env_variable()
-            hoilyday,holiday_reason = is_hoilyday()
-            event_list = [first_order,second_order,third_order,fourth_order,fifth_order,exit_orders,logout_session]
-            broker_name = env.broker_name
-            is_login,broker_session = Login().setup()
-            
-            start_socket_thread = Thread(name='Socket_thread',target=socket_thread_fun,kwargs={'broker_session' : broker_session})
-            start_socket_thread.start()
-            env.thread_list.append(start_socket_thread)  
-               
-            time.sleep(10)  
-            
-                
-        else : 
-            start_time = get_ist_now().second
-            current_time = dt.strftime(get_ist_now(),'%H:%M')
-            
-            if is_market_time() and not hoilyday :
-                if is_login :
-                    if current_time in event_list: 
-                        
-                        placing_thread = Thread(target=placing, kwargs={'current_time':current_time,F.broker_name:broker_name,F.broker_session:broker_session})
-                        env.thread_list.append(placing_thread)
-                        # placing_thread.start()
-                    
-                    
-                    else : 
-                        print(start_socket_thread.is_alive())
-                        
-                        if start_socket_thread.is_alive(): 
-                            checking_thread = Thread(target=Checking(broker_session=broker_session,broker_name=broker_name).check())
-                            checking_thread.start()
-                            
-                        else : 
-                            # start_socket_thread = threading.Thread(name='Socket_thread', target=socket_thread_fun, kwargs={'broker_session': broker_session})
-                            # start_socket_thread.start()
-                            # env.thread_list.append(start_socket_thread)
-                            time.sleep(10)
-                                
-                    time.sleep(60 - (get_ist_now().second - start_time))
-                            
-                else : 
-                    is_login,broker_session = Login().setup()
-            
-            else : 
-                emergency_bot(f"Today is holiday beacause : {holiday_reason}")
-                sleep_till_next_day()  
-                # time.sleep(5)
-                pass
-
-            
-            
-            
             
             
     

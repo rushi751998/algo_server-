@@ -78,8 +78,6 @@ class Order_details :
                 emergency_bot(f'Not albe o get orderbook\nMessage : {e},{responce["errMsg"]}')
                 return False,all_orders,filled_order,pending_order
             
-       
-
     def position_book(self):
         if   self.broker_name == F.kotak_neo   :
             try :
@@ -167,7 +165,6 @@ class Socket_handling:
                     option_chain[symbol]['ltp'] = ltp
             except:
                 pass
-        time.sleep(1)
         # print(option_chain,'\n\n')
 
     def prepare_option_chain_Future_token(self):
