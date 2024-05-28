@@ -251,11 +251,11 @@ class Order_management :
                     self.place_limit_sl(ticker=i[ F.ticker ],qty=i[F.qty],transaction_type=i[ F.transaction_type],avg_price=(i[ F.entry_price ]),exit_percent=exit_percent,tag = tag)
                 break
 
-    def place_limit_sl(self,ticker,qty,transaction_type,avg_price,exit_percent,tag):
-        if transaction_type == F.Buy:
+    def place_limit_sl(self,ticker,qty,transaction_type_,avg_price,exit_percent,tag):
+        if transaction_type_ == F.Buy:
             transaction_type =  F.Sell
 
-        elif transaction_type == F.Sell:
+        elif transaction_type_ == F.Sell:
             transaction_type =  F.Buy
         else:
             pass
@@ -267,7 +267,7 @@ class Order_management :
         sl_placed,order_number = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price , qty=qty, ticker =ticker , transaction_type = transaction_type, tag = tag+'_sl')
         if sl_placed:
             self.entry_id [str(self.date )].update_one({ "entry_tag": tag}, { "$set": { F.exit_orderid : order_number,  F.exit_orderid_status :  F.open , F.exit_price : stoploos, F.exit_price_initial : stoploos, F.exit_tag: tag+'_sl'} } )
-            logger_bot(f"Sl order palced Sucessfully !!! \nOrder Number : {order_number}\nPrice : {stoploos}")
+            logger_bot(f"Sl order palced Sucessfully !!! \nOrder Number : {order_number}\nPrice : {stoploos}\nSide : {transaction_type_}")
 
         elif not sl_placed:
             emergency_bot(f'Problem in palcing limit_sl\nMessage : {order_number}')

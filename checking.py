@@ -72,7 +72,7 @@ class Checking:
             pl =  round((i[ F.entry_price]-ltp)*i[F.qty])
             # print('order_id: ',i[F.exit_orderid] )
             self.entry_id[str(self.date)].update_one({F.exit_orderid :i[F.exit_orderid]},{'$push': {F.recording: {'Time':self.current_time, 'pl': pl}}}) #procuction
-            print(f'\n{self.current_time}---------------- data updated ------------------')
+        print(f'\n{self.current_time}---------------- data updated ------------------')
             # entry_id[str(date)].update_one({ F.ticker :i[ F.ticker ]},{'$push': {F.recording: {'Time':current_time , 'pl': pl,'datetime':dt.now()}}})
 
 
@@ -106,9 +106,6 @@ class Checking:
 
         a = pd.DataFrame(combine_pl).groupby('Time').sum().reset_index()
         reecord_pl[str(self.date)].update_one({ F.stratagy : {'$eq"': 'combine_pl'}},{F.recording : combine_pl })
-
-
-
 
     def fifty_per_management(self,pending_order,filled_order,stratagy):
         NineTwenty_db = self.entry_id[str(self.date)].find({ F.stratagy: {'$eq':stratagy}})
@@ -186,12 +183,12 @@ class Checking:
                             }
 
                     self.entry_id[str(self.date)].insert_one(order)
-                    logger_bot(f"re-entry order palced Sucessfully !!! \nMessage : {order_number}\nTicker : {i[ F.ticker ]}\nPrice : {i[ F.entry_price ]}")
+                    logger_bot(f"re-entry order palced Sucessfully !!! \nMessage : {order_number}\nTicker : {i[ F.ticker ]}\nPrice : {i[ F.entry_price ]}\nSide : {i[ F.option_type]}")
 
 
-            if (i[ F.entry_orderid] not in pending_order_list) and i[ F.entry_orderid_status ] == F.reentry_pending_order: # re-entry pending sl-order place
-
-                self.entry_id[str(self.date)].update_one({  F.entry_orderid : i[ F.entry_orderid]}, { "$set": {F.entry_orderid_status: F.placed_sucessfully} } )
+            if (i[ F.entry_orderid] not in pending_order_list) and i[ F.entry_orderid_status ] == F.reentry_pending_order: 
+                # Check is re-entry pending order is threre if not place sl for re-entry 
+                self.entry_id[str(self.date)].update_one({  F.entry_orderid : i[ F.entry_orderid]}, { "$set": {F.entry_orderid_status: F.placed_sucessfully, F.entry_order_execuation_type : F.limit_order} } )
 
                 #------------- Place new re-entry stoploss --------------
 
@@ -206,21 +203,17 @@ class Checking:
                 stoploos = round(i[ F.entry_price ]+(i[ F.entry_price ]*(i[F.exit_percent]/100)),1)
                 qty = i[F.qty]
                 trigger_price =(stoploos)-0.1
-                
                 is_order_placed, order_number = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price, qty = qty, ticker =ticker , transaction_type = transaction_type, tag = tag+'_sl')
                 if is_order_placed : 
-                    self.entry_id[str(self.date)].update_one({ "tag": tag}, { "$set": { F.exit_orderid : order_number,  F.exit_orderid_status : F.re_entry_open, F.entry_order_execuation_type : F.limit_order, F.exit_price : stoploos , F.exit_tag : tag+'_sl'} } )
-                    logger_bot(f"re-entry Sl order palced Sucessfully !!! \nMessage : {order_number}\nTicker : {i[ F.ticker ]}\nPrice : {stoploos}")
+                    self.entry_id[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": { F.exit_orderid : order_number,  F.exit_orderid_status : F.re_entry_open, F.entry_order_execuation_type : F.limit_order, F.exit_price : stoploos , F.exit_tag : tag+'_sl'} } )
+                    logger_bot(f"re-entry Sl order palced Sucessfully !!! \nMessage : {order_number}\nTicker : {i[ F.ticker ]}\nPrice : {stoploos}\nSide : {i[ F.option_type]}")
 
-
-            if (i[ F.exit_orderid] not in pending_order_list) and i[ F.exit_orderid_status] == F.re_entry_open: # re-entry pending sl-order place
-                # Track re-entry sl 
+            if (i[ F.exit_orderid] not in pending_order_list) and i[ F.exit_orderid_status] == F.re_entry_open:
+                # Track re-entry sl order is sl hit
                 sl_price = filled_order[filled_order[F.order_id]==i[F.exit_orderid]].iloc[0][F.price]
-                exit_time = self.current_time
-                sl_orderid_status = F.closed
-                exit_reason =  F.sl_hit
-                self.entry_id[str(self.date)].update_one({ F.exit_orderid : i[F.exit_orderid]}, { "$set": { F.exit_orderid_status : sl_orderid_status, F.exit_reason : exit_reason, F.exit_order_execuation_type : F.limit_order, F.exit_price:float(sl_price), F.exit_time:str(exit_time)} } )
-
+                self.entry_id[str(self.date)].update_one({ F.exit_orderid : i[F.exit_orderid]}, { "$set": { F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_order_execuation_type : F.limit_order, F.exit_price : float(sl_price), F.exit_time : str(self.current_time)} } )
+                logger_bot(f"re-entry Sl hit !!! \nMessage : {order_number}\nTicker : {i[ F.ticker ]}\nPrice : {sl_price}\nSide : {i[ F.option_type]}")
+                
     def wait_n_trade(self,pending_order,filled_order,stratagy):
         NineFourtyFive_db = self.entry_id[str(self.date)].find({ F.stratagy: {'$eq': stratagy}})
         pending_order_list = pending_order[F.order_id].to_list()
@@ -229,7 +222,7 @@ class Checking:
             if (i[ F.entry_orderid_status ] == F.pending_order) and (i[ F.entry_orderid] not in pending_order_list):
                 #--------------- Place limit sl ----------------------------
                 tag = f"{i[ F.stratagy]}_{i[ F.option_type]}_{i[F.loop_no]}"
-                Order_management(self.broker_name,self.broker_session).place_limit_sl(i[ F.ticker ],i[F.qty],i[ F.transaction_type],i[ F.entry_price ],i[F.exit_percent],tag)
+                Order_management(self.broker_name, self.broker_session).place_limit_sl(i[ F.ticker ], i[F.qty], i[ F.transaction_type], i[ F.entry_price ], i[F.exit_percent], tag)
                 self.entry_id[str(self.date)].update_one({ F.entry_orderid :{'$eq':i[ F.entry_orderid]}},{"$set": { F.entry_orderid_status : F.placed_sucessfully , F.entry_order_execuation_type : F.limit_order}})
 
             if (i[ F.exit_orderid_status] == F.open):

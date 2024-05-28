@@ -60,7 +60,7 @@ def placing(**kwargs):
 
     elif current_time==second_order:
         for i in range(1):
-            i = 3
+            i = 1
             ce_thread = Thread(target=order_placer,kwargs={ F.option_type: F.CE,'option_price' :125, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:  kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
             pe_thread = Thread(target=order_placer,kwargs={ F.option_type: F.PE,'option_price' :125, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:  kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
             env.thread_list.append(ce_thread)
@@ -123,7 +123,7 @@ if __name__ == '__main__':
         date = dt.today().date()
         
         if not env.env_variable_initilised and (env.today != date):
-            print(1)
+            
             is_env = env.load_env_variable()
             hoilyday, holiday_reason = is_hoilyday()
             event_list = [login,first_order, second_order, third_order, fourth_order, fifth_order, exit_orders, logout_session]
@@ -134,9 +134,9 @@ if __name__ == '__main__':
             env.thread_list.append(start_socket_thread)
             start_socket_thread.start()
             is_socket_alive = start_socket_thread.is_alive()
-            
+            print(1)
             # print(env.thread_list)
-            time.sleep(20)
+            time.sleep(10)
             
             
             
@@ -147,22 +147,21 @@ if __name__ == '__main__':
 
                 
             if is_socket_alive and (current_time in event_list ):
-                print(3)
-                placing_thread = Thread(target=placing, kwargs={'current_time': current_time, 'broker_name': broker_name, 'broker_session': broker_session})
+                placing_thread = Thread(name = 'Placing Thread',target=placing, kwargs={'current_time': current_time, 'broker_name': broker_name, 'broker_session': broker_session})
                 env.thread_list.append(placing_thread)
                 # placing_thread.start()
+                print(3)
                 
             if is_socket_alive:
-                print(4)
-                checking_thread = Thread(name='socket_thread', target=checking_thread_fun, kwargs={'broker_name': broker_name, 'broker_session': broker_session})
+                checking_thread = Thread(name='checking_thread', target=checking_thread_fun, kwargs={'broker_name': broker_name, 'broker_session': broker_session})
                 env.thread_list.append(checking_thread)
                 checking_thread.start()
-                
+                print(4)
                 # print(env.thread_list)
                 time.sleep(60 - (get_ist_now().second - start_time))
                 
             else : 
-                start_socket_thread = Thread(name='socket_thread', target=socket_thread_fun, kwargs={'broker_name': broker_name, 'broker_session': broker_session})
+                start_socket_thread = Thread(name='socket_thread_restart', target=socket_thread_fun, kwargs={'broker_name': broker_name, 'broker_session': broker_session})
                 env.thread_list.append(start_socket_thread)
                 start_socket_thread.start()
                 print(5)
