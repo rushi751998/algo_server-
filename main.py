@@ -21,12 +21,12 @@ from random import randint
 
 login = dt.strftime(get_ist_now(),'%H:%M')
 first_order = None
-second_order = dt.strftime(get_ist_now(),'%H:%M')
+second_order = None
 # second_order = '18:20'
 third_order = '18:20'
 fourth_order = '18:20'
 fifth_order = '16:20'
-exit_orders = '15:01'
+exit_orders = dt.strftime(get_ist_now(),'%H:%M')
 logout_session = '15:15'
 
 def socket_thread_fun(**kwargs):
@@ -39,7 +39,8 @@ def order_placer(option_type,option_price,loop_no,stratagy,exit_percent,transact
                 ticker,ltp = get_symbol(option_type,option_price,broker_name)
                 print("ticker,ltp : ",ticker,ltp)
                 Order_management(broker_name,broker_session).order_place(ticker,qty=15,transaction_type=transaction_type,stratagy=stratagy,exit_percent=exit_percent,loop_no=loop_no,price=ltp,option_type=option_type)
-
+def day_end(broker_name,broker_session,option_type):
+    Order_management(broker_name,broker_session).exit_orders_dayend(option_type)
 
 # def placing(current_time_,broker_name,broker_session):
 #     kwargs={'current_time':current_time,F.broker_name:broker_name,F.broker_session:broker_session}
@@ -96,9 +97,8 @@ def placing(**kwargs):
             pe_thread.start()
 
     elif current_time==exit_orders:
-        cancel_pending_order()
-        ce_thread = Thread(target=Order_management(broker_name,broker_session).exit_orders_dayend,args=(F.CE))
-        pe_thread = Thread(target=Order_management(broker_name,broker_session).exit_orders_dayend,args=(F.PE))
+        ce_thread = Thread(target=day_end,kwargs={F.option_type: F.CE,F.broker_name:  kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
+        pe_thread = Thread(target=day_end,kwargs={F.option_type: F.PE,F.broker_name:  kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
         env.thread_list.append(ce_thread)
         env.thread_list.append(pe_thread)
         ce_thread.start()
@@ -144,16 +144,15 @@ if __name__ == '__main__':
             
             start_time = get_ist_now().second
             current_time = dt.strftime(get_ist_now(), '%H:%M')
-
                 
             if is_socket_alive and (current_time in event_list ):
-                placing_thread = Thread(name = 'Placing Thread',target=placing, kwargs={'current_time': current_time, 'broker_name': broker_name, 'broker_session': broker_session})
+                placing_thread = Thread(name = 'Placing Thread',target = placing, kwargs = {'current_time': current_time, 'broker_name': broker_name, 'broker_session': broker_session})
                 env.thread_list.append(placing_thread)
-                # placing_thread.start()
+                placing_thread.start()
                 print(3)
                 
             if is_socket_alive:
-                checking_thread = Thread(name='checking_thread', target=checking_thread_fun, kwargs={'broker_name': broker_name, 'broker_session': broker_session})
+                checking_thread = Thread(name = 'checking_thread', target = checking_thread_fun, kwargs = {'broker_name': broker_name, 'broker_session': broker_session})
                 env.thread_list.append(checking_thread)
                 checking_thread.start()
                 print(4)
@@ -161,7 +160,7 @@ if __name__ == '__main__':
                 time.sleep(60 - (get_ist_now().second - start_time))
                 
             else : 
-                start_socket_thread = Thread(name='socket_thread_restart', target=socket_thread_fun, kwargs={'broker_name': broker_name, 'broker_session': broker_session})
+                start_socket_thread = Thread(name = 'socket_thread_restart', target = socket_thread_fun, kwargs = {'broker_name': broker_name, 'broker_session': broker_session})
                 env.thread_list.append(start_socket_thread)
                 start_socket_thread.start()
                 print(5)

@@ -288,7 +288,9 @@ class Order_management :
             myquery = { F.option_type:{'$eq':option_type},'$or': [{ F.exit_orderid_status : F.open},{ F.exit_orderid_status : F.re_entry_open}]}
             db_data = self.entry_id [str(self.date )].find(myquery)
             pending_orders_db = pd.DataFrame(db_data)
-            all_orders,filled_order,pending_order = order_book()
+            
+            order_details =  Order_details(self.broker_session,self.broker_name)
+            is_not_empty,all_orders,filled_order,pending_order = order_details.order_book()
 
             if len(pending_orders_db)!=0:
                 for index,row in pending_orders_db.iterrows():

@@ -84,10 +84,10 @@ class Order_details :
                 responce = self.broker_session.positions()
                 responce_code =  None if responce[F.stCode] == 200 else emergency_bot(f"Not able to get position_book due to : {order_staus_dict[responce[F.stCode] ]}")
                 all_positions = pd.DataFrame(responce[F.data]) [['trdSym','type','optTp','buyAmt' ,'prod','exSeg','tok','flBuyQty','flSellQty','sellAmt','stkPrc','expDt',]]
-                all_positions = set_coloumn_name(all_positions,self.broker_name)
+                all_positions = set_coloumn_name(all_positions, self.broker_name)
                 option_positions = all_positions[all_positions[ F.option_type].isin([ F.CE, F.PE])]
-                open_position = option_positions[option_positions['filed_buy_qty']!=option_positions['filed_sell_qty']]
-                closed_position = option_positions[option_positions['filed_buy_qty']==option_positions['filed_sell_qty']]
+                open_position = option_positions[option_positions['filed_buy_qty'] != option_positions['filed_sell_qty']]
+                closed_position = option_positions[option_positions['filed_buy_qty'] == option_positions['filed_sell_qty']]
                 return all_positions,open_position,closed_position
             except KeyError:
                 # Nedd to add alert
@@ -115,8 +115,6 @@ class Socket_handling:
                         self.future_token = future_token
                         self.is_prepared = is_prepared
                     
-                    
-        
         if self.broker_name == F.kotak_neo : 
             token_list = [{"instrument_token":i,"exchange_segment":'nse_fo'} for i in option_chain.keys()]
             
