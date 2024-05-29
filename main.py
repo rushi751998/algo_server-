@@ -23,10 +23,10 @@ login = dt.strftime(get_ist_now(),'%H:%M')
 first_order = None
 second_order = None
 # second_order = '18:20'
-third_order = '18:20'
+third_order = dt.strftime(get_ist_now(),'%H:%M')
 fourth_order = '18:20'
 fifth_order = '16:20'
-exit_orders = dt.strftime(get_ist_now(),'%H:%M')
+exit_orders = None
 logout_session = '15:15'
 
 def socket_thread_fun(**kwargs):
@@ -35,10 +35,10 @@ def socket_thread_fun(**kwargs):
 def checking_thread_fun(**kwargs):
     Checking(broker_session,broker_name).check()
 
-def order_placer(option_type,option_price,loop_no,stratagy,exit_percent,transaction_type,broker_name,broker_session):
+def order_placer(option_type,option_price,loop_no,stratagy,exit_percent,transaction_type,broker_name,broker_session,wait_percent = None):
                 ticker,ltp = get_symbol(option_type,option_price,broker_name)
-                print("ticker,ltp : ",ticker,ltp)
-                Order_management(broker_name,broker_session).order_place(ticker,qty=15,transaction_type=transaction_type,stratagy=stratagy,exit_percent=exit_percent,loop_no=loop_no,price=ltp,option_type=option_type)
+                price = round(ltp * ((100-wait_percent)/100),1) if wait_percent != None else ltp
+                Order_management(broker_name,broker_session).order_place(ticker,qty=15,transaction_type=transaction_type,stratagy=stratagy,exit_percent=exit_percent,loop_no=loop_no,price=price,option_type=option_type)
 def day_end(broker_name,broker_session,option_type):
     Order_management(broker_name,broker_session).exit_orders_dayend(option_type)
 
@@ -61,7 +61,6 @@ def placing(**kwargs):
 
     elif current_time==second_order:
         for i in range(1):
-            i = 1
             ce_thread = Thread(target=order_placer,kwargs={ F.option_type: F.CE,'option_price' :125, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:  kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
             pe_thread = Thread(target=order_placer,kwargs={ F.option_type: F.PE,'option_price' :125, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:  kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
             env.thread_list.append(ce_thread)
@@ -71,8 +70,9 @@ def placing(**kwargs):
             
     elif current_time==third_order:
         for i in range(1):
-            ce_thread = Thread(target=order_placer,kwargs={ F.option_type: F.CE,'option_price' :100,F.loop_no : i, F.stratagy :  F.NineFourtyFive,F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
-            pe_thread = Thread(target=order_placer,kwargs={ F.option_type: F.PE,'option_price' :100,F.loop_no : i, F.stratagy :  F.NineFourtyFive,F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
+            i = 4
+            ce_thread = Thread(target=order_placer,kwargs={ F.option_type: F.CE,'option_price' :100,F.loop_no : i, F.stratagy :  F.NineFourtyFive,F.exit_percent : 50, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session],'wait_percent' : 5})
+            pe_thread = Thread(target=order_placer,kwargs={ F.option_type: F.PE,'option_price' :100,F.loop_no : i, F.stratagy :  F.NineFourtyFive,F.exit_percent : 50, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session],'wait_percent' : 5})
             env.thread_list.append(ce_thread)
             env.thread_list.append(pe_thread)
             ce_thread.start()

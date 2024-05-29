@@ -1,5 +1,5 @@
 from execuations import OrderExecuation
-from telegram_bot import logger_bot,emergency_bot,alert_bot
+from telegram_bot import logger_bot,emergency_bot
 from  datetime import datetime as dt
 import pandas as pd
 import time
@@ -146,6 +146,7 @@ class Order_management :
                             F.entry_time:str(dt.now()),
                             F.ticker  : ticker,
                             F.token : get_token(ticker),
+                            "ltp": 0,
                             F.transaction_type : transaction_type,
                             F.option_type : option_type,
                             F.qty: qty,
@@ -248,10 +249,10 @@ class Order_management :
                 for i in pending_orders_db:
                     tag = f'{i[F.stratagy]}_{i[ F.option_type]}_{i[F.loop_no]}'
                     # print(f"ticker={i[ F.ticker ]},qty={i[F.qty]},transaction_type={i[ F.transaction_type]},avg_price={(i[ F.entry_price ])},exit_percent={exit_percent},tag = {tag}")
-                    self.place_limit_sl(ticker=i[ F.ticker ],qty=i[F.qty],transaction_type=i[ F.transaction_type],avg_price=(i[ F.entry_price ]),exit_percent=exit_percent,tag = tag)
+                    self.place_limit_sl(ticker=i[ F.ticker ],qty=i[F.qty],transaction_type=i[ F.transaction_type],avg_price=(i[ F.entry_price ]),exit_percent=exit_percent,option_type= i[F.option_type],tag = tag)
                 break
 
-    def place_limit_sl(self,ticker,qty,transaction_type_,avg_price,exit_percent,tag):
+    def place_limit_sl(self,ticker,qty,transaction_type_,avg_price,exit_percent,option_type,tag):
         if transaction_type_ == F.Buy:
             transaction_type =  F.Sell
 
@@ -264,10 +265,10 @@ class Order_management :
         stoploos = round(round(0.05*round(avg_price/0.05),2)*((100+exit_percent)/100),1)
         
         trigger_price =round(stoploos-0.05,2) # 0.05 is the diffrance betweeen limit price and trigger price
-        sl_placed,order_number = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price , qty=qty, ticker =ticker , transaction_type = transaction_type, tag = tag+'_sl')
+        sl_placed,order_number = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price , qty= qty, ticker= ticker , transaction_type = transaction_type, tag = tag+'_sl')
         if sl_placed:
             self.entry_id [str(self.date )].update_one({ "entry_tag": tag}, { "$set": { F.exit_orderid : order_number,  F.exit_orderid_status :  F.open , F.exit_price : stoploos, F.exit_price_initial : stoploos, F.exit_tag: tag+'_sl'} } )
-            logger_bot(f"Sl order palced Sucessfully !!! \nOrder Number : {order_number}\nPrice : {stoploos}\nSide : {transaction_type_}")
+            logger_bot(f"Sl order palced Sucessfully !!! \nOrder Number : {order_number}\nPrice : {stoploos}\nSide : {option_type}")
 
         elif not sl_placed:
             emergency_bot(f'Problem in palcing limit_sl\nMessage : {order_number}')

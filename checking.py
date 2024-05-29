@@ -220,26 +220,30 @@ class Checking:
         pending_order_list = pending_order[F.order_id].to_list()
 
         for i in NineFourtyFive_db:
+            count = i[F.exit_order_count]
             if (i[ F.entry_orderid_status ] == F.pending_order) and (i[ F.entry_orderid] not in pending_order_list):
                 #--------------- Place limit sl ----------------------------
-                tag = f"{i[ F.stratagy]}_{i[ F.option_type]}_{i[F.loop_no]}"
-                Order_management(self.broker_name, self.broker_session).place_limit_sl(i[ F.ticker ], i[F.qty], i[ F.transaction_type], i[ F.entry_price ], i[F.exit_percent], tag)
-                self.entry_id[str(self.date)].update_one({ F.entry_orderid :{'$eq':i[ F.entry_orderid]}},{"$set": { F.entry_orderid_status : F.placed_sucessfully , F.entry_order_execuation_type : F.limit_order}})
-
+                tag = f"{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}"
+                Order_management(self.broker_name, self.broker_session).place_limit_sl(i[ F.ticker ], i[F.qty], i[ F.transaction_type], i[ F.entry_price ], i[F.exit_percent], i[F.option_type], tag)
+                ltp = get_ltp(i[F.token],self.broker_name)
+                self.entry_id[str(self.date)].update_one({ F.entry_orderid :{'$eq':i[ F.entry_orderid]}},{"$set": { F.entry_orderid_status : F.placed_sucessfully , F.entry_order_execuation_type : F.limit_order, "ltp" : ltp, F.entry_order_count : count+1}})
+                
             if (i[ F.exit_orderid_status] == F.open):
                 #--------------- Trail sl ----------------------------
-                net_points = abs(i[ F.exit_price]-get_ltp(i[F.token],self.broker_name),self.broker_name)//5
+                new_ltp = get_ltp(i[F.token],self.broker_name)
+                net_points = (i["ltp"] - new_ltp)//5
+                print(net_points)
                 if net_points>0:
                     new_sl = i[ F.exit_price] -  net_points
-                    is_modified,order_number = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id= i[F.order_id], new_price= new_sl, quantity= i[F.qty])
+                    is_modified,order_number = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id= i[F.exit_orderid], new_price= new_sl, quantity= i[F.qty])
                     if is_modified : 
-                        self.entry_id[str(self.date)].update_one({ F.entry_orderid :{'$eq':i[ F.entry_orderid]}},{"$set": { F.exit_price : new_sl, F.exit_price_initial : new_sl}})
-                        logger_bot(f"ss trailed from {i[ F.exit_price]} to {new_sl} of {i[F.exit_orderid]}")
+                        self.entry_id[str(self.date)].update_one({ F.entry_orderid :{'$eq':i[ F.entry_orderid]}},{"$set": { F.exit_price : new_sl, F.exit_price_initial : new_sl, "ltp" : new_ltp}})
+                        logger_bot(f"SL trailed from {i[ F.exit_price]} to {new_sl} of {i[F.exit_orderid]} Side : {i[F.option_type]}")
 
             if (i[ F.exit_orderid_status]== F.open) and (i[F.exit_orderid] not in pending_order_list):
                 #--------------- Update sl hit ----------------------------
                 sl_price = filled_order[filled_order[F.order_id]==i[F.exit_orderid]].iloc[0][F.price]
-                self.entry_id[str(self.date)].update_one({ F.entry_orderid :{'$eq':i[ F.entry_orderid]}},{"$set": { F.exit_orderid_status :F.closed, F.exit_price:sl_price, F.exit_reason: F.sl_hit, F.exit_order_execuation_type : F.limit_order, F.exit_time: self.current_time}})
+                self.entry_id[str(self.date)].update_one({ F.entry_orderid :{'$eq':i[ F.entry_orderid]}},{"$set": { F.exit_orderid_status :F.closed, F.exit_price:sl_price, F.exit_reason: F.sl_hit, F.exit_order_execuation_type : F.limit_order,F.exit_order_count : count+1 , F.exit_time: self.current_time}})
         print(f'{self.current_time}---------------- wait_n_trade ------------------')
         
     def check_ltp_above_sl(self,pending_order,filled_order):
