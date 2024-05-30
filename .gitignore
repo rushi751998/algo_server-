@@ -1,3 +1,8 @@
 .env
 env/
 test.py
+a.py
+.____pycache__/
+.vscode/
+order.csv
+test.ipynb

@@ -71,7 +71,8 @@ def is_market_time():
         return True
     else : 
         return False
-  
+ 
+
 def sleep_till_next_day():
     now= dt.now()
     tomorow_9am = (now + timedelta(days=1)).replace(hour=9,minute=0,second=0)
@@ -90,7 +91,7 @@ def get_db(db_name='order_book'):
     return entry_id
 
 def set_coloumn_name(df,broker_name):
-    if  broker_name == 'kotak_neo'   :
+    if  broker_name == 'kotak_neo' :
         column_name_dict = {
             'nOrdNo':'order_id',
             'ordDtTm':'order_time',
@@ -113,6 +114,8 @@ def set_coloumn_name(df,broker_name):
             'flBuyQty' : 'filed_buy_qty',
             'flSellQty' : 'filed_sell_qty',
             'sellAmt' : 'sell_amount',
+            'rejRsn' : 'message',
+            
             
         }
     if   broker_name =='fyers':
