@@ -231,11 +231,13 @@ class Fields :
     
     open = "open"
     re_entry_open = 're_entry_open'
-    pending_order = 'pending_order'
-    reentry_pending_order = 'reentry_pending_order'
+    # pending_order = 'pending_order'
+    # reentry_pending_order = 'reentry_pending_order'
     closed = 'closed'
-    placed_sucessfully = 'placed_sucessfully'
+    # placed_sucessfully = 'placed_sucessfully'
+    
     sl_hit = 'sl_hit'
+    day_end = 'day_end'
     
     # Staratgy Names
     stratagy = 'stratagy'

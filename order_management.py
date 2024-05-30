@@ -42,7 +42,7 @@ class Order_management :
                             F.qty: qty,
                             #-------------- Entry order details -------------
                             F.entry_orderid : order_number,
-                            F.entry_orderid_status  : F.pending_order,    #To check order is complete
+                            F.entry_orderid_status  : F.open,    #To check order is complete
                             F.entry_price : price,
                             F.entry_price_initial: price,
                             F.entry_tag : tag,  #tag_contains stratagy_name+option_type+loop no
@@ -98,7 +98,7 @@ class Order_management :
                             F.qty: qty,
                             #-------------- Entry order details -------------
                             F.entry_orderid : order_number,
-                            F.entry_orderid_status  : F.pending_order,    #To check order is complete
+                            F.entry_orderid_status  : F.open,    #To check order is complete
                             F.entry_price : price,
                             F.entry_price_initial: price,
                             F.entry_tag : tag,  #tag_contains stratagy_name+option_type+loop 
@@ -154,7 +154,7 @@ class Order_management :
                             F.qty: qty,
                             #-------------- Entry order details -------------
                             F.entry_orderid : order_number,
-                            F.entry_orderid_status  : F.pending_order,    #To check order is complete
+                            F.entry_orderid_status  : F.open,    #To check order is complete
                             F.entry_price : price,
                             F.entry_price_initial: price,
                             F.entry_tag : tag,  #tag_contains stratagy_name+option_type+loop no
@@ -194,7 +194,7 @@ class Order_management :
         while True:
             order_details =  Order_details(self.broker_session,self.broker_name)
             is_not_empty,all_orders,filled_order,pending_order = order_details.order_book()
-            myquery = {F.stratagy: { "$eq": stratagy }, F.option_type: { "$eq": option_type } , F.entry_orderid_status: {"$eq":  F.pending_order }}
+            myquery = {F.stratagy: { "$eq": stratagy }, F.option_type: { "$eq": option_type } , F.entry_orderid_status: {"$eq":  F.open }}
             db_data = self.entry_id [str(self.date )].find(myquery)
             pending_orders_db = pd.DataFrame(db_data)
             if len(pending_orders_db)!=0:
@@ -202,7 +202,7 @@ class Order_management :
                 for index,row in pending_orders_db.iterrows():
                     count = row[F.entry_order_count]
                     if (row[F.entry_orderid]  not in pending_order[F.order_id].tolist()):
-                        self.entry_id [str(self.date )].update_one({  F.entry_orderid : row[F.entry_orderid]}, { "$set": {F.entry_orderid_status: F.placed_sucessfully, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count+1 } }) # it will update if sl hit  modificarion status to slhit
+                        self.entry_id [str(self.date )].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {F.entry_orderid_status: F.closed, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count+1 } }) # it will update if sl hit  modificarion status to slhit
                         logger_bot(f'Placed in broker end \nOrder id : {row[F.entry_orderid]} \nOption Type : {row[F.option_type]}')
                         time.sleep(1)
                         continue
@@ -250,7 +250,7 @@ class Order_management :
 
 
             else:
-                myquery = {F.entry_orderid_status: {"$eq":  F.placed_sucessfully},F.stratagy: { "$eq": stratagy }, F.option_type: { "$eq": option_type }, F.exit_orderid: { "$eq": '---' }}
+                myquery = {F.entry_orderid_status: {"$eq":  F.closed},F.stratagy: { "$eq": stratagy }, F.option_type: { "$eq": option_type }, F.exit_orderid: { "$eq": '---' }}
                 pending_orders_db = self.entry_id [str(self.date )].find(myquery)
                 for i in pending_orders_db:
                     tag = f'{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}'
@@ -280,8 +280,9 @@ class Order_management :
             emergency_bot(f'Problem in palcing limit_sl\nMessage : {message}')
 
     def exit_orders_dayend(self,option_type) :
+        print('option_type : ',option_type)
         # Cancel Pending order
-        myquery = {'$or': [{F.exit_orderid_status :  F.pending_order},{F.exit_orderid_status : F.reentry_pending_order}]}
+        myquery = {F.option_type:{'$eq' : option_type},'$or': [{F.entry_orderid_status : F.open},{F.entry_orderid_status : F.re_entry_open}]}
         db_data = self.entry_id [str(self.date )].find(myquery)
         print(111,pd.DataFrame(db_data))
        
@@ -292,68 +293,55 @@ class Order_management :
                 logger_bot(f"pending order \nMessage :{order_number} is canceled")
             else : 
                 emergency_bot(f'Not able to cancle order {i[F.exit_orderid]} in cancel_pending_order()\n Reason : {message}')
-
-        
-        # while True:
-        #     myquery = {F.option_type:{'$eq':option_type},'$or': [{F.exit_orderid_status : F.open},{F.exit_orderid_status : F.re_entry_open}]}
-        #     db_data = self.entry_id [str(self.date )].find(myquery)
-        #     pending_orders_db = pd.DataFrame(db_data)
+   
+        while True:
+            myquery = {F.option_type:{'$eq':option_type},'$or': [{F.exit_orderid_status : F.open},{F.exit_orderid_status : F.re_entry_open}]}
+            db_data = self.entry_id [str(self.date )].find(myquery)
+            pending_orders_db = pd.DataFrame(db_data)
             
-        #     order_details =  Order_details(self.broker_session,self.broker_name)
-        #     is_not_empty,all_orders,filled_order,pending_order = order_details.order_book()
+            order_details =  Order_details(self.broker_session,self.broker_name)
+            is_not_empty,all_orders,filled_order,pending_order = order_details.order_book()
 
-        #     if len(pending_orders_db)!=0:
-        #         for index,row in pending_orders_db.iterrows():
-        #             count = row[F.exit_order_count]
-        #             if (row[F.exit_orderid]  not in pending_order[F.order_id].tolist()):
-        #                 # print(pending_order[F.order_id].tolist())
-        #                 exit_price = filled_order[filled_order[F.order_id]==row[F.exit_orderid]].iloc[0][F.price]
-        #                 exit_time = dt.now()
-        #                 sl_orderid_status = F.closed
-        #                 exit_reason = 'day_end'
-        #                 self.entry_id [str(self.date )].update_one({F.exit_orderid : row[F.exit_orderid]}, { "$set": {F.exit_orderid_status : sl_orderid_status, F.exit_reason:exit_reason, F.exit_price:float(exit_price), F.exit_time:str(exit_time), F.exit_order_execuation_type : F.limit_order, F.exit_order_count : count+1} } )
+            if len(pending_orders_db) != 0:
+                for index,row in pending_orders_db.iterrows():
+                    count = row[F.exit_order_count]
+                    if (row[F.exit_orderid]  not in pending_order[F.order_id].tolist()):
+                        exit_price = filled_order[filled_order[F.order_id] == row[F.exit_orderid]].iloc[0][F.price]
+                        self.entry_id [str(self.date )].update_one({F.exit_orderid : row[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.day_end, F.exit_price:float(exit_price), F.exit_time:str(dt.now()), F.exit_order_execuation_type : F.limit_order, F.exit_order_count : count+1} } )
 
-        #             elif count<5:
-        #                 ltp = get_ltp(row[F.token],self.broker_name)
-        #                 # ltp = 40
-        #                 price = row[F.exit_price] 
+                    elif count<5:
+                        ltp = get_ltp(row[F.token],self.broker_name)
+                        # ltp = 40
+                        price = row[F.exit_price] 
 
-        #                 if ltp>price:
-        #                     new_price  =round(abs(price)+abs(ltp-price)/2,1)
-        #                 else:
-        #                     new_price  =round(abs(price)-abs(ltp-price)/2,1)
-        #                 print(f"ltp :{ltp} old_price:{price} new_price :{new_price} count : {count}\n\n")
+                        # if ltp > price:
+                        #     new_price = round(abs(price) + abs(ltp - price)/2 ,1)
+                        # else:
+                        #     new_price = round(abs(price) - abs(ltp - price)/2 ,1)
+                        # print(f"ltp :{ltp} old_price:{price} new_price :{new_price} count : {count}\n\n")
                         
-        #                 remaning_qty = pending_order[pending_order[F.order_id]==row[F.entry_orderid]].iloc[0][F.qty]
-        #                 is_modified, order_number = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.entry_orderid], new_price =new_price ,quantity = remaning_qty)
-        #                 if is_modified :
-        #                     self.entry_id [str(self.date )].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {  F.entry_price : new_price , F.exit_order_count: count + 1 } }) # it will update updated price to database
-        #                     logger_bot(f"Entry price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {new_price} \nRemaning Qty : {remaning_qty}")
-                            
-        #                 elif not is_modified :
-        #                     emergency_bot(f'Not able to modify sl in exit_orders_dayend(kotak.modify_order)\nMessage : {order_number}')
+                        remaning_qty = pending_order[pending_order[F.order_id]==row[F.exit_orderid]].iloc[0][F.qty]
+                        is_modified, order_number, message = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.exit_orderid], new_price = ltp ,quantity = remaning_qty)
+                        if is_modified :
+                            if count == 0 :
+                                self.entry_id [str(self.date )].update_one({F.entry_orderid : row[F.entry_orderid]}, {"$set": {F.exit_price_initial : ltp, F.exit_price : ltp , F.exit_order_count: count + 1 }}) # it will update updated price to database
+                                logger_bot(f"Exit price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {ltp} \nRemaning Qty : {remaning_qty}")
+                            else : 
+                                self.entry_id [str(self.date )].update_one({F.entry_orderid : row[F.entry_orderid]}, {"$set": {F.exit_price : ltp , F.exit_order_count: count + 1 }}) # it will update updated price to database
+                                logger_bot(f"Exit price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {ltp} \nRemaning Qty : {remaning_qty}")
+                                
+                        elif not is_modified :
+                            emergency_bot(f'Not able to modify sl in exit_orders_dayend(kotak.modify_order)\nMessage : {message}')
                         
-        #             else:
-        #                 remaning_qty = pending_order[pending_order[F.order_id]==row[F.exit_orderid]].iloc[0][F.qty]
+                    else:
+                        remaning_qty = pending_order[pending_order[F.order_id]==row[F.exit_orderid]].iloc[0][F.qty]
                         
-        #                 is_modified, order_number  = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.exit_orderid], new_price = 0, quantity =remaning_qty,trigger_price = 0, order_type = "MKT")
-        #                 if is_modified :
-        #                     logger_bot(f"Executed at Market Order \nMessage :{order_number}")
-        #                 elif not is_modified:
-        #                     emergency_bot(f'Not able to modify sl in exit_orders_dayend() Market Order\nMessage : {order_number}')
-
-        #     else:
-        #         break
-
-
-        #     # else:
-        #     #     def cancel_pending_order():
-        #     #         all_orders,filled_order,pending_order  = order_book()
-        #     #         myquery = {F.option_type:{'$eq':option_type},'$or': [{F.exit_orderid_status : F.open},{F.exit_orderid_status : F.re_entry_open}]}
-        #     #         db_data = self.entry_id [str(date)].find(myquery)
-        #     #         for i in :
-
-
-
-        #     #     place_sl(stratagy,exit_percent)
-        #     #     break
+                        is_modified, order_number, message  = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.exit_orderid], new_price = 0, quantity =remaning_qty,trigger_price = 0, order_type = "MKT")
+                        if is_modified :
+                            logger_bot(f"Executed at Market Order \nMessage :{order_number}")
+                            self.entry_id [str(self.date )].update_one({F.exit_orderid : row[F.exit_orderid]}, {"$set": {F.exit_order_execuation_type : F.market_order }})
+                        elif not is_modified:
+                            emergency_bot(f'Not able to modify sl in exit_orders_dayend() Market Order\nMessage : {message}')
+                time.sleep(5)
+            else:
+                break

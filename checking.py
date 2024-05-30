@@ -126,14 +126,12 @@ class Checking:
         NineThirty_db = self.entry_id[str(self.date)].find({F.stratagy: {'$eq': stratagy}})
         pending_order_list = pending_order[F.order_id].to_list()
         for i in NineThirty_db:
-            
+            count = i[F.exit_order_count]
             if (i[F.exit_orderid] not in pending_order_list) and (i[F.exit_orderid_status] ==  F.open): # re-entry pending order place
                 #----------------------------------- Upadate 1st order details ---------------------------------------------------------
                 sl_price = filled_order[filled_order[F.order_id]==i[F.exit_orderid]].iloc[0][F.price]
-                count = i[F.exit_order_count]
                 self.entry_id[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_price : float(sl_price), F.exit_order_execuation_type : F.limit_order, F.exit_time : str(self.current_time),F.exit_order_count : count+1 } } )
-
-                    #----------------------------------- Place re-entry order ---------------------------------------------------------
+                #----------------------------------- Place re-entry order ---------------------------------------------------------
                 tag = f'{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}_re_entry'
                 trigger_price = i[F.entry_price]+0.05
                 # print('trigger_price : ',trigger_price)
@@ -150,7 +148,7 @@ class Checking:
                             F.qty : i[F.qty],
                             #-------------- Entry order details -------------
                             F.entry_orderid : order_number,
-                            F.entry_orderid_status : F.reentry_pending_order,    #To check order is complete
+                            F.entry_orderid_status : F.re_entry_open,    #To check order is complete
                             F.entry_price : i[F.entry_price],
                             F.entry_price_initial : i[F.entry_price],
                             F.entry_order_count : 0,
@@ -184,10 +182,9 @@ class Checking:
                 else : 
                     pass# handel issue in emergrncy 
 
-            if (i[F.entry_orderid] not in pending_order_list) and i[F.entry_orderid_status] == F.reentry_pending_order: 
+            if (i[F.entry_orderid] not in pending_order_list) and i[F.entry_orderid_status] == F.re_entry_open: 
                 # Check is re-entry pending order is threre if not place sl for re-entry 
-                count = i[F.exit_order_count]
-                self.entry_id[str(self.date)].update_one({  F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.entry_orderid_status: F.placed_sucessfully, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count+1 } } )
+                self.entry_id[str(self.date)].update_one({  F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.entry_orderid_status: F.closed, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count+1 } } )
 
                 #------------- Place new re-entry stoploss --------------
 
@@ -202,14 +199,13 @@ class Checking:
                 stoploos = round(i[F.entry_price]+(i[F.entry_price]*(i[F.exit_percent]/100)),1)
                 qty = i[F.qty]
                 trigger_price = stoploos-0.1
-                is_order_placed, order_number,message = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price, qty = qty, ticker =ticker , transaction_type = transaction_type, tag = tag+'_sl')
+                is_order_placed, order_number,message = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price, qty = qty, ticker = ticker , transaction_type = transaction_type, tag = tag + '_sl')
                 is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
                 if is_order_placed and not is_order_rejected : 
                     self.entry_id[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.exit_orderid : order_number,  F.exit_orderid_status : F.re_entry_open, F.entry_order_execuation_type : F.limit_order, F.exit_price : stoploos , F.exit_tag : tag+'_sl'} } )
                     logger_bot(f"re-entry Sl order palced Sucessfully !!! \nMessage : {order_number}\nTicker : {i[F.ticker]}\nPrice : {stoploos}\nSide : {i[F.option_type]}")
 
-            if (i[F.exit_orderid] not in pending_order_list) and i[F.exit_orderid_status] == F.re_entry_open:
-                count = i[F.exit_order_count]
+            if (i[F.exit_orderid] not in pending_order_list) and i[F.exit_orderid_status] == F.re_entry_open :
                 # Track re-entry sl order is sl hit
                 sl_price = filled_order[filled_order[F.order_id]==i[F.exit_orderid]].iloc[0][F.price]
                 self.entry_id[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_order_execuation_type : F.limit_order, F.exit_price : float(sl_price), F.exit_time : str(self.current_time), F.exit_order_count : count+1} } )
@@ -223,12 +219,12 @@ class Checking:
 
         for i in NineFourtyFive_db:
             count = i[F.exit_order_count]
-            if (i[F.entry_orderid_status] == F.pending_order) and (i[F.entry_orderid] not in pending_order_list):
+            if (i[F.entry_orderid_status] == F.open) and (i[F.entry_orderid] not in pending_order_list):
                 #--------------- Place limit sl ----------------------------
                 tag = f"{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}"
                 Order_management(self.broker_name, self.broker_session).place_limit_sl(i[F.ticker], i[F.qty], i[F.transaction_type], i[F.entry_price], i[F.exit_percent], i[F.option_type], tag)
                 ltp = get_ltp(i[F.token],self.broker_name)
-                self.entry_id[str(self.date)].update_one({F.entry_orderid :{'$eq':i[F.entry_orderid]}},{"$set": {F.entry_orderid_status : F.placed_sucessfully , F.entry_order_execuation_type : F.limit_order, "ltp" : ltp, F.entry_order_count : count+1}})
+                self.entry_id[str(self.date)].update_one({F.entry_orderid :{'$eq':i[F.entry_orderid]}},{"$set": {F.entry_orderid_status : F.closed , F.entry_order_execuation_type : F.limit_order, "ltp" : ltp, F.entry_order_count : count+1}})
                 
             if (i[F.exit_orderid_status] == F.open):
                 #--------------- Trail sl ----------------------------

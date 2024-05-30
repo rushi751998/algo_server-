@@ -41,9 +41,7 @@ from checking import Checking
 order_details =  Order_details(broker_session,F.kotak_neo)
 is_not_empty,all_orders,filled_order,pending_order = order_details.order_book()
 all_positions,open_position,closed_position = order_details.position_book()
+date = dt.today().date()
 
+entry_id = get_db()
 
-a = is_order_rejected_func('240530000174495',broker_session,F.kotak_neo)
-
-
-print(a)
