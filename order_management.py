@@ -32,7 +32,6 @@ class Order_management :
                 # print('pending_order',pending_order)
                 # print('all_orders',all_orders[F.order_id]['order_id'])
                 if order_number in all_filled_orders:
-                    print(True)
                     order = { 
                             F.entry_time:str(dt.now()),
                             F.ticker  : ticker,
@@ -101,6 +100,7 @@ class Order_management :
                             F.entry_orderid_status  : F.open,    #To check order is complete
                             F.entry_price : price,
                             F.entry_price_initial: price,
+                            F.entry_order_count : 0,
                             F.entry_tag : tag,  #tag_contains stratagy_name+option_type+loop 
                             F.entry_order_execuation_type: None,
                             #-------------- sl order details -------------
@@ -115,7 +115,6 @@ class Order_management :
                             F.exit_price:0,
                             F.exit_time:'---',
                             F.exit_reason : '---',              # sl_hit/day_end
-                            F.entry_order_count : 0,
                             F.stratagy : stratagy,
                             F.loop_no : loop_no,
                             F.exit_percent : exit_percent,
@@ -281,20 +280,12 @@ class Order_management :
             emergency_bot(f'Problem in palcing limit_sl\nMessage : {message}')
 
     def exit_orders_dayend(self,option_type) :
-        print('option_type : ',option_type)
+        # print('option_type : ',option_type)
         # Cancel Pending order
         myquery = {F.option_type:{'$eq' : option_type},'$or': [{F.entry_orderid_status : F.open},{F.entry_orderid_status : F.re_entry_open}]}
         db_data = self.entry_id [str(self.date )].find(myquery)
-        print(111,pd.DataFrame(db_data))
+        # print(111,pd.DataFrame(db_data))
        
-        for i in db_data:
-            print(i)
-            is_canceled,order_number, message  = OrderExecuation(self.broker_name,self.broker_session).cancel_order(i[F.exit_orderid])
-            if is_canceled : 
-                logger_bot(f"pending order \nMessage :{order_number} is canceled")
-            else : 
-                emergency_bot(f'Not able to cancle order {i[F.exit_orderid]} in cancel_pending_order()\n Reason : {message}')
-   
         while True:
             myquery = {F.option_type:{'$eq':option_type},'$or': [{F.exit_orderid_status : F.open},{F.exit_orderid_status : F.re_entry_open}]}
             db_data = self.entry_id [str(self.date )].find(myquery)
@@ -314,7 +305,7 @@ class Order_management :
                         ltp = get_ltp(row[F.token],self.broker_name)
                         # ltp = 40
                         price = row[F.exit_price] 
-
+                        ## code for the modification to mean price
                         # if ltp > price:
                         #     new_price = round(abs(price) + abs(ltp - price)/2 ,1)
                         # else:
@@ -345,4 +336,11 @@ class Order_management :
                             emergency_bot(f'Not able to modify sl in exit_orders_dayend() Market Order\nMessage : {message}')
                 time.sleep(5)
             else:
+                for i in db_data:
+                    is_canceled,order_number, message  = OrderExecuation(self.broker_name,self.broker_session).cancel_order(i[F.entry_orderid])
+                    if is_canceled : 
+                        logger_bot(f"pending order \nMessage :{order_number} is canceled")
+                    else : 
+                        emergency_bot(f'Not able to cancle order {i[F.exit_orderid]} in cancel_pending_order()\n Reason : {message}')
+                        
                 break

@@ -28,7 +28,7 @@ class OrderExecuation :
         if self.broker_name  == F.kotak_neo: 
             responce = self.broker_session.cancel_order(order_id = order_number)
             if responce[F.stCode] == 200 :
-                return True,responce[F.nOrdNo],"Placed Sucessfully"
+                return True,responce['result'],"Placed Sucessfully"
             else : 
                 return False,0,responce['errMsg']
         

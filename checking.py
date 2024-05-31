@@ -34,26 +34,43 @@ class Checking:
         if is_not_empty :
             try:
                 self.day_tracker()
+                print(f'\n{self.current_time}---------------- data updated ------------------')
             except Exception as e:
                 emergency_bot(f'problem in day_tracker \nReason :{e}')
 
             try:
                 self.fifty_per_management(pending_order,filled_order,F.NineTwenty)
+                print(f'{self.current_time}---------------- fifty_per_management -  {F.NineTwenty} ------------------')
             except Exception as e:
                 emergency_bot(f'problem in fifty_per_management for : {F.NineTwenty} \nReason :{e}')
 
             try:
                 self.re_entry_management(pending_order,filled_order,F.NineThirty)
+                print(f'{self.current_time}---------------- re_entry_management -  {F.NineThirty} ------------------')
             except Exception as e:
                 emergency_bot(f'problem in re_entry_management for : {F.NineThirty} \nReason :{e}')
 
             try:
                 self.wait_n_trade(pending_order,filled_order,F.NineFourtyFive)
+                print(f'{self.current_time}---------------- wait_n_trade -  {F.NineFourtyFive} ------------------')
             except Exception as e:
                 emergency_bot(f'problem in wait_n_trade for : {F.NineFourtyFive} \nReason :{e}')
+                
+            try:
+                self.re_entry_management(pending_order,filled_order,F.TenThirty)
+                print(f'{self.current_time}---------------- re_entry_management -  {F.TenThirty} ------------------')
+            except Exception as e:
+                emergency_bot(f'problem in re_entry_management for : {F.NineThirty} \nReason :{e}')
+            
+            try:
+                self.re_entry_management(pending_order,filled_order,F.Eleven)
+                print(f'{self.current_time}---------------- re_entry_management -  {F.Eleven} ------------------')
+            except Exception as e:
+                emergency_bot(f'problem in re_entry_management for : {F.NineThirty} \nReason :{e}')
 
             try:
                 self.check_ltp_above_sl(pending_order,filled_order)
+                print(f'{self.current_time}---------------- check_ltp_above_sl ------------------')
             except Exception as e:
                 emergency_bot(f'problem in check_ltp_above_sl\nReason :{e}')
         else :
@@ -74,7 +91,7 @@ class Checking:
             pl =  round((i[F.entry_price]-ltp)*i[F.qty])
             # print('order_id: ',i[F.exit_orderid] )
             self.entry_id[str(self.date)].update_one({F.exit_orderid :i[F.exit_orderid]},{'$push': {F.recording: {'Time':self.current_time, 'pl': pl}}}) #procuction
-        print(f'\n{self.current_time}---------------- data updated ------------------')
+        
             # entry_id[str(date)].update_one({F.ticker :i[F.ticker]},{'$push': {F.recording: {'Time':current_time , 'pl': pl,'datetime':dt.now()}}})
 
 
@@ -122,7 +139,7 @@ class Checking:
                 logger_bot(f'Sl hit {i[F.exit_orderid]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}')
             else:
                 pass
-        print(f'{self.current_time}---------------- fifty_per_management ------------------')
+        
         
     def re_entry_management(self,pending_order,filled_order,stratagy):
         NineThirty_db = self.entry_id[str(self.date)].find({F.stratagy: {'$eq': stratagy}})
@@ -133,7 +150,7 @@ class Checking:
                 #----------------------------------- Upadate 1st order details ---------------------------------------------------------
                 sl_price = filled_order[filled_order[F.order_id]==i[F.exit_orderid]].iloc[0][F.price]
                 self.entry_id[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_price : float(sl_price), F.exit_order_execuation_type : F.limit_order, F.exit_time : str(self.current_time),F.exit_order_count : count+1 } } )
-                logger_bot(f'Sl hit {i[F.exit_orderid]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}')
+                logger_bot(f'Sl hit {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}')
                 #----------------------------------- Place re-entry order ---------------------------------------------------------
                 tag = f'{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}_re_entry'
                 trigger_price = i[F.entry_price]+0.05
@@ -181,7 +198,7 @@ class Checking:
                             }
 
                     self.entry_id[str(self.date)].insert_one(order)
-                    logger_bot(f"re-entry order palced Sucessfully !!! \nMessage : {order_number}\nTicker : {i[F.ticker]}\nPrice : {i[F.entry_price]}\nSide : {i[F.option_type]}")
+                    logger_bot(f"re-entry order palced Sucessfully !!! \nMessage : {order_number}\nTicker : {i[F.ticker]}\nPrice : {i[F.entry_price]}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}")
                 else : 
                     
                     pass# handel issue in emergrncy 
@@ -207,7 +224,7 @@ class Checking:
                 is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
                 if sl_placed and not is_order_rejected : 
                     self.entry_id[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.exit_orderid : order_number,  F.exit_orderid_status : F.re_entry_open, F.entry_order_execuation_type : F.limit_order, F.exit_price : stoploos , F.exit_tag : tag+'_sl'} } )
-                    logger_bot(f"re-entry Sl order palced Sucessfully !!! \nMessage : {order_number}\nTicker : {i[F.ticker]}\nPrice : {stoploos}\nSide : {i[F.option_type]}")
+                    logger_bot(f"re-entry Sl order palced Sucessfully !!! \nMessage : {order_number}\nTicker : {i[F.ticker]}\nPrice : {stoploos}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}")
                 elif not sl_placed:
                     self.entry_id [str(self.date )].update_one({ "entry_tag": tag}, { "$set": {F.exit_orderid_status :  F.rejected }})
                     emergency_bot(f'Problem in palcing limit_sl\nMessage : {message}')
@@ -216,9 +233,9 @@ class Checking:
                 # Track re-entry sl order is sl hit
                 sl_price = filled_order[filled_order[F.order_id]==i[F.exit_orderid]].iloc[0][F.price]
                 self.entry_id[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_order_execuation_type : F.limit_order, F.exit_price : float(sl_price), F.exit_time : str(self.current_time), F.exit_order_count : count+1} } )
-                logger_bot(f"re-entry Sl hit !!! \nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nPrice : {sl_price}\nSide : {i[F.option_type]}")
+                logger_bot(f"re-entry Sl hit !!! \nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nPrice : {sl_price}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}")
                 
-        print(f'{self.current_time}---------------- re_entry_management ------------------')
+        
                    
     def wait_n_trade(self,pending_order,filled_order,stratagy):
         NineFourtyFive_db = self.entry_id[str(self.date)].find({F.stratagy: {'$eq': stratagy}})
@@ -232,7 +249,7 @@ class Checking:
                 Order_management(self.broker_name, self.broker_session).place_limit_sl(i[F.ticker], i[F.qty], i[F.transaction_type], i[F.entry_price], i[F.exit_percent], i[F.option_type], tag)
                 ltp = get_ltp(i[F.token],self.broker_name)
                 self.entry_id[str(self.date)].update_one({F.entry_orderid :{'$eq':i[F.entry_orderid]}},{"$set": {F.entry_orderid_status : F.closed , F.entry_order_execuation_type : F.limit_order, "ltp" : ltp, F.entry_order_count : count+1}})
-                logger_bot(f'Sl hit {i[F.exit_orderid]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}')
+                logger_bot(f'Sl hit {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}')
                 
             if (i[F.exit_orderid_status] == F.open):
                 #--------------- Trail sl ----------------------------
@@ -245,13 +262,13 @@ class Checking:
                     is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
                     if is_modified and not is_order_rejected :  
                         self.entry_id[str(self.date)].update_one({F.entry_orderid :{'$eq':i[F.entry_orderid]}},{"$set": {F.exit_price : new_sl, F.exit_price_initial : new_sl, "ltp" : new_ltp}})
-                        logger_bot(f"SL trailed from {i[F.exit_price]} to {new_sl} of {i[F.exit_orderid]}\nSide : {i[F.option_type]}")
+                        logger_bot(f"SL trailed from {i[F.exit_price]} to {new_sl} of {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nSide : {i[F.option_type]}\nStratagy : {i[F.stratagy]}")
 
             if (i[F.exit_orderid_status]== F.open) and (i[F.exit_orderid] not in pending_order_list):
                 #--------------- Update sl hit ----------------------------
                 sl_price = filled_order[filled_order[F.order_id]==i[F.exit_orderid]].iloc[0][F.price]
                 self.entry_id[str(self.date)].update_one({F.entry_orderid :{'$eq':i[F.entry_orderid]}},{"$set": {F.exit_orderid_status :F.closed, F.exit_price:sl_price, F.exit_reason: F.sl_hit, F.exit_order_execuation_type : F.limit_order,F.exit_order_count : count+1 , F.exit_time: self.current_time}})
-        print(f'{self.current_time}---------------- wait_n_trade ------------------')
+                logger_bot(f"Sl hit !!! \nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nPrice : {sl_price}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}")
         
     def check_ltp_above_sl(self,pending_order,filled_order):
         myquery = {'$or': [{F.exit_orderid_status : F.open},{F.exit_orderid_status : F.re_entry_open}]}
@@ -279,7 +296,7 @@ class Checking:
             else :
                 # print('-----------',ltp,sl_price,i[F.exit_orderid])
                 pass
-        print(f'{self.current_time}---------------- check_ltp_above_sl ------------------')
+        
                 
 
     # def is_loss_above_limit(self,pl):

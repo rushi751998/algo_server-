@@ -45,3 +45,16 @@ date = dt.today().date()
 
 entry_id = get_db()
 
+
+myquery = {'$or': [{F.entry_orderid_status : F.open},{F.entry_orderid_status : F.re_entry_open}]}
+db_data = entry_id [str(date )].find(myquery)
+# print(111,pd.DataFrame(db_data))
+
+for i in db_data:
+    print(i[F.exit_orderid])
+    is_canceled,order_number, message  = OrderExecuation(F.kotak_neo,broker_session).cancel_order(i[F.entry_orderid])
+    if is_canceled : 
+        logger_bot(f"pending order \nMessage :{order_number} is canceled")
+    else : 
+        emergency_bot(f'Not able to cancle order {i[F.exit_orderid]} in cancel_pending_order()\n Reason : {message}')
+
