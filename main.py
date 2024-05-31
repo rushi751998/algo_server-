@@ -1,15 +1,15 @@
 
-from broker import Login, get_symbol, Order_details, Socket_handling
-from checking import Checking
-from utils import (get_ist_now,
+from server.broker import Login, get_symbol, Order_details, Socket_handling
+from server.checking import Checking
+from server.utils import (get_ist_now,
                    is_hoilyday,
                    is_market_time,
                    sleep_till_next_day,
                    env_variables as env ,
                    get_db, Fields as F)
 
-from telegram_bot import emergency_bot
-from order_management import Order_management
+from server.telegram_bot import emergency_bot
+from server.order_management import Order_management
 from neo_api_client import NeoAPI
 import time,re,pymongo,os ,pandas as pd 
 from threading import Thread
@@ -19,15 +19,6 @@ pd.options.mode.chained_assignment = None # it is mandatory
 
 from random import randint
 
-login = dt.strftime(get_ist_now(),'%H:%M')
-NineTwenty = None
-NineThirty = None
-# second_order = '18:20'
-NineFourtyFive = None
-TenThirty = dt.strftime(get_ist_now(),'%H:%M')
-Eleven = None
-exit_orders = '15:01'
-logout_session = '15:35'
 
 def socket_thread_fun(**kwargs):
     Socket_handling(broker_name,broker_session).start_socket(kwargs['expiry_base_instrument'])
@@ -48,7 +39,7 @@ def day_end(broker_name,broker_session,option_type):
 def placing(**kwargs):
     current_time = kwargs['current_time']
 
-    if current_time == NineTwenty:
+    if current_time == env.NineTwenty:
         for i in range(1):
             ce_thread = Thread(name = f'CE_{F.NineTwenty}',target=order_placer,kwargs={F.option_type: F.CE,'option_price' :150, F.loop_no : i, F.stratagy :  F.NineTwenty, F.exit_percent : 50, F.transaction_type :  F.Sell,F.broker_name:  broker_name, F.broker_session : broker_session})
             pe_thread = Thread(name = f'PE_{F.NineTwenty}' ,target=order_placer,kwargs={F.option_type: F.PE,'option_price' :150, F.loop_no : i, F.stratagy :  F.NineTwenty, F.exit_percent : 50, F.transaction_type :  F.Sell,F.broker_name:  broker_name, F.broker_session : broker_session})
@@ -57,7 +48,7 @@ def placing(**kwargs):
             ce_thread.start()
             pe_thread.start()
 
-    elif current_time == NineThirty:
+    elif current_time == env.NineThirty:
         for i in range(1):
             i = 1
             ce_thread = Thread(name = f'CE_{F.NineThirty}',target=order_placer,kwargs={F.option_type: F.CE,'option_price' :125, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:  kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
@@ -67,7 +58,7 @@ def placing(**kwargs):
             ce_thread.start()
             pe_thread.start()
             
-    elif current_time == NineFourtyFive:
+    elif current_time == env.NineFourtyFive:
         for i in range(1):
             i = 0
             ce_thread = Thread(name = f'CE_{F.NineFourtyFive}-Thread',target=order_placer,kwargs={F.option_type: F.CE,'option_price' :100,F.loop_no : i, F.stratagy :  F.NineFourtyFive,F.exit_percent : 50, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session],'wait_percent' : 5})
@@ -77,7 +68,7 @@ def placing(**kwargs):
             ce_thread.start()
             pe_thread.start()
             
-    elif current_time == TenThirty:
+    elif current_time == env.TenThirty:
         for i in range(1):
             ce_thread = Thread(name = f'CE_{F.TenThirty}-Thread',target=order_placer,kwargs={F.option_type: F.CE,'option_price' :125,F.loop_no : i, F.stratagy :  F.TenThirty,F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
             pe_thread = Thread(name = f'PE_{F.TenThirty}-Thread' ,target=order_placer,kwargs={F.option_type: F.PE,'option_price' :125,F.loop_no : i, F.stratagy :  F.TenThirty,F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
@@ -86,7 +77,7 @@ def placing(**kwargs):
             ce_thread.start()
             pe_thread.start()
             
-    elif current_time == Eleven:
+    elif current_time == env.Eleven:
         for i in range(1):
             ce_thread = Thread(name =f'CE_{F.Eleven}-Thread',target=order_placer,kwargs={F.option_type: F.CE,'option_price' :125,F.loop_no : i, F.stratagy :  F.Eleven, F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
             pe_thread = Thread(name =f'PE_{F.Eleven}-Thread',target=order_placer,kwargs={F.option_type: F.PE,'option_price' :125,F.loop_no : i, F.stratagy :  F.Eleven, F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
@@ -125,7 +116,7 @@ if __name__ == '__main__':
             
             is_env = env.load_env_variable()
             hoilyday, holiday_reason = is_hoilyday()
-            event_list = [login,NineTwenty, NineTwenty, NineThirty, NineFourtyFive, TenThirty, exit_orders, logout_session]
+            event_list = [env.login, env.NineTwenty, env.NineTwenty, env.NineThirty, env.NineFourtyFive, env.TenThirty, env.exit_orders, env.logout_session]
             broker_name = env.broker_name
             is_login, broker_session = Login().setup()
             

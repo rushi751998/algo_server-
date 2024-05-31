@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from typing import Dict, List 
 import requests
 from bs4 import BeautifulSoup
-from telegram_bot import logger_bot,emergency_bot
+from server.telegram_bot import logger_bot,emergency_bot
 import ast
 import datetime
 import time
@@ -146,11 +146,11 @@ class env_variables:
     exceptational_tradingdays  : list
 
     login : str
-    first_order : str
-    second_order : str
-    third_order : str
-    fourth_order : str
-    fifth_order : str
+    NineTwenty : str
+    NineThirty : str
+    NineFourtyFive : str
+    TenThirty : str
+    Eleven : str
     exit_orders : str
     logout_session : str
     
@@ -175,12 +175,14 @@ class env_variables:
         # self.hoilydays =os.environ['hoilydays'] 
         self.exceptational_tradingdays =  ast.literal_eval(os.environ['exceptational_tradingdays'] )
         self.exceptational_hoilydays = ast.literal_eval(os.environ['exceptational_hoilydays'] )
+        
+        # self.login = dt.strftime(get_ist_now(),'%H:%M')
         self.login = os.environ['login'] 
-        self.first_order = os.environ['first_order']
-        self.second_order = os.environ['second_order']
-        self.third_order = os.environ['third_order']
-        self.fourth_order = os.environ['fourth_order']
-        self.fifth_order = os.environ['fifth_order']
+        self.NineTwenty = os.environ['first_order']
+        self.NineThirty = os.environ['second_order']
+        self.NineFourtyFive = os.environ['third_order']
+        self.TenThirty = os.environ['fourth_order']
+        self.Eleven = os.environ['fifth_order']
         self.exit_orders = os.environ['exit_orders']
         self.logout_session = os.environ['logout_session']
         return True

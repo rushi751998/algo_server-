@@ -1,10 +1,10 @@
-from execuations import OrderExecuation
-from telegram_bot import logger_bot,emergency_bot
+from server.execuations import OrderExecuation
+from server.telegram_bot import logger_bot,emergency_bot
 from  datetime import datetime as dt
 import pandas as pd
 import time
-from broker import Order_details, get_ltp, get_token, is_order_rejected_func
-from utils import env_variables as env ,get_db, Fields as F
+from server.broker import Order_details, get_ltp, get_token, is_order_rejected_func
+from server.utils import env_variables as env ,get_db, Fields as F
 
 pd.options.mode.chained_assignment = None # it is mandatory
 
