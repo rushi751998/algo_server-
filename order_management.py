@@ -280,11 +280,6 @@ class Order_management :
             emergency_bot(f'Problem in palcing limit_sl\nMessage : {message}')
 
     def exit_orders_dayend(self,option_type) :
-        # print('option_type : ',option_type)
-        # Cancel Pending order
-        myquery = {F.option_type:{'$eq' : option_type},'$or': [{F.entry_orderid_status : F.open},{F.entry_orderid_status : F.re_entry_open}]}
-        db_data = self.entry_id [str(self.date )].find(myquery)
-        # print(111,pd.DataFrame(db_data))
        
         while True:
             myquery = {F.option_type:{'$eq':option_type},'$or': [{F.exit_orderid_status : F.open},{F.exit_orderid_status : F.re_entry_open}]}
@@ -336,6 +331,8 @@ class Order_management :
                             emergency_bot(f'Not able to modify sl in exit_orders_dayend() Market Order\nMessage : {message}')
                 time.sleep(5)
             else:
+                myquery = {F.option_type:{'$eq' : option_type},'$or': [{F.entry_orderid_status : F.open},{F.entry_orderid_status : F.re_entry_open}]}
+                db_data = self.entry_id [str(self.date )].find(myquery)
                 for i in db_data:
                     is_canceled,order_number, message  = OrderExecuation(self.broker_name,self.broker_session).cancel_order(i[F.entry_orderid])
                     if is_canceled : 
