@@ -107,9 +107,9 @@ class Socket_handling:
         self.broker_session = broker_session
         self.is_prepared = False
     
-    def start_socket(self):
+    def start_socket(self,expiry_base_instrument):
         if not self.is_prepared : 
-            df, future_token,is_prepared = self.prepare_option_chain_Future_token()
+            df, future_token,is_prepared = self.prepare_option_chain_Future_token(expiry_base_instrument)
             with self._lock:
                         self.future_token = future_token
                         self.is_prepared = is_prepared
@@ -164,7 +164,7 @@ class Socket_handling:
                 pass
         # print(option_chain,'\n\n')
 
-    def prepare_option_chain_Future_token(self):
+    def prepare_option_chain_Future_token(self,expiry_base_instrument): 
         if self.broker_name  ==  F.kotak_neo :  
             script_master =   [i  for i in  self.broker_session.scrip_master()['filesPaths']  if 'nse_fo' in  i]    
             df = pd.read_csv(script_master[0],low_memory=False)

@@ -234,6 +234,7 @@ class Fields :
     # pending_order = 'pending_order'
     # reentry_pending_order = 'reentry_pending_order'
     closed = 'closed'
+    rejected = 'rejected'
     # placed_sucessfully = 'placed_sucessfully'
     
     sl_hit = 'sl_hit'

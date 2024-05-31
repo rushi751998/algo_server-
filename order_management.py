@@ -72,12 +72,12 @@ class Order_management :
                             }
 
                     self.entry_id [str(self.date )].insert_one(order)
-                    logger_bot(f"NineTwenty {option_type} limit order placed SucessFully !!! \nMessage : {order_number}")
+                    logger_bot(f"{stratagy} {option_type} limit order placed SucessFully !!! \nMessage : {order_number}")
                     self.smart_executer(stratagy=stratagy,exit_percent=exit_percent,option_type=option_type )
 
 
             elif not is_order_placed :
-                emergency_bot(f'Not able to palce NineTwenty order \nmessage : {message}')
+                emergency_bot(f'Not able to palce {stratagy} order \nmessage : {message}')
 
         if stratagy in [F.NineThirty, F.TenThirty, F.Eleven]:
             trigger_price = price+0.05
@@ -128,10 +128,10 @@ class Order_management :
                             }
 
                     self.entry_id [str(self.date )].insert_one(order)
-                    logger_bot(f"NineThirty order placed SucessFully !!! \nMessage : {order_number}")
+                    logger_bot(f"{stratagy} {option_type} limit order placed SucessFully !!! \nMessage : {order_number}")
                     self.smart_executer(stratagy=stratagy,exit_percent=exit_percent,option_type=option_type)
             elif not is_order_placed :
-                    emergency_bot(f'Not able to palce NineThirty order \nmessage : {message}')
+                    emergency_bot(f'Not able to palce {stratagy} order \nmessage : {message}')
 
         if stratagy == F.NineFourtyFive:
             price=round(price*0.95,1)
@@ -184,10 +184,10 @@ class Order_management :
                             }
 
                     self.entry_id [str(self.date )].insert_one(order)
-                    logger_bot(f"{F.NineFourtyFive} order placed SucessFully !!! \nMessage : {order_number}")
+                    logger_bot(f"{stratagy} {option_type} limit order placed SucessFully !!! \nMessage : {order_number}")
 
             elif not is_order_placed :
-                emergency_bot(f'Not able to palce NineThirty order \nmessage :{message}')
+                emergency_bot(f'Not able to palce {stratagy} order \nmessage :{message}')
 
 
     def smart_executer(self,stratagy,exit_percent,option_type) :
@@ -255,7 +255,7 @@ class Order_management :
                 for i in pending_orders_db:
                     tag = f'{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}'
                     # print(f"ticker={i[F.ticker]},qty={i[F.qty]},transaction_type={i[F.transaction_type]},avg_price={(i[F.entry_price])},exit_percent={exit_percent},tag = {tag}")
-                    self.place_limit_sl(ticker=i[F.ticker],qty=i[F.qty],transaction_type=i[F.transaction_type],avg_price=(i[F.entry_price]),exit_percent=exit_percent,option_type= i[F.option_type],tag = tag)
+                    self.place_limit_sl(ticker=i[F.ticker],qty=i[F.qty],transaction_type_=i[F.transaction_type],avg_price=(i[F.entry_price]),exit_percent=exit_percent,option_type= i[F.option_type],tag = tag)
                 break
 
     def place_limit_sl(self,ticker,qty,transaction_type_,avg_price,exit_percent,option_type,tag):
@@ -277,6 +277,7 @@ class Order_management :
             logger_bot(f"Sl order palced Sucessfully !!! \nOrder Number : {order_number}\nPrice : {stoploos}\nSide : {option_type}")
 
         elif not sl_placed:
+            self.entry_id [str(self.date )].update_one({ "entry_tag": tag}, { "$set": {F.exit_orderid_status :  F.rejected }})
             emergency_bot(f'Problem in palcing limit_sl\nMessage : {message}')
 
     def exit_orders_dayend(self,option_type) :

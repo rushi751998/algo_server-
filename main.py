@@ -24,13 +24,13 @@ first_order = None
 second_order = None
 # second_order = '18:20'
 third_order = None
-fourth_order = None
+fourth_order = dt.strftime(get_ist_now(),'%H:%M')
 fifth_order = None
-exit_orders = dt.strftime(get_ist_now(),'%H:%M')
+exit_orders = '15:01'
 logout_session = '15:35'
 
 def socket_thread_fun(**kwargs):
-    Socket_handling(broker_name,broker_session).start_socket()
+    Socket_handling(broker_name,broker_session).start_socket(kwargs['expiry_base_instrument'])
 
 def checking_thread_fun(**kwargs):
     Checking(broker_session,broker_name).check()
@@ -59,6 +59,7 @@ def placing(**kwargs):
 
     elif current_time==second_order:
         for i in range(1):
+            i = 1
             ce_thread = Thread(name = f'CE_{F.NineThirty}',target=order_placer,kwargs={F.option_type: F.CE,'option_price' :125, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:  kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
             pe_thread = Thread(name = f'PE_{F.NineThirty}' ,target=order_placer,kwargs={F.option_type: F.PE,'option_price' :125, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.transaction_type :  F.Sell,F.broker_name:  kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
             env.thread_list.append(ce_thread)
@@ -68,7 +69,7 @@ def placing(**kwargs):
             
     elif current_time==third_order:
         for i in range(1):
-            i = 7
+            i = 0
             ce_thread = Thread(name = f'CE_{F.NineFourtyFive}-Thread',target=order_placer,kwargs={F.option_type: F.CE,'option_price' :100,F.loop_no : i, F.stratagy :  F.NineFourtyFive,F.exit_percent : 50, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session],'wait_percent' : 5})
             pe_thread = Thread(name = f'PE_{F.NineFourtyFive}-Thread' ,target=order_placer,kwargs={F.option_type: F.PE,'option_price' :100,F.loop_no : i, F.stratagy :  F.NineFourtyFive,F.exit_percent : 50, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session],'wait_percent' : 5})
             env.thread_list.append(ce_thread)
@@ -128,7 +129,7 @@ if __name__ == '__main__':
             broker_name = env.broker_name
             is_login, broker_session = Login().setup()
             
-            start_socket_thread = Thread(name='socket_thread', target=socket_thread_fun, kwargs={'broker_session': broker_session,'broker_name': broker_name})
+            start_socket_thread = Thread(name='socket_thread', target=socket_thread_fun, kwargs={'expiry_base_instrument' : False,'broker_session': broker_session,'broker_name': broker_name})
             env.thread_list.append(start_socket_thread)
             start_socket_thread.start()
             is_socket_alive = start_socket_thread.is_alive()
@@ -172,5 +173,7 @@ if __name__ == '__main__':
                 sleep_till_next_day()
                 
             if not is_market_time():
+                for i in env.thread_list :
+                    i.join()
                 emergency_bot("Market is stopped, going to sleep")
                 sleep_till_next_day()
