@@ -72,16 +72,13 @@ def is_market_time():
     else : 
         return False
  
-
 def sleep_till_next_day():
     now= dt.now()
     tomorow_9am = (now + timedelta(days=1)).replace(hour=9,minute=0,second=0)
     total_seconds = (tomorow_9am-now).total_seconds()
     logger_bot('Market is offline.. Going to sleep till next day')
     time.sleep(total_seconds)
-
-
-        
+       
 def get_ist_now():
     return dt.now() + timedelta(0)
 
@@ -126,7 +123,6 @@ def set_coloumn_name(df,broker_name):
     df.to_csv('order.csv')
     return df
 
-
 class env_variables:
     env_variable_initilised = False
     today = None
@@ -153,6 +149,8 @@ class env_variables:
     Eleven : str
     exit_orders : str
     logout_session : str
+    
+    index : str
     
     @classmethod
     def load_env_variable (self):
@@ -185,6 +183,7 @@ class env_variables:
         self.Eleven = os.environ['fifth_order']
         self.exit_orders = os.environ['exit_orders']
         self.logout_session = os.environ['logout_session']
+        self.index = None
         return True
     
 class Fields : 
@@ -219,6 +218,7 @@ class Fields :
     price = 'price'
     loop_no = 'loop_no'
     recording = 'recording'
+    index = 'index'
     charges = 'charges'
     drift_points = 'drift_points'
     drift_rs = 'drift_rs'

@@ -1,5 +1,5 @@
 .env
-env/
+algo_env/
 test.py
 a.py
 __pycache__
@@ -8,3 +8,6 @@ order.csv
 test.ipynb
 .vscode/
 note.txt
+noteook.ipynb
+nohup.out
+log

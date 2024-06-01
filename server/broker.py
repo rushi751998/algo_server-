@@ -109,10 +109,13 @@ class Socket_handling:
     
     def start_socket(self,expiry_base_instrument):
         if not self.is_prepared : 
-            df, future_token,is_prepared = self.prepare_option_chain_Future_token(expiry_base_instrument)
-            with self._lock:
-                        self.future_token = future_token
-                        self.is_prepared = is_prepared
+            try : 
+                df, future_token, is_prepared = self.prepare_option_chain_Future_token(expiry_base_instrument)
+                with self._lock:
+                            self.future_token = future_token
+                            self.is_prepared = is_prepared
+            except Exception as e  :
+                emergency_bot(f'Facing Issue in prepare_option_chain_Future_token \nissue : {e}')
                     
         if self.broker_name == F.kotak_neo : 
             token_list = [{"instrument_token":i,"exchange_segment":'nse_fo'} for i in option_chain.keys()]
@@ -140,55 +143,84 @@ class Socket_handling:
     def update_option_chain(self, message):
         for tick in message[F.data]:
             try:
-                symbol = tick['tk']
+                token = tick['tk']
                 volume =int( tick['v'])
                 with self._lock:
-                    option_chain[symbol]['v'] = volume
+                    option_chain[token]['v'] = volume
             except:
                 pass
 
             try:
-                symbol = tick['tk']
+                token = tick['tk']
                 oi = int(tick['oi'])
                 with self._lock:
-                    option_chain[symbol]['oi'] = oi
+                    option_chain[token]['oi'] = oi
             except:
                 pass
 
             try:
-                symbol = tick['tk']
+                token = tick['tk']
                 ltp = float(tick['ltp'])
                 with self._lock:
-                    option_chain[symbol]['ltp'] = ltp
+                    option_chain[token]['ltp'] = ltp
             except:
                 pass
         # print(option_chain,'\n\n')
 
     def prepare_option_chain_Future_token(self,expiry_base_instrument): 
-        if self.broker_name  ==  F.kotak_neo :  
-            script_master =   [i  for i in  self.broker_session.scrip_master()['filesPaths']  if 'nse_fo' in  i]    
-            df = pd.read_csv(script_master[0],low_memory=False)
-            df.columns=[i.strip() for i in df.columns]
-            df = df[df['pSymbolName']=='BANKNIFTY'][['pSymbol','pSymbolName','pTrdSymbol','pOptionType','pScripRefKey','lLotSize','lExpiryDate','dStrikePrice;', 'iMaxOrderSize', 'iLotSize', 'dOpenInterest']]
-            df['lExpiryDate'] = df['lExpiryDate'].apply(lambda x:dt.fromtimestamp(x).date()+ relativedelta(years=10))
-            df['dStrikePrice;'] = df['dStrikePrice;']/100
-            df = df[['pSymbol','pScripRefKey','lExpiryDate','dStrikePrice;','pOptionType']]
-            df.columns = ['instrumentToken','instrumentName','expiry','strike','optionType']
-            df['days_to_expire'] = df['expiry'].apply(lambda x:(dt.strptime(str(x),'%Y-%m-%d').date()-dt.today().date()).days)
-            df.sort_values('days_to_expire',inplace=True)
-            df =df[(df['days_to_expire']==df['days_to_expire'].min())|(df['optionType']=='XX')]   # Find Nearest Expiry
-            df.reset_index(inplace=True,drop=True)
-            df.dropna(inplace = True)
-            future_token =df[df['optionType']=='XX'].iloc[0]['instrumentToken']
-            
-            # time.sleep(2)
-            with self._lock:
-                for index,row in df.iterrows():
-                    option_chain[row['instrumentToken']] = {'v':0,'oi':0,'ltp':0,'option_type':row['optionType'],'symbol':row['instrumentName']}
-                    ticker_to_token[row['instrumentName']]=row['instrumentToken']
+        script_master =   [i  for i in  self.broker_session.scrip_master()['filesPaths']  if 'nse_fo' in  i]   
+        df = pd.read_csv(script_master[0],low_memory=False)
+        df.columns=[i.strip() for i in df.columns]
+        df = df[df['pSymbolName'].isin(['NIFTY', 'FINNIFTY','BANKNIFTY' , 'MIDCPNIFTY'])][['pSymbol','pSymbolName','pTrdSymbol','pOptionType','pScripRefKey','lLotSize','lExpiryDate','dStrikePrice;', 'iMaxOrderSize', 'iLotSize', 'dOpenInterest']]
+        df['lExpiryDate'] = df['lExpiryDate'].apply(lambda x:dt.fromtimestamp(x).date()+ relativedelta(years=10))
+        df = df[['pSymbol','pScripRefKey','pSymbolName','lExpiryDate','dStrikePrice;','pOptionType']]
+        df.columns = ['token','ticker','index','expiry','strike','optionType']
+        df.dropna(inplace=True)
+        df['days_to_expire'] = df['expiry'].apply(lambda x:(dt.strptime(str(x),'%Y-%m-%d').date()-dt.today().date()).days)
+        df.sort_values('days_to_expire',inplace=True)
 
-                logger_bot('prepared opetion chain')
-                return df, future_token,True
+        option_tickers = df[df['optionType'] != 'XX']
+        future_tickers = df[df['optionType'] == 'XX']
+
+        if expiry_base_instrument:
+            future_tickers = future_tickers[(future_tickers['days_to_expire'] == future_tickers['days_to_expire'].min())]
+            future_token = future_tickers[future_tickers['days_to_expire'] == future_tickers['days_to_expire'].min()].iloc[0]['token']
+            
+            option_tickers = option_tickers[(option_tickers['days_to_expire'] == option_tickers['days_to_expire'].min())]
+            index_list = option_tickers['index'].unique()
+            
+            if len(index_list) == 1:
+                if 'BANKNIFTY' in index_list : 
+                    index = 'BANKNIFTY'
+                elif 'NIFTY' in index_list : 
+                    index = 'NIFTY'
+                elif 'FINNIFTY' in index_list : 
+                    index = 'FINNIFTY'
+                elif 'MIDCPNIFTY' in index_list : 
+                    index = 'MIDCPNIFTY'
+                    
+            option_tickers = option_tickers[option_tickers['index'] == index]
+            future_tickers = future_tickers[future_tickers['index'] == index]
+            
+        else:
+            index = 'BANKNIFTY'
+            option_tickers = option_tickers[option_tickers['index'] == index]
+            future_tickers = future_tickers[future_tickers['index'] == index]
+            
+            future_tickers = future_tickers[(future_tickers['days_to_expire'] == future_tickers['days_to_expire'].min())]
+            future_token = future_tickers[future_tickers['days_to_expire'] == future_tickers['days_to_expire'].min()].iloc[0]['token']
+            
+            option_tickers = option_tickers[(option_tickers['days_to_expire'] == option_tickers['days_to_expire'].min())]
+        env.index = index
+        df = pd.concat([option_tickers, future_tickers])
+        df.reset_index(inplace=True,drop=True)
+
+        with self._lock:
+            for index,row in df.iterrows():
+                option_chain[row['token']] = {'v':0,'oi':0,'ltp':0,'option_type':row['optionType'],'ticker':row['ticker']}
+                ticker_to_token[row['ticker']]=row['token']
+        logger_bot('prepared opetion chain')
+        return df, future_token,True
 
 def get_option_chain():
     return option_chain
@@ -199,7 +231,7 @@ def get_symbol(option_type,option_price,broker_name):
         chain = chain[(chain['v']>100000)&(chain['oi']>100000)]
         ce = chain[chain[F.option_type]==option_type]
         strike = ce[ce['ltp']<=option_price].sort_values('ltp',ascending=False).iloc[0]
-        return strike['symbol'],strike['ltp']
+        return strike['ticker'], strike['ltp']
 
 def get_ltp(instrument_token,broker_name):
     if   broker_name == F.kotak_neo   :
