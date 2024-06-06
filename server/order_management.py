@@ -16,7 +16,6 @@ class Order_management :
         self.database = get_db()
         self.date = dt.today().date()
 
-
     def order_place(self,ticker,qty,transaction_type,stratagy,exit_percent,loop_no,price,option_type,):
         tag = f'{stratagy}_{option_type}_{loop_no}'
         if stratagy == F.NineTwenty:
@@ -190,7 +189,6 @@ class Order_management :
 
             elif not is_order_placed :
                 emergency_bot(f'Not able to palce {stratagy} order \nmessage :{message}')
-
 
     def smart_executer(self,stratagy,exit_percent,option_type) :
         while True:

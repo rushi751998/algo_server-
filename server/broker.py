@@ -173,8 +173,8 @@ class Socket_handling:
         df.columns=[i.strip() for i in df.columns]
         df = df[df['pSymbolName'].isin(['NIFTY', 'FINNIFTY','BANKNIFTY' , 'MIDCPNIFTY'])][['pSymbol','pSymbolName','pTrdSymbol','pOptionType','pScripRefKey','lLotSize','lExpiryDate','dStrikePrice;', 'iMaxOrderSize', 'iLotSize', 'dOpenInterest']]
         df['lExpiryDate'] = df['lExpiryDate'].apply(lambda x:dt.fromtimestamp(x).date()+ relativedelta(years=10))
-        df = df[['pSymbol','pScripRefKey','pSymbolName','lExpiryDate','dStrikePrice;','pOptionType']]
-        df.columns = ['token','ticker','index','expiry','strike','optionType']
+        df = df[['pSymbol','pScripRefKey','pSymbolName','lExpiryDate','dStrikePrice;','pOptionType','lLotSize']]
+        df.columns = ['token','ticker','index','expiry','strike','optionType','lotSize']
         df.dropna(inplace=True)
         df['days_to_expire'] = df['expiry'].apply(lambda x:(dt.strptime(str(x),'%Y-%m-%d').date()-dt.today().date()).days)
         df.sort_values('days_to_expire',inplace=True)
@@ -216,6 +216,9 @@ class Socket_handling:
         df.reset_index(inplace=True,drop=True)
 
         with self._lock:
+            env.index = index
+            env.lot_size = df.iloc[0]['lotSize']
+            
             for index,row in df.iterrows():
                 option_chain[row['token']] = {'v':0,'oi':0,'ltp':0,'option_type':row['optionType'],'ticker':row['ticker']}
                 ticker_to_token[row['ticker']]=row['token']

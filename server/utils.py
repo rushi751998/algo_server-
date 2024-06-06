@@ -123,11 +123,55 @@ def set_coloumn_name(df,broker_name):
     df.to_csv('order.csv')
     return df
 
+def get_qty_option_price(broker_name):
+    fifty_per_risk = 2250
+    re_entry_risk = 1875
+    wait_trade_risk  = 1500
+    lot_size = env_variables.lot_size
+    
+
+    if  broker_name == 'kotak_neo' : 
+        if env_variables.index == 'BANKNIFTY' : 
+            fifty_per_qty = lot_size
+            fifty_per_price = fifty_per_risk / lot_size
+            re_entry_qty = lot_size
+            re_entry_price = re_entry_risk / lot_size
+            wait_trade_qty  = lot_size  
+            wait_trade_price = wait_trade_risk / lot_size
+            
+        elif env_variables.index == 'NIFTY' : 
+            fifty_per_qty = lot_size
+            fifty_per_price = fifty_per_risk / lot_size
+            re_entry_qty = lot_size
+            re_entry_price = re_entry_risk / lot_size
+            wait_trade_qty  = lot_size  
+            wait_trade_price = wait_trade_risk / lot_size
+            
+        elif env_variables.index == 'FINNIFTY' : 
+            fifty_per_qty = lot_size
+            fifty_per_price = fifty_per_risk / lot_size
+            re_entry_qty = lot_size
+            re_entry_price = re_entry_risk / lot_size
+            wait_trade_qty  = lot_size  
+            wait_trade_price = wait_trade_risk / lot_size
+        
+        elif env_variables.index == 'MIDCPNIFTY' : 
+            fifty_per_qty = lot_size
+            fifty_per_price = fifty_per_risk / lot_size
+            re_entry_qty = lot_size
+            re_entry_price = re_entry_risk / lot_size
+            wait_trade_qty  = lot_size  
+            wait_trade_price = wait_trade_risk / lot_size
+            
+    return fifty_per_qty, fifty_per_price, re_entry_qty, re_entry_price, wait_trade_qty, wait_trade_price
+            
 class env_variables:
     env_variable_initilised = False
     today = None
     thread_list = []
     socket_thread = None
+    lot_size : int
+    index : str 
     
     mongodb_link : str
     consumer_key : str
@@ -150,7 +194,8 @@ class env_variables:
     exit_orders : str
     logout_session : str
     
-    index : str
+    capital : str
+    qty_partation_loop : int
     
     @classmethod
     def load_env_variable (self):
@@ -160,16 +205,18 @@ class env_variables:
         self.env_variable_initilised= True
         self.thread_list = []
         self.today = dt.today().date()
+        self.lot_size = 1
+        self.index = ''
         
-        self.mongodb_link =os.environ['mongodb_link'] 
-        self.consumer_key =os.environ['consumer_key'] 
-        self.secretKey =os.environ['secretKey'] 
-        self.mobileNumber=os.environ['mobileNumber'] 
-        self.login_password =os.environ['login_password'] 
-        self.broker_name =os.environ['broker_name']    
-        self.session_validation_key =os.environ['session_validation_key'] 
-        self.two_factor_code =os.environ['two_factor_code'] 
-        self.allowed_loss_percent =os.environ['allowed_loss_percent'] 
+        self.mongodb_link = os.environ['mongodb_link'] 
+        self.consumer_key = os.environ['consumer_key'] 
+        self.secretKey = os.environ['secretKey'] 
+        self.mobileNumber = os.environ['mobileNumber'] 
+        self.login_password = os.environ['login_password'] 
+        self.broker_name = os.environ['broker_name']    
+        self.session_validation_key = os.environ['session_validation_key'] 
+        self.two_factor_code = os.environ['two_factor_code'] 
+        self.allowed_loss_percent = float(os.environ['allowed_loss_percent'] )
         # self.hoilydays =os.environ['hoilydays'] 
         self.exceptational_tradingdays =  ast.literal_eval(os.environ['exceptational_tradingdays'] )
         self.exceptational_hoilydays = ast.literal_eval(os.environ['exceptational_hoilydays'] )
@@ -187,7 +234,9 @@ class env_variables:
         self.Eleven = os.environ['fifth_order']
         self.exit_orders = os.environ['exit_orders']
         self.logout_session = os.environ['logout_session']
-        self.index = None
+        self.capital = float(os.environ['capital'])
+        self.qty_partation_loop = int(os.environ['qty_partation_loop'])
+    
         return True
     
 class Fields : 
