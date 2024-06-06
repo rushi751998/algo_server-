@@ -19,6 +19,7 @@ class Checking:
         self.database = get_db()
     
     def check(self):
+        is_not_empty = False
         try : 
             order_details =  Order_details(self.broker_session,self.broker_name)
             is_not_empty,all_orders,filled_order,pending_order = order_details.order_book()
@@ -162,7 +163,7 @@ class Checking:
                 is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
                 if is_order_placed and not is_order_rejected : 
                     order = { 
-                            F.entry_time : str(self.current_time),
+                            F.entry_time : '---',
                             F.ticker : i[F.ticker],
                             F.token : i[F.token],
                             F.transaction_type : i[F.transaction_type],
@@ -208,7 +209,7 @@ class Checking:
 
             if (i[F.entry_orderid] not in pending_order_list) and i[F.entry_orderid_status] == F.re_entry_open: 
                 # Check is re-entry pending order is threre if not place sl for re-entry 
-                self.database[str(self.date)].update_one({  F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.entry_orderid_status: F.closed, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count+1 } } )
+                self.database[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.entry_orderid_status: F.closed, F.entry_time : self.current_time, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count+1 } } )
 
                 #------------- Place new re-entry stoploss --------------
 
@@ -249,7 +250,7 @@ class Checking:
                 tag = f"{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}"
                 Order_management(self.broker_name, self.broker_session).place_limit_sl(i[F.ticker], i[F.qty], i[F.transaction_type], i[F.entry_price], i[F.exit_percent], i[F.option_type], tag)
                 ltp = get_ltp(i[F.token],self.broker_name)
-                self.database[str(self.date)].update_one({F.entry_orderid :{'$eq':i[F.entry_orderid]}},{"$set": {F.entry_orderid_status : F.closed , F.entry_order_execuation_type : F.limit_order, "ltp" : ltp, F.entry_order_count : count+1}})
+                self.database[str(self.date)].update_one({F.entry_orderid :{'$eq':i[F.entry_orderid]}},{"$set": {F.entry_orderid_status : F.closed ,F.entry_time : self.current_time, F.entry_order_execuation_type : F.limit_order, "ltp" : ltp, F.entry_order_count : count+1}})
                 logger_bot(f'Sl hit {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}')
                 
             if (i[F.exit_orderid_status] == F.open):
@@ -298,7 +299,7 @@ class Checking:
                 # print('-----------',ltp,sl_price,i[F.exit_orderid])
                 pass
     
-    def rejected_order_management():
+    def rejected_order_management(self):
         myquery = {'$or': [{F.exit_orderid_status : F.rejected},{F.entry_orderid_status : F.rejected}]}
         db_data = self.database[str(self.date)].find(myquery)
         for i in db_data : 

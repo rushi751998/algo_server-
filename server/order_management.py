@@ -204,7 +204,7 @@ class Order_management :
                 for index,row in pending_orders_db.iterrows():
                     count = row[F.entry_order_count]
                     if (row[F.entry_orderid]  not in pending_order[F.order_id].tolist()):
-                        self.database [str(self.date )].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {F.entry_orderid_status: F.closed, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count+1 } }) # it will update if sl hit  modificarion status to slhit
+                        self.database [str(self.date )].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {F.entry_time : str(dt.now()),F.entry_orderid_status: F.closed, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count+1 } }) # it will update if sl hit  modificarion status to slhit
                         logger_bot(f'Placed in broker end \nOrder id : {row[F.entry_orderid]} \nOption Type : {row[F.option_type]}')
                         time.sleep(1)
                         continue
@@ -218,10 +218,7 @@ class Order_management :
                         else:
                             new_price  =round(abs(price)-abs(ltp-price)/2,1)
                         logger_bot(f" Modification of  : {row[F.entry_orderid]}\nltp :{ltp} old_price:{price} new_price :{new_price} count : {count}\n\n")
-                        # print("pending_tag :\n ",pending_order[F.order_id])
-                        # print("F.entry_tag : ",row[F.entry_orderid] )
-                        # print("pending_orders_orderid :\n ",pending_order[pending_order[F.order_id]==row[F.entry_orderid]])
-                        
+                    
                         remaning_qty = pending_order[pending_order[F.order_id]==row[F.entry_orderid]].iloc[0][F.qty]
                         is_modified, order_number, message = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.entry_orderid], new_price =new_price ,quantity = remaning_qty)
                         is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
@@ -266,9 +263,7 @@ class Order_management :
 
         elif transaction_type_ == F.Sell:
             transaction_type =  F.Buy
-        else:
-            pass
-        
+
         stoploos = round(round(0.05*round(avg_price/0.05),2)*((100+exit_percent)/100),1)
         trigger_price =round(stoploos-0.05,2) # 0.05 is the diffrance betweeen limit price and trigger price
         sl_placed,order_number, message  = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price , qty= qty, ticker= ticker , transaction_type = transaction_type, tag = tag+'_sl')

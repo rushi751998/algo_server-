@@ -117,7 +117,7 @@ if __name__ == '__main__':
             broker_name = env.broker_name
             is_login, broker_session = Login().setup()
             
-            start_socket_thread = Thread(name = 'socket_thread', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : False,'broker_session': broker_session,'broker_name' : broker_name})
+            start_socket_thread = Thread(name = 'socket_thread', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : True,'broker_session': broker_session,'broker_name' : broker_name})
             env.thread_list.append(start_socket_thread)
             start_socket_thread.start()
             is_socket_alive = start_socket_thread.is_alive()
