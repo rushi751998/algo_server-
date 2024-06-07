@@ -72,8 +72,8 @@ def placing(current_time, broker_name, broker_session):
             
     elif current_time == env.TenThirty:
         for i in range(env.qty_partation_loop):
-            ce_thread = Thread(name = f'CE_{F.TenThirty}-Thread', target=order_placer, kwargs = {F.option_type: F.CE, 'option_price' : re_entry_price, F.loop_no : i, F.stratagy :  F.TenThirty,F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
-            pe_thread = Thread(name = f'PE_{F.TenThirty}-Thread', target=order_placer, kwargs = {F.option_type: F.PE, 'option_price' : re_entry_price, F.loop_no : i, F.stratagy :  F.TenThirty,F.exit_percent : 20,F. qty : re_entry_qty, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
+            ce_thread = Thread(name = f'CE_{F.TenThirty}-Thread', target=order_placer, kwargs = {F.option_type: F.CE, 'option_price' : re_entry_price, F.loop_no : i, F.stratagy :  F.TenThirty,F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type :  F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
+            pe_thread = Thread(name = f'PE_{F.TenThirty}-Thread', target=order_placer, kwargs = {F.option_type: F.PE, 'option_price' : re_entry_price, F.loop_no : i, F.stratagy :  F.TenThirty,F.exit_percent : 20,F. qty : re_entry_qty, F.transaction_type :  F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
             env.thread_list.append(ce_thread)
             env.thread_list.append(pe_thread)
             ce_thread.start()
@@ -81,16 +81,16 @@ def placing(current_time, broker_name, broker_session):
             
     elif current_time == env.Eleven:
         for i in range(env.qty_partation_loop):
-            ce_thread = Thread(name = f'CE_{F.Eleven}-Thread',target=order_placer, kwargs = {F.option_type : F.CE, 'option_price' : 125, F.loop_no : i, F.stratagy : F.Eleven, F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
-            pe_thread = Thread(name = f'PE_{F.Eleven}-Thread',target=order_placer, kwargs = {F.option_type : F.PE, 'option_price' : 125, F.loop_no : i, F.stratagy : F.Eleven, F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type :  F.Sell,F.broker_name:kwargs[F.broker_name],F.broker_session : kwargs[F.broker_session]})
+            ce_thread = Thread(name = f'CE_{F.Eleven}-Thread',target=order_placer, kwargs = {F.option_type : F.CE, 'option_price' : 125, F.loop_no : i, F.stratagy : F.Eleven, F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type :  F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
+            pe_thread = Thread(name = f'PE_{F.Eleven}-Thread',target=order_placer, kwargs = {F.option_type : F.PE, 'option_price' : 125, F.loop_no : i, F.stratagy : F.Eleven, F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type :  F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
             env.thread_list.append(ce_thread)
             env.thread_list.append(pe_thread)
             ce_thread.start()
             pe_thread.start()
 
     elif current_time == env.exit_orders:
-        ce_thread = Thread(name = 'CE_exit_orders-Thread',target = day_end, kwargs={F.option_type: F.CE,F.broker_name : kwargs[F.broker_name], F.broker_session : kwargs[F.broker_session]})
-        pe_thread = Thread(name = 'PE_exit_orders-Thread',target = day_end, kwargs={F.option_type: F.PE,F.broker_name : kwargs[F.broker_name], F.broker_session : kwargs[F.broker_session]})
+        ce_thread = Thread(name = 'CE_exit_orders-Thread',target = day_end, kwargs={F.option_type: F.CE, F.broker_name : broker_name, F.broker_session : broker_session})
+        pe_thread = Thread(name = 'PE_exit_orders-Thread',target = day_end, kwargs={F.option_type: F.PE, F.broker_name : broker_name, F.broker_session : broker_session})
         env.thread_list.append(ce_thread)
         env.thread_list.append(pe_thread)
         ce_thread.start()

@@ -59,6 +59,7 @@ class Order_details :
     def order_book(self):
         if  self.broker_name == F.kotak_neo   :
             responce = self.broker_session.order_report()
+            # print(responce[F.data][0])
             if responce[F.stCode] == 200 : 
                 try :
                     all_orders = pd.DataFrame(responce[F.data])[[F.nOrdNo,'ordDtTm','trdSym','tok',F.qty,'fldQty','avgPrc','trnsTp','prod' ,'exSeg','ordSt','stkPrc','optTp','brdLtQty','expDt','GuiOrdId','rejRsn']]

@@ -16,10 +16,10 @@ def emergency_bot(bot_message):
     bot_token = os.environ['emergency_bot_token']
     bot_chatId = os.environ['chatId']
     print(bot_message,'\n')
-    # send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
-    # response = requests.get(send_text)
-    # if response.status_code != 200:
-    #     alert_bot("emergency_bot not able to send message")
+    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
+    response = requests.get(send_text)
+    if response.status_code != 200:
+        alert_bot("emergency_bot not able to send message")
         
 
 def alert_bot(bot_message : str,send_image : bool = False):
@@ -38,8 +38,8 @@ def alert_bot(bot_message : str,send_image : bool = False):
     else : 
         print(bot_message,'\n')
 
-        # send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
-        # response = requests.get(send_text)
+        send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
+        response = requests.get(send_text)
 
 def logger_bot(bot_message):
     """ It is used for sending order manangemant"""
@@ -48,10 +48,10 @@ def logger_bot(bot_message):
     bot_token = os.environ['logger_bot_token']
     bot_chatId = os.environ['chatId']
     print(bot_message,'\n')
-    # send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
-    # response = requests.get(send_text)
-    # if response.status_code != 200:
-    #     emergency_bot("logger_bot not able to send message")
+    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
+    response = requests.get(send_text)
+    if response.status_code != 200:
+        emergency_bot("logger_bot not able to send message")
 
 
 def Trigger_finder(bot_message):
@@ -61,7 +61,7 @@ def Trigger_finder(bot_message):
     bot_token = os.environ['Trigger_finder_token']
     bot_chatId = os.environ['chatId']
     print(bot_message,'\n')
-    # send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
-    # response = requests.get(send_text)
-    # if response.status_code != 200:
-    #     emergency_bot("Trigger_finder not able to send message")
+    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
+    response = requests.get(send_text)
+    if response.status_code != 200:
+        emergency_bot("Trigger_finder not able to send message")

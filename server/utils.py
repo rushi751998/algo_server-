@@ -239,18 +239,18 @@ class env_variables:
         self.exceptational_hoilydays = ast.literal_eval(os.environ['exceptational_hoilydays'] )
         
         self.login = dt.strftime(get_ist_now(),'%H:%M')
-        self.NineFourtyFive = dt.strftime(get_ist_now(),'%H:%M')
+        self.exit_orders = dt.strftime(get_ist_now(),'%H:%M')
         
         
         # self.login = os.environ['login'] 
         # self.NineTwenty = os.environ['first_order']
         self.NineTwenty = os.environ['first_order']
         self.NineThirty = os.environ['second_order']
-        # self.NineFourtyFive = os.environ['third_order']
+        self.NineFourtyFive = os.environ['third_order']
         self.TenThirty = os.environ['fourth_order']
         self.Eleven = os.environ['fifth_order']
-        self.exit_orders = os.environ['exit_orders']
-        self.logout_session = os.environ['logout_session']
+        # self.exit_orders = os.environ['exit_orders']
+        self.logout_session = os.environ['logout_session']  
         self.capital = float(os.environ['capital'])
         self.qty_partation_loop = int(os.environ['qty_partation_loop'])
     
