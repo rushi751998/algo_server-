@@ -269,7 +269,7 @@ class Order_management :
         is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
         if sl_placed and not is_order_rejected:
             self.database [str(self.date )].update_one({ "entry_tag": tag}, { "$set": {F.exit_orderid : order_number,  F.exit_orderid_status :  F.open , F.exit_price : stoploos, F.exit_price_initial : stoploos, F.exit_tag: tag+'_sl'} } )
-            logger_bot(f"Sl order palced Sucessfully !!! \nOrder Number : {order_number}\nPrice : {stoploos}\nSide : {option_type}")
+            logger_bot(f"Sl order palced Sucessfully !!! \nOrder Number : {order_number}\nPrice : {stoploos}\nSide : {option_type},tag : {tag}")
 
         elif not sl_placed:
             self.database [str(self.date )].update_one({ "entry_tag": tag}, { "$set": {F.exit_orderid_status :  F.rejected }})

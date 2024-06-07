@@ -36,15 +36,15 @@ def day_end(broker_name,broker_session,option_type):
     Order_management(broker_name,broker_session).exit_orders_dayend(option_type)
 
     
-def placing(**kwargs):
-    current_time = kwargs['current_time']
-    fifty_per_qty, fifty_per_price, re_entry_qty, re_entry_price, wait_trade_qty, wait_trade_price = get_qty_option_price(kwargs[F.broker_name])
+def placing(current_time, broker_name, broker_session):
+    # current_time = kwargs['current_time']
+    fifty_per_qty, fifty_per_price, re_entry_qty, re_entry_price, wait_trade_qty, wait_trade_price = get_qty_option_price(broker_name)
     # print(env.index,re_entry_qty, re_entry_price)
     
     if current_time == env.NineTwenty:
         for i in range(env.qty_partation_loop):
-            ce_thread = Thread(name = f'CE_{F.NineTwenty}', target = order_placer, kwargs = {F.option_type : F.CE, 'option_price' : fifty_per_price, F.loop_no : i, F.stratagy :  F.NineTwenty, F.exit_percent : 50, qty : fifty_per_qty, F.transaction_type : F.Sell,F.broker_name : broker_name, F.broker_session : broker_session})
-            pe_thread = Thread(name = f'PE_{F.NineTwenty}', target = order_placer, kwargs = {F.option_type : F.PE, 'option_price' : fifty_per_price, F.loop_no : i, F.stratagy :  F.NineTwenty, F.exit_percent : 50, qty : fifty_per_qty, F.transaction_type : F.Sell,F.broker_name : broker_name, F.broker_session : broker_session})
+            ce_thread = Thread(name = f'CE_{F.NineTwenty}', target = order_placer, kwargs = {F.option_type : F.CE, 'option_price' : fifty_per_price, F.loop_no : i, F.stratagy :  F.NineTwenty, F.exit_percent : 50, qty : fifty_per_qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
+            pe_thread = Thread(name = f'PE_{F.NineTwenty}', target = order_placer, kwargs = {F.option_type : F.PE, 'option_price' : fifty_per_price, F.loop_no : i, F.stratagy :  F.NineTwenty, F.exit_percent : 50, qty : fifty_per_qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
             env.thread_list.append(ce_thread)
             env.thread_list.append(pe_thread)
             ce_thread.start()
@@ -53,8 +53,8 @@ def placing(**kwargs):
     elif current_time == env.NineThirty:
         for i in range(env.qty_partation_loop):
             i = 3
-            ce_thread = Thread(name = f'CE_{F.NineThirty}', target = order_placer, kwargs = {F.option_type : F.CE, 'option_price' : re_entry_price, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type : F.Sell,F.broker_name : kwargs[F.broker_name], F.broker_session : kwargs[F.broker_session]})
-            pe_thread = Thread(name = f'PE_{F.NineThirty}', target = order_placer, kwargs = {F.option_type : F.PE, 'option_price' : re_entry_price, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type : F.Sell,F.broker_name : kwargs[F.broker_name], F.broker_session : kwargs[F.broker_session]})
+            ce_thread = Thread(name = f'CE_{F.NineThirty}', target = order_placer, kwargs = {F.option_type : F.CE, 'option_price' : re_entry_price, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
+            pe_thread = Thread(name = f'PE_{F.NineThirty}', target = order_placer, kwargs = {F.option_type : F.PE, 'option_price' : re_entry_price, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
             env.thread_list.append(ce_thread)
             env.thread_list.append(pe_thread)
             ce_thread.start()
@@ -63,8 +63,8 @@ def placing(**kwargs):
     elif current_time == env.NineFourtyFive:
         for i in range(env.qty_partation_loop):
             i = 0
-            ce_thread = Thread(name = f'CE_{F.NineFourtyFive}-Thread', target = order_placer, kwargs = {F.option_type: F.CE, 'option_price' : wait_trade_price, F.loop_no : i, F.stratagy :  F.NineFourtyFive, F.exit_percent : 50, F.qty : wait_trade_qty, F.transaction_type : F.Sell, F.broker_name : kwargs[F.broker_name], F.broker_session : kwargs[F.broker_session], 'wait_percent' : 5})
-            pe_thread = Thread(name = f'PE_{F.NineFourtyFive}-Thread', target = order_placer, kwargs = {F.option_type: F.PE, 'option_price' : wait_trade_price, F.loop_no : i, F.stratagy :  F.NineFourtyFive, F.exit_percent : 50, F.qty : wait_trade_qty, F.transaction_type : F.Sell, F.broker_name : kwargs[F.broker_name], F.broker_session : kwargs[F.broker_session], 'wait_percent' : 5})
+            ce_thread = Thread(name = f'CE_{F.NineFourtyFive}-Thread', target = order_placer, kwargs = {F.option_type: F.CE, 'option_price' : wait_trade_price, F.loop_no : i, F.stratagy :  F.NineFourtyFive, F.exit_percent : 50, F.qty : wait_trade_qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session, 'wait_percent' : 5})
+            pe_thread = Thread(name = f'PE_{F.NineFourtyFive}-Thread', target = order_placer, kwargs = {F.option_type: F.PE, 'option_price' : wait_trade_price, F.loop_no : i, F.stratagy :  F.NineFourtyFive, F.exit_percent : 50, F.qty : wait_trade_qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session, 'wait_percent' : 5})
             env.thread_list.append(ce_thread)
             env.thread_list.append(pe_thread)
             ce_thread.start()
@@ -133,9 +133,10 @@ if __name__ == '__main__':
             current_time = dt.strftime(get_ist_now(), '%H:%M')
                 
             if is_socket_alive and (current_time in event_list ):
-                placing_thread = Thread(name = 'Placing Thread',target = placing, kwargs = {'current_time': current_time, 'broker_name': broker_name, 'broker_session': broker_session})
-                env.thread_list.append(placing_thread)
-                placing_thread.start()
+                placing(current_time, broker_name, broker_session)
+                # placing_thread = Thread(name = 'Placing Thread',target = placing, kwargs = {'current_time': current_time, 'broker_name': broker_name, 'broker_session': broker_session})
+                # env.thread_list.append(placing_thread)
+                # placing_thread.start()
                 print(3)
                 
             if is_socket_alive:
