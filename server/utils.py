@@ -82,6 +82,21 @@ def sleep_till_next_day():
 def get_ist_now():
     return dt.now() + timedelta(0)
 
+def trailing_points():
+    if env_variables.index == 'BANKNIFTY' : 
+        points = 5
+            
+    elif env_variables.index == 'NIFTY' : 
+        points = 3
+        
+    elif env_variables.index == 'FINNIFTY' : 
+        points = 3
+        
+    elif env_variables.index == 'MIDCPNIFTY' : 
+        points = 3
+        
+    return points
+            
 def get_db(db_name='order_book'):
     mongo_db = pymongo.MongoClient(env_variables.mongodb_link)
     entry_id= mongo_db[db_name]
@@ -172,6 +187,7 @@ class env_variables:
     socket_thread = None
     lot_size : int
     index : str 
+    expiry_base_instrument : bool
     
     mongodb_link : str
     consumer_key : str
@@ -207,6 +223,7 @@ class env_variables:
         self.today = dt.today().date()
         self.lot_size = 1
         self.index = ''
+        self.expiry_base_instrument = False
         
         self.mongodb_link = os.environ['mongodb_link'] 
         self.consumer_key = os.environ['consumer_key'] 

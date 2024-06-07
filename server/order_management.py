@@ -215,21 +215,21 @@ class Order_management :
                             new_price  =round(abs(price)+abs(ltp-price)/2,1)
                         else:
                             new_price  =round(abs(price)-abs(ltp-price)/2,1)
-                        logger_bot(f" Modification of  : {row[F.entry_orderid]}\nltp :{ltp} old_price:{price} new_price :{new_price} count : {count}\n\n")
+                        # logger_bot(f" Modification of  : {row[F.entry_orderid]}\nltp :{ltp} old_price:{price} new_price :{new_price} count : {count}\n\n")
                     
                         remaning_qty = pending_order[pending_order[F.order_id]==row[F.entry_orderid]].iloc[0][F.qty]
-                        is_modified, order_number, message = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.entry_orderid], new_price =new_price ,quantity = remaning_qty)
+                        is_modified, order_number, message = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.entry_orderid], new_price = new_price ,quantity = remaning_qty)
                         is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
                         if is_modified and not is_order_rejected:
                             self.database [str(self.date )].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {  F.entry_price : new_price , F.entry_order_count: count + 1 } }) # it will update updated price to database
-                            logger_bot(f"Entry price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {new_price} \nRemaning Qty : {remaning_qty}")
+                            logger_bot(f"Entry price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {new_price} \nRemaning Qty : {remaning_qty}\nSide : {row[F.option_type]}")
                             
                         elif not is_modified :
-                            emergency_bot(f'Not able to modify sl in Smart Execuator(kotak.modify_order)\nMessage : {message}')
+                            emergency_bot(f'Not able to modify sl in Smart Execuator(kotak.modify_order)\nMessage : {message}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}')
 
                     else:
                         remaning_qty = pending_order[pending_order[F.order_id]==row[F.entry_orderid]].iloc[0][F.qty]
-                        is_modified, order_number, message  = (self.broker_name,self.broker_session).modify_order(order_id = row[F.entry_orderid], new_price =0 ,quantity = remaning_qty,trigger_price =0, order_type = "MKT")
+                        is_modified, order_number, message  = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.entry_orderid], new_price =0 ,quantity = remaning_qty,trigger_price =0, order_type = "MKT")
                         is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
                         if is_modified and not is_order_rejected:
                             
@@ -239,9 +239,9 @@ class Order_management :
                             print( f"Final market price : ", market_execute_price )
                             
                             self.database [str(self.date )].update_one({F.entry_orderid : order_number}, { "$set": {F.entry_price : float(market_execute_price) , F.entry_order_count: count + 1 , F.entry_order_execuation_type : F.market_order} })
-                            logger_bot(f"Executed at Market Order \nMessage :{order_number} \nRemaning Qty : {remaning_qty}")
+                            logger_bot(f"Executed at Market Order \nMessage :{order_number} \nRemaning Qty : {remaning_qty}\nSide : {row[F.option_type]}")
                         elif not is_modified :
-                            emergency_bot(f'Not able to modify sl in Smart Executer SOD Market Order\nMessage : {message}')
+                            emergency_bot(f'Not able to modify sl in Smart Executer SOD Market Order\nMessage : {message}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}')
                             
                     time.sleep(5)
 

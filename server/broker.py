@@ -131,7 +131,7 @@ class Socket_handling:
                 emergency_bot(f'Facing Issue in Socket.start \nissue : {e}')
         
     def on_error(self,message):
-                emergency_bot(f'Issue in Socket : {message}')
+        emergency_bot(f'Issue in Socket : {message}')
                 
     def on_open(self,message):
         logger_bot(f'Socket Started : {message}')
@@ -217,7 +217,7 @@ class Socket_handling:
 
         with self._lock:
             env.index = index
-            env.lot_size = df.iloc[0]['lotSize']
+            env.lot_size = int(df.iloc[0]['lotSize'])
             
             for index,row in df.iterrows():
                 option_chain[row['token']] = {'v':0,'oi':0,'ltp':0,'option_type':row['optionType'],'ticker':row['ticker']}

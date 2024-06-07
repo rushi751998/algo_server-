@@ -39,7 +39,8 @@ def day_end(broker_name,broker_session,option_type):
 def placing(**kwargs):
     current_time = kwargs['current_time']
     fifty_per_qty, fifty_per_price, re_entry_qty, re_entry_price, wait_trade_qty, wait_trade_price = get_qty_option_price(kwargs[F.broker_name])
-
+    # print(env.index,re_entry_qty, re_entry_price)
+    
     if current_time == env.NineTwenty:
         for i in range(env.qty_partation_loop):
             ce_thread = Thread(name = f'CE_{F.NineTwenty}', target = order_placer, kwargs = {F.option_type : F.CE, 'option_price' : fifty_per_price, F.loop_no : i, F.stratagy :  F.NineTwenty, F.exit_percent : 50, qty : fifty_per_qty, F.transaction_type : F.Sell,F.broker_name : broker_name, F.broker_session : broker_session})
@@ -51,7 +52,7 @@ def placing(**kwargs):
 
     elif current_time == env.NineThirty:
         for i in range(env.qty_partation_loop):
-            i = 5
+            i = 3
             ce_thread = Thread(name = f'CE_{F.NineThirty}', target = order_placer, kwargs = {F.option_type : F.CE, 'option_price' : re_entry_price, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type : F.Sell,F.broker_name : kwargs[F.broker_name], F.broker_session : kwargs[F.broker_session]})
             pe_thread = Thread(name = f'PE_{F.NineThirty}', target = order_placer, kwargs = {F.option_type : F.PE, 'option_price' : re_entry_price, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type : F.Sell,F.broker_name : kwargs[F.broker_name], F.broker_session : kwargs[F.broker_session]})
             env.thread_list.append(ce_thread)
@@ -118,15 +119,15 @@ if __name__ == '__main__':
             hoilyday, holiday_reason = is_hoilyday()
             event_list = [env.login, env.NineTwenty, env.NineTwenty, env.NineThirty, env.NineFourtyFive, env.TenThirty, env.exit_orders, env.logout_session]
             broker_name = env.broker_name
-            is_login, broker_session = Login().setup()
-            
-            start_socket_thread = Thread(name = 'socket_thread', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : True,'broker_session': broker_session,'broker_name' : broker_name})
-            env.thread_list.append(start_socket_thread)
-            start_socket_thread.start()
-            is_socket_alive = start_socket_thread.is_alive()
-            print(1)
-            # print(env.thread_list)
-            time.sleep(10)
+            if is_market_time() and not hoilyday:
+                is_login, broker_session = Login().setup()
+                start_socket_thread = Thread(name = 'socket_thread', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : env.expiry_base_instrument,'broker_session': broker_session,'broker_name' : broker_name})
+                env.thread_list.append(start_socket_thread)
+                start_socket_thread.start()
+                is_socket_alive = start_socket_thread.is_alive()
+                print(1)
+                print(env.expiry_base_instrument)
+                time.sleep(10)
             
         if is_market_time() and not hoilyday:
             current_time = dt.strftime(get_ist_now(), '%H:%M')

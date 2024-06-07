@@ -6,7 +6,7 @@ import pandas as pd
 from  datetime import datetime as dt
 import pymongo
 from server.order_management import Order_management
-from server.utils import get_db, Fields as F
+from server.utils import get_db, Fields as F, trailing_points
 from server.telegram_bot import emergency_bot,logger_bot
 
 class Checking:
@@ -250,13 +250,14 @@ class Checking:
                 tag = f"{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}"
                 Order_management(self.broker_name, self.broker_session).place_limit_sl(i[F.ticker], i[F.qty], i[F.transaction_type], i[F.entry_price], i[F.exit_percent], i[F.option_type], tag)
                 ltp = get_ltp(i[F.token],self.broker_name)
-                self.database[str(self.date)].update_one({F.entry_orderid :{'$eq':i[F.entry_orderid]}},{"$set": {F.entry_orderid_status : F.closed ,F.entry_time : self.current_time, F.entry_order_execuation_type : F.limit_order, "ltp" : ltp, F.entry_order_count : count+1}})
+                self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.entry_orderid_status : F.closed ,F.entry_time : self.current_time, F.entry_order_execuation_type : F.limit_order, "ltp" : ltp, F.entry_order_count : count+1}})
                 logger_bot(f'Sl hit {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}')
                 
             if (i[F.exit_orderid_status] == F.open):
                 #--------------- Trail sl ----------------------------
                 new_ltp = get_ltp(i[F.token],self.broker_name)
-                net_points = (i["ltp"] - new_ltp)//5
+                points =  trailing_points()
+                net_points = (i["ltp"] - new_ltp)//points
                 # print(net_points)
                 if net_points > 0:
                     new_sl = i[F.exit_price] -  net_points
