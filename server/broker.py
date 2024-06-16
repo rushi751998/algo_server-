@@ -139,7 +139,6 @@ class Socket_handling:
     def on_close(self,message):
         logger_bot(f'Socket Stopped : {message}')
             
- 
     def update_option_chain(self, message):
         for tick in message[F.data]:
             try:
@@ -168,62 +167,63 @@ class Socket_handling:
         # print(option_chain,'\n\n')
 
     def prepare_option_chain_Future_token(self,expiry_base_instrument): 
-        script_master =   [i  for i in  self.broker_session.scrip_master()['filesPaths']  if 'nse_fo' in  i]   
-        df = pd.read_csv(script_master[0],low_memory=False)
-        df.columns=[i.strip() for i in df.columns]
-        df = df[df['pSymbolName'].isin(['NIFTY', 'FINNIFTY','BANKNIFTY' , 'MIDCPNIFTY'])][['pSymbol','pSymbolName','pTrdSymbol','pOptionType','pScripRefKey','lLotSize','lExpiryDate','dStrikePrice;', 'iMaxOrderSize', 'iLotSize', 'dOpenInterest']]
-        df['lExpiryDate'] = df['lExpiryDate'].apply(lambda x:dt.fromtimestamp(x).date()+ relativedelta(years=10))
-        df = df[['pSymbol','pScripRefKey','pSymbolName','lExpiryDate','dStrikePrice;','pOptionType','lLotSize']]
-        df.columns = ['token','ticker','index','expiry','strike','optionType','lotSize']
-        df.dropna(inplace=True)
-        df['days_to_expire'] = df['expiry'].apply(lambda x:(dt.strptime(str(x),'%Y-%m-%d').date()-dt.today().date()).days)
-        df.sort_values('days_to_expire',inplace=True)
+        if self.broker_name == F.kotak_neo : 
+            script_master =   [i  for i in  self.broker_session.scrip_master()['filesPaths']  if 'nse_fo' in  i]   
+            df = pd.read_csv(script_master[0],low_memory=False)
+            df.columns=[i.strip() for i in df.columns]
+            df = df[df['pSymbolName'].isin(['NIFTY', 'FINNIFTY','BANKNIFTY' , 'MIDCPNIFTY'])][['pSymbol','pSymbolName','pTrdSymbol','pOptionType','pScripRefKey','lLotSize','lExpiryDate','dStrikePrice;', 'iMaxOrderSize', 'iLotSize', 'dOpenInterest']]
+            df['lExpiryDate'] = df['lExpiryDate'].apply(lambda x:dt.fromtimestamp(x).date()+ relativedelta(years=10))
+            df = df[['pSymbol','pScripRefKey','pSymbolName','lExpiryDate','dStrikePrice;','pOptionType','lLotSize']]
+            df.columns = ['token','ticker','index','expiry','strike','optionType','lotSize']
+            df.dropna(inplace=True)
+            df['days_to_expire'] = df['expiry'].apply(lambda x:(dt.strptime(str(x),'%Y-%m-%d').date()-dt.today().date()).days)
+            df.sort_values('days_to_expire',inplace=True)
 
-        option_tickers = df[df['optionType'] != 'XX']
-        future_tickers = df[df['optionType'] == 'XX']
+            option_tickers = df[df['optionType'] != 'XX']
+            future_tickers = df[df['optionType'] == 'XX']
 
-        if expiry_base_instrument:
-            future_tickers = future_tickers[(future_tickers['days_to_expire'] == future_tickers['days_to_expire'].min())]
-            future_token = future_tickers[future_tickers['days_to_expire'] == future_tickers['days_to_expire'].min()].iloc[0]['token']
-            
-            option_tickers = option_tickers[(option_tickers['days_to_expire'] == option_tickers['days_to_expire'].min())]
-            index_list = option_tickers['index'].unique()
-            
-            if len(index_list) == 1:
-                if 'BANKNIFTY' in index_list : 
-                    index = 'BANKNIFTY'
-                elif 'NIFTY' in index_list : 
-                    index = 'NIFTY'
-                elif 'FINNIFTY' in index_list : 
-                    index = 'FINNIFTY'
-                elif 'MIDCPNIFTY' in index_list : 
-                    index = 'MIDCPNIFTY'
-                    
-            option_tickers = option_tickers[option_tickers['index'] == index]
-            future_tickers = future_tickers[future_tickers['index'] == index]
-            
-        else:
-            index = 'BANKNIFTY'
-            option_tickers = option_tickers[option_tickers['index'] == index]
-            future_tickers = future_tickers[future_tickers['index'] == index]
-            
-            future_tickers = future_tickers[(future_tickers['days_to_expire'] == future_tickers['days_to_expire'].min())]
-            future_token = future_tickers[future_tickers['days_to_expire'] == future_tickers['days_to_expire'].min()].iloc[0]['token']
-            
-            option_tickers = option_tickers[(option_tickers['days_to_expire'] == option_tickers['days_to_expire'].min())]
-        env.index = index
-        df = pd.concat([option_tickers, future_tickers])
-        df.reset_index(inplace=True,drop=True)
-
-        with self._lock:
+            if expiry_base_instrument:
+                future_tickers = future_tickers[(future_tickers['days_to_expire'] == future_tickers['days_to_expire'].min())]
+                future_token = future_tickers[future_tickers['days_to_expire'] == future_tickers['days_to_expire'].min()].iloc[0]['token']
+                
+                option_tickers = option_tickers[(option_tickers['days_to_expire'] == option_tickers['days_to_expire'].min())]
+                index_list = option_tickers['index'].unique()
+                
+                if len(index_list) == 1:
+                    if 'BANKNIFTY' in index_list : 
+                        index = 'BANKNIFTY'
+                    elif 'NIFTY' in index_list : 
+                        index = 'NIFTY'
+                    elif 'FINNIFTY' in index_list : 
+                        index = 'FINNIFTY'
+                    elif 'MIDCPNIFTY' in index_list : 
+                        index = 'MIDCPNIFTY'
+                        
+                option_tickers = option_tickers[option_tickers['index'] == index]
+                future_tickers = future_tickers[future_tickers['index'] == index]
+                
+            else:
+                index = 'BANKNIFTY'
+                option_tickers = option_tickers[option_tickers['index'] == index]
+                future_tickers = future_tickers[future_tickers['index'] == index]
+                
+                future_tickers = future_tickers[(future_tickers['days_to_expire'] == future_tickers['days_to_expire'].min())]
+                future_token = future_tickers[future_tickers['days_to_expire'] == future_tickers['days_to_expire'].min()].iloc[0]['token']
+                
+                option_tickers = option_tickers[(option_tickers['days_to_expire'] == option_tickers['days_to_expire'].min())]
             env.index = index
-            env.lot_size = int(df.iloc[0]['lotSize'])
-            
-            for index,row in df.iterrows():
-                option_chain[row['token']] = {'v':0,'oi':0,'ltp':0,'option_type':row['optionType'],'ticker':row['ticker']}
-                ticker_to_token[row['ticker']]=row['token']
-        logger_bot('prepared opetion chain')
-        return df, future_token,True
+            df = pd.concat([option_tickers, future_tickers])
+            df.reset_index(inplace=True,drop=True)
+
+            with self._lock:
+                env.index = index
+                env.lot_size = int(df.iloc[0]['lotSize'])
+                
+                for index,row in df.iterrows():
+                    option_chain[row['token']] = {'v':0,'oi':0,'ltp':0,'option_type':row['optionType'],'ticker':row['ticker']}
+                    ticker_to_token[row['ticker']]=row['token']
+            logger_bot('prepared opetion chain')
+            return df, future_token,True
 
 def get_option_chain():
     return option_chain

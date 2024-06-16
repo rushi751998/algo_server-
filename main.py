@@ -1,5 +1,5 @@
 
-from server.broker import Login, get_symbol, Order_details, Socket_handling
+from server.broker import Login, get_symbol, Order_details, Socket_handling, option_chain, ticker_to_token
 from server.checking import Checking
 from server.utils import (get_ist_now,
                    is_hoilyday,
@@ -155,5 +155,7 @@ if __name__ == '__main__':
             elif not is_market_time():
                 for i in env.thread_list :
                     i.join()
+                option_chain.clear()
+                ticker_to_token.clear()
                 emergency_bot("Market is Stopped, going to sleep")
                 sleep_till_next_day()
