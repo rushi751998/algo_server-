@@ -7,7 +7,7 @@ from  datetime import datetime as dt
 import pymongo
 from server.order_management import Order_management
 from server.utils import get_db, Fields as F, trailing_points,env_variables as env
-from server.telegram_bot import emergency_bot,logger_bot
+from server.utils import emergency_bot,logger_bot
 
 class Checking:
     

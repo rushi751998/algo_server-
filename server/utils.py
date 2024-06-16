@@ -1,14 +1,14 @@
 import pymongo
 import os
-from  datetime import datetime as dt,timedelta
+from  datetime import datetime as dt,timedelta,time as time_
 from dotenv import load_dotenv
 from typing import Dict, List 
 import requests
 from bs4 import BeautifulSoup
-from server.telegram_bot import logger_bot,emergency_bot
 import ast
 import datetime
 import time
+import logging
 
 kotak_transaction_type_dict= {
                             'Buy' : 'B',
@@ -27,6 +27,20 @@ order_staus_dict = {
                     # 5204 :  'Gateway timeout, trade API is unreachable'
                     }
 
+def setup_daily_logger(empty:bool = False):
+    log_directory = 'log'
+    today = dt.now().strftime('%Y-%m-%d')
+    log_filename = os.path.join(log_directory, f'{today}.log')
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s %(levelname)s %(message)s',
+        handlers=[
+            logging.FileHandler(log_filename),
+            logging.StreamHandler()  # Also print to console
+        ]
+    )
+    logging.info('Logger setup complete')
+    return logging
 
 def is_hoilyday() :
     try : 
@@ -65,8 +79,8 @@ def is_hoilyday() :
         
 def is_market_time():
     current_time = dt.today().time()
-    start_time = datetime.time(hour=9,minute=16,second=0)
-    end_time = datetime.time(hour=15,minute=30,second=0)
+    start_time = time_(hour=9,minute=15,second=30)
+    end_time = time_(hour=15,minute=30,second=0)
     if (current_time > start_time) and (current_time < end_time):
         return True
     else : 
@@ -74,9 +88,9 @@ def is_market_time():
  
 def sleep_till_next_day():
     now= dt.now()
-    tomorow_9am = (now + timedelta(days=1)).replace(hour=9,minute=0,second=0)
+    tomorow_9am = (now + timedelta(days=1)).replace(hour=9,minute=16,second=15)
+    # tomorow_9am = (now + timedelta(days=0)).replace(hour=9,minute=43,second=0)
     total_seconds = (tomorow_9am-now).total_seconds()
-    logger_bot('Market is offline.. Going to sleep till next day')
     time.sleep(total_seconds)
        
 def get_ist_now():
@@ -185,6 +199,7 @@ class env_variables:
     today = None
     thread_list = []
     socket_thread = None
+    logger = None #setup_daily_logger(True)
     lot_size : int
     index : str 
     expiry_base_instrument : bool
@@ -223,8 +238,8 @@ class env_variables:
         self.today = dt.today().date()
         self.lot_size = 1
         self.index = ''
-        self.expiry_base_instrument = False
         
+        self.expiry_base_instrument = os.environ['expiry_base_instrument'] 
         self.mongodb_link = os.environ['mongodb_link'] 
         self.consumer_key = os.environ['consumer_key'] 
         self.secretKey = os.environ['secretKey'] 
@@ -238,22 +253,21 @@ class env_variables:
         self.exceptational_tradingdays =  ast.literal_eval(os.environ['exceptational_tradingdays'] )
         self.exceptational_hoilydays = ast.literal_eval(os.environ['exceptational_hoilydays'] )
         
-        self.login = dt.strftime(get_ist_now(),'%H:%M')
-        self.exit_orders = dt.strftime(get_ist_now(),'%H:%M')
+        # self.login = dt.strftime(get_ist_now(),'%H:%M')
+        # self.exit_orders = dt.strftime(get_ist_now(),'%H:%M')
         
-        
-        # self.login = os.environ['login'] 
-        # self.NineTwenty = os.environ['first_order']
+        self.login = os.environ['login']
         self.NineTwenty = os.environ['first_order']
         self.NineThirty = os.environ['second_order']
         self.NineFourtyFive = os.environ['third_order']
         self.TenThirty = os.environ['fourth_order']
         self.Eleven = os.environ['fifth_order']
-        # self.exit_orders = os.environ['exit_orders']
+        self.exit_orders = os.environ['exit_orders']
         self.logout_session = os.environ['logout_session']  
         self.capital = float(os.environ['capital'])
         self.qty_partation_loop = int(os.environ['qty_partation_loop'])
-    
+        self.logger = setup_daily_logger()
+        logger_bot('env variable initilised')    
         return True
     
 class Fields : 
@@ -332,5 +346,62 @@ class Fields :
     tag = 'tag'
     option_type = 'option_type'
     
+  
+def emergency_bot(bot_message):
+    """ It is used for sending alert to Emergeny situation"""
+    current_time = get_ist_now()
+    env_variables.logger.warning(bot_message)
+    bot_message = f'{dt.strftime(current_time,"%H:%M:%S")}\n{bot_message}'
+    bot_token = os.environ['emergency_bot_token']
+    bot_chatId = os.environ['chatId']
+    # print(bot_message,'\n')
+    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
+    response = requests.get(send_text)
+    if response.status_code != 200:
+        alert_bot("emergency_bot not able to send message")
+        
+def alert_bot(bot_message_ : str,send_image : bool = False):
+    """ It is used for sending price alert"""
+    current_time = get_ist_now()
+    bot_message = f'{dt.strftime(current_time,"%H:%M:%S")}\n{bot_message_}'
+    bot_token = os.environ['alert_bot_token']
+    bot_chatId = os.environ['chatId']
     
+    if send_image : 
+        with open('plot.png', 'rb') as file:
+            response = requests.post(url, data={'chat_id': CHAT_ID}, files={'photo': file})
+            if response.status_code != 200:
+                emergency_bot("alert_bot not able to send image")
+    else : 
+        # print(bot_message,'\n')
+        env_variables.logger.info(bot_message_)
+
+        send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
+        response = requests.get(send_text)
+
+def logger_bot(bot_message):
+    """ It is used for sending order manangemant"""
+    current_time = get_ist_now()
+    env_variables.logger.info(bot_message)
+    bot_message = f'{dt.strftime(current_time,"%H:%M:%S")} {bot_message}'
+    bot_token = os.environ['logger_bot_token']
+    bot_chatId = os.environ['chatId']
+    # print(bot_message,'\n')
+    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
+    response = requests.get(send_text)
+    if response.status_code != 200:
+        emergency_bot("logger_bot not able to send message")
+
+def Trigger_finder(bot_message):
+    """ It is used for sending alert to Emergeny situation"""
+    current_time = get_ist_now()
+    env_variables.logger.info(bot_message)
+    bot_message = f'{dt.strftime(current_time,"%H:%M:%S")}\n{bot_message}'
+    bot_token = os.environ['Trigger_finder_token']
+    bot_chatId = os.environ['chatId']
+    # print(bot_message,'\n')
+    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
+    response = requests.get(send_text)
+    if response.status_code != 200:
+        emergency_bot("Trigger_finder not able to send message")
     

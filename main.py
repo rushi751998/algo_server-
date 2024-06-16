@@ -9,7 +9,7 @@ from server.utils import (get_ist_now,
                    get_db, Fields as F,
                    get_qty_option_price)
 
-from server.telegram_bot import emergency_bot
+from server.utils import emergency_bot, logger_bot
 from server.order_management import Order_management
 from neo_api_client import NeoAPI
 import time,re,pymongo,os ,pandas as pd 
@@ -112,46 +112,39 @@ if __name__ == '__main__':
     while True:
         date = dt.today().date()
         start_time = get_ist_now().second
-        
-        if not env.env_variable_initilised and (env.today != date):
-            
+        if not env.env_variable_initilised or (env.today != date):
             is_env = env.load_env_variable()
-            hoilyday, holiday_reason = is_hoilyday()
             event_list = [env.login, env.NineTwenty, env.NineTwenty, env.NineThirty, env.NineFourtyFive, env.TenThirty, env.exit_orders, env.logout_session]
             broker_name = env.broker_name
-            if is_market_time() and not hoilyday:
+            hoilyday, holiday_reason = is_hoilyday()
+            if not hoilyday:
                 is_login, broker_session = Login().setup()
                 start_socket_thread = Thread(name = 'socket_thread', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : env.expiry_base_instrument,'broker_session': broker_session,'broker_name' : broker_name})
                 env.thread_list.append(start_socket_thread)
                 start_socket_thread.start()
                 is_socket_alive = start_socket_thread.is_alive()
-                print(1)
-                print(env.expiry_base_instrument)
+                # print(1)
                 time.sleep(10)
+                logger_bot(f'Todays instrument : {env.index}')
             
         if is_market_time() and not hoilyday:
             current_time = dt.strftime(get_ist_now(), '%H:%M')
                 
             if is_socket_alive and (current_time in event_list ):
-                placing(current_time, broker_name, broker_session)
-                # placing_thread = Thread(name = 'Placing Thread',target = placing, kwargs = {'current_time': current_time, 'broker_name': broker_name, 'broker_session': broker_session})
-                # env.thread_list.append(placing_thread)
-                # placing_thread.start()
-                print(3)
+                placing(current_time = current_time, broker_name = broker_name, broker_session = broker_session)
                 
             if is_socket_alive:
                 checking_thread = Thread(name = 'checking_thread', target = checking_thread_fun, kwargs = {'broker_name': broker_name, 'broker_session': broker_session})
                 env.thread_list.append(checking_thread)
                 checking_thread.start()
-                print(4)
-                # print(env.thread_list)
+                # print(4)
                 time.sleep(60 - (get_ist_now().second - start_time))
                 
             else : 
                 start_socket_thread = Thread(name = 'socket_thread_restart', target = socket_thread_fun, kwargs = {'broker_name': broker_name, 'broker_session': broker_session})
                 env.thread_list.append(start_socket_thread)
                 start_socket_thread.start()
-                print(5)
+                # print(5)
                                   
         if not is_market_time() or hoilyday:
             
@@ -159,8 +152,8 @@ if __name__ == '__main__':
                 emergency_bot(f"Today is holiday because: {holiday_reason}")
                 sleep_till_next_day()
                 
-            if not is_market_time():
+            elif not is_market_time():
                 for i in env.thread_list :
                     i.join()
-                emergency_bot("Market is stopped, going to sleep")
+                emergency_bot("Market is Stopped, going to sleep")
                 sleep_till_next_day()

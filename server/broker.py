@@ -1,6 +1,6 @@
 import neo_api_client
 from server.engine import login_Engine
-from server.telegram_bot import logger_bot,emergency_bot
+from server.utils import logger_bot,emergency_bot
 import pandas as pd
 from  datetime import datetime as dt
 from dateutil.relativedelta import relativedelta
@@ -22,7 +22,6 @@ class Login(login_Engine):
     def setup(self):
         
         try : 
-            responce =  env.load_env_variable() if env.env_variable_initilised == False else False
             self.broker_name = env.broker_name
             session_validation_key,broker_session = self.login()
         except Exception as e :
