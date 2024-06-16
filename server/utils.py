@@ -239,7 +239,7 @@ class env_variables:
         self.lot_size = 1
         self.index = ''
         
-        self.expiry_base_instrument = os.environ['expiry_base_instrument'] 
+        self.expiry_base_instrument = bool(os.environ['expiry_base_instrument'])
         self.mongodb_link = os.environ['mongodb_link'] 
         self.consumer_key = os.environ['consumer_key'] 
         self.secretKey = os.environ['secretKey'] 
