@@ -331,7 +331,7 @@ class Order_management :
                 for i in db_data:
                     is_canceled,order_number, message  = OrderExecuation(self.broker_name,self.broker_session).cancel_order(i[F.entry_orderid])
                     if is_canceled : 
-                        self.database [str(self.date)].update_one({F.entry_orderid : row[F.entry_orderid]}, {"$set": {F.exit_reason : F.day_end}) 
+                        self.database [str(self.date)].update_one({F.entry_orderid : row[F.entry_orderid]}, {"$set": {F.exit_reason : F.day_end}}) 
                         logger_bot(f"pending order \nMessage :{order_number} is canceled")
                     else : 
                         emergency_bot(f'Not able to cancle order {i[F.exit_orderid]} in cancel_pending_order()\n Reason : {message}')

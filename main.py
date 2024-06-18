@@ -146,7 +146,7 @@ if __name__ == '__main__':
         if not is_market_time() or hoilyday:
             
             if hoilyday:
-                emergency_bot(f"Today is holiday because: {holiday_reason}")
+                emergency_bot(f"Today is holiday because: {holiday_reason}\nCatch You Tomorrow... !!")
                 sleep_till_next_day()
                 
             elif not is_market_time():
@@ -154,5 +154,5 @@ if __name__ == '__main__':
                     i.join()
                 option_chain.clear()
                 ticker_to_token.clear()
-                emergency_bot("Market is Stopped, going to sleep")
+                emergency_bot("Market is Stopped, Catch You Tomorrow... !!")
                 sleep_till_next_day()
