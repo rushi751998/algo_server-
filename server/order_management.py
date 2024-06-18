@@ -185,7 +185,7 @@ class Order_management :
                             }
 
                     self.database [str(self.date )].insert_one(order)
-                    logger_bot(f"{stratagy} {option_type} limit order placed SucessFully !!! \nMessage : {order_number}")
+                    logger_bot(f"{stratagy} {option_type} \nlimit order placed SucessFully !!! \nMessage : {order_number}")
 
             elif not is_order_placed :
                 emergency_bot(f'Not able to palce {stratagy} order \nmessage :{message}')
@@ -212,9 +212,9 @@ class Order_management :
                         price = row[F.entry_price] 
 
                         if ltp>price:
-                            new_price  =round(abs(price)+abs(ltp-price)/2,1)
+                            new_price = round(abs(price) + abs(ltp-price)/2,1)
                         else:
-                            new_price  =round(abs(price)-abs(ltp-price)/2,1)
+                            new_price = round(abs(price) - abs(ltp-price)/2,1)
                         # logger_bot(f" Modification of  : {row[F.entry_orderid]}\nltp :{ltp} old_price:{price} new_price :{new_price} count : {count}\n\n")
                     
                         remaning_qty = pending_order[pending_order[F.order_id]==row[F.entry_orderid]].iloc[0][F.qty]
@@ -229,10 +229,9 @@ class Order_management :
 
                     else:
                         remaning_qty = pending_order[pending_order[F.order_id]==row[F.entry_orderid]].iloc[0][F.qty]
-                        is_modified, order_number, message  = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.entry_orderid], new_price =0 ,quantity = remaning_qty,trigger_price =0, order_type = "MKT")
+                        is_modified, order_number, message  = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.entry_orderid], new_price =0 ,quantity = remaning_qty, trigger_price =0, order_type = "MKT")
                         is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
                         if is_modified and not is_order_rejected:
-                            
                             order_details =  Order_details(self.broker_session,self.broker_name)
                             is_not_empty,all_orders,filled_order,pending_order = order_details.order_book()
                             market_execute_price = filled_order[filled_order[F.order_id] == order_number].iloc[0][F.price]
@@ -269,7 +268,7 @@ class Order_management :
         is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
         if sl_placed and not is_order_rejected:
             self.database [str(self.date )].update_one({ "entry_tag": tag}, { "$set": {F.exit_orderid : order_number,  F.exit_orderid_status :  F.open , F.exit_price : stoploos, F.exit_price_initial : stoploos, F.exit_tag: tag+'_sl'} } )
-            logger_bot(f"Sl order palced Sucessfully !!! \nOrder Number : {order_number}\nPrice : {stoploos}\nSide : {option_type},tag : {tag}")
+            logger_bot(f"Sl order palced Sucessfully !!! \nOrder Number : {order_number}\nPrice : {stoploos}\nSide : {option_type}\ntag : {tag}")
 
         elif not sl_placed:
             self.database [str(self.date )].update_one({ "entry_tag": tag}, { "$set": {F.exit_orderid_status :  F.rejected }})
@@ -332,6 +331,7 @@ class Order_management :
                 for i in db_data:
                     is_canceled,order_number, message  = OrderExecuation(self.broker_name,self.broker_session).cancel_order(i[F.entry_orderid])
                     if is_canceled : 
+                        self.database [str(self.date)].update_one({F.entry_orderid : row[F.entry_orderid]}, {"$set": {F.exit_reason : F.day_end}) 
                         logger_bot(f"pending order \nMessage :{order_number} is canceled")
                     else : 
                         emergency_bot(f'Not able to cancle order {i[F.exit_orderid]} in cancel_pending_order()\n Reason : {message}')

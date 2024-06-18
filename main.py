@@ -52,7 +52,6 @@ def placing(current_time, broker_name, broker_session):
 
     elif current_time == env.NineThirty:
         for i in range(env.qty_partation_loop):
-            i = 3
             ce_thread = Thread(name = f'CE_{F.NineThirty}', target = order_placer, kwargs = {F.option_type : F.CE, 'option_price' : re_entry_price, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
             pe_thread = Thread(name = f'PE_{F.NineThirty}', target = order_placer, kwargs = {F.option_type : F.PE, 'option_price' : re_entry_price, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
             env.thread_list.append(ce_thread)
@@ -62,7 +61,6 @@ def placing(current_time, broker_name, broker_session):
             
     elif current_time == env.NineFourtyFive:
         for i in range(env.qty_partation_loop):
-            i = 0
             ce_thread = Thread(name = f'CE_{F.NineFourtyFive}-Thread', target = order_placer, kwargs = {F.option_type: F.CE, 'option_price' : wait_trade_price, F.loop_no : i, F.stratagy :  F.NineFourtyFive, F.exit_percent : 50, F.qty : wait_trade_qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session, 'wait_percent' : 5})
             pe_thread = Thread(name = f'PE_{F.NineFourtyFive}-Thread', target = order_placer, kwargs = {F.option_type: F.PE, 'option_price' : wait_trade_price, F.loop_no : i, F.stratagy :  F.NineFourtyFive, F.exit_percent : 50, F.qty : wait_trade_qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session, 'wait_percent' : 5})
             env.thread_list.append(ce_thread)
@@ -122,7 +120,6 @@ if __name__ == '__main__':
                 start_socket_thread = Thread(name = 'socket_thread', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : env.expiry_base_instrument,'broker_session': broker_session,'broker_name' : broker_name})
                 env.thread_list.append(start_socket_thread)
                 start_socket_thread.start()
-                is_socket_alive = start_socket_thread.is_alive()
                 # print(1)
                 time.sleep(10)
                 logger_bot(f'Todays instrument : {env.index}')
@@ -140,7 +137,7 @@ if __name__ == '__main__':
                 # print(4)
                 time.sleep(60 - (get_ist_now().second - start_time))
                 
-            else : 
+            if not is_socket_alive : 
                 start_socket_thread = Thread(name = 'socket_thread_restart', target = socket_thread_fun, kwargs = {'broker_name': broker_name, 'broker_session': broker_session})
                 env.thread_list.append(start_socket_thread)
                 start_socket_thread.start()

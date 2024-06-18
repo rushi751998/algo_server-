@@ -207,7 +207,7 @@ class Checking:
                     
                     pass# handel issue in emergrncy 
 
-            if (i[F.entry_orderid] not in pending_order_list) and i[F.entry_orderid_status] == F.re_entry_open: 
+            if (i[F.entry_orderid] not in pending_order_list) and (i[F.entry_orderid_status] == F.re_entry_open) and (i[F.exit_reason] == '---'): 
                 # Check is re-entry pending order is threre if not place sl for re-entry 
                 self.database[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.entry_orderid_status: F.closed, F.entry_time : self.current_time, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count+1 } } )
 
@@ -246,12 +246,12 @@ class Checking:
         for i in NineFourtyFive_db:
             count = i[F.exit_order_count]
             if (i[F.entry_orderid_status] == F.open) and (i[F.entry_orderid] not in pending_order_list):
+                logger_bot(f'Placed at broker-end  :  {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}')
                 #--------------- Place limit sl ----------------------------
                 tag = f"{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}"
                 Order_management(self.broker_name, self.broker_session).place_limit_sl(i[F.ticker], i[F.qty], i[F.transaction_type], i[F.entry_price], i[F.exit_percent], i[F.option_type], tag)
                 ltp = get_ltp(i[F.token],self.broker_name)
                 self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.entry_orderid_status : F.closed ,F.entry_time : self.current_time, F.entry_order_execuation_type : F.limit_order, "ltp" : ltp, F.entry_order_count : count+1}})
-                logger_bot(f'Placed at broker-end  :  {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}')
             if (i[F.exit_orderid_status] == F.open):
                 #--------------- Trail sl ----------------------------
                 new_ltp = get_ltp(i[F.token],self.broker_name)

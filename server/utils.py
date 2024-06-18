@@ -198,7 +198,7 @@ class env_variables:
     env_variable_initilised = False
     today = None
     thread_list = []
-    socket_thread = None
+    socket_open = False
     logger = None #setup_daily_logger(True)
     lot_size : int
     index : str 
@@ -350,7 +350,7 @@ class Fields :
 def emergency_bot(bot_message):
     """ It is used for sending alert to Emergeny situation"""
     current_time = get_ist_now()
-    env_variables.logger.warning(bot_message)
+    env_variables.logger.warning(f'{bot_message}\n')
     bot_message = f'{dt.strftime(current_time,"%H:%M:%S")}\n{bot_message}'
     bot_token = os.environ['emergency_bot_token']
     bot_chatId = os.environ['chatId']
@@ -374,7 +374,7 @@ def alert_bot(bot_message_ : str,send_image : bool = False):
                 emergency_bot("alert_bot not able to send image")
     else : 
         # print(bot_message,'\n')
-        env_variables.logger.info(bot_message_)
+        env_variables.logger.info(f'{bot_message}\n')
 
         send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
         response = requests.get(send_text)
@@ -382,7 +382,7 @@ def alert_bot(bot_message_ : str,send_image : bool = False):
 def logger_bot(bot_message):
     """ It is used for sending order manangemant"""
     current_time = get_ist_now()
-    env_variables.logger.info(bot_message)
+    env_variables.logger.info(f'{bot_message}\n')
     bot_message = f'{dt.strftime(current_time,"%H:%M:%S")} {bot_message}'
     bot_token = os.environ['logger_bot_token']
     bot_chatId = os.environ['chatId']
@@ -395,7 +395,7 @@ def logger_bot(bot_message):
 def Trigger_finder(bot_message):
     """ It is used for sending alert to Emergeny situation"""
     current_time = get_ist_now()
-    env_variables.logger.info(bot_message)
+    env_variables.logger.info(f'{bot_message}\n')
     bot_message = f'{dt.strftime(current_time,"%H:%M:%S")}\n{bot_message}'
     bot_token = os.environ['Trigger_finder_token']
     bot_chatId = os.environ['chatId']

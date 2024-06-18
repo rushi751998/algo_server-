@@ -131,12 +131,15 @@ class Socket_handling:
                 emergency_bot(f'Facing Issue in Socket.start \nissue : {e}')
         
     def on_error(self,message):
+        env.socket_open = False
         emergency_bot(f'Issue in Socket : {message}')
                 
     def on_open(self,message):
+        env.socket_open = True
         logger_bot(f'Socket Started : {message}')
         
     def on_close(self,message):
+        env.socket_open = False
         logger_bot(f'Socket Stopped : {message}')
             
     def update_option_chain(self, message):
@@ -244,13 +247,13 @@ def get_ltp(instrument_token,broker_name):
 def get_token(ticker):
     return ticker_to_token[ticker]
 
-def is_order_rejected_func(order_id:str,broker_session,broker_name):
+def is_order_rejected_func(order_id,broker_session,broker_name):
     if broker_name == 'kotak_neo' :
         if order_id != 0 : 
             time.sleep(5)
             order_details =  Order_details(broker_session, broker_name)
             is_not_empty, all_orders,filled_order, pending_order = order_details.order_book()
-            order_status = all_orders[all_orders['order_id'] == order_id].iloc[0]
+            order_status = all_orders[all_orders['order_id'] == str(order_id)].iloc[0]
             if order_status['order_status'] == 'rejected':
                 emergency_bot(f'Order rejected\nOrder ID : {order_id}\nTicker : {order_status["order_symbol"]}\nMessage : {order_status["message"]}')
                 return True
