@@ -198,7 +198,7 @@ class Order_management :
             db_data = self.database [str(self.date )].find(myquery)
             pending_orders_db = pd.DataFrame(db_data)
             if len(pending_orders_db)!=0:
-                print("New loop started\n")
+                # print("New loop started\n")
                 for index,row in pending_orders_db.iterrows():
                     count = row[F.entry_order_count]
                     if (row[F.entry_orderid]  not in pending_order[F.order_id].tolist()):
@@ -235,7 +235,7 @@ class Order_management :
                             order_details =  Order_details(self.broker_session,self.broker_name)
                             is_not_empty,all_orders,filled_order,pending_order = order_details.order_book()
                             market_execute_price = filled_order[filled_order[F.order_id] == order_number].iloc[0][F.price]
-                            print( f"Final market price : ", market_execute_price )
+                            # print( f"Final market price : ", market_execute_price )
                             
                             self.database [str(self.date )].update_one({F.entry_orderid : order_number}, { "$set": {F.entry_price : float(market_execute_price) , F.entry_order_count: count + 1 , F.entry_order_execuation_type : F.market_order} })
                             logger_bot(f"Executed at Market Order \nMessage :{order_number} \nRemaning Qty : {remaning_qty}\nSide : {row[F.option_type]}")

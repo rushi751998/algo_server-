@@ -30,49 +30,49 @@ class Checking:
         if is_not_empty :
             try:
                 self.day_tracker()
-                print(f'\n{self.current_time}---------------- data updated ------------------')
+                # print(f'\n{self.current_time}---------------- data updated ------------------')
             except Exception as e:
                 emergency_bot(f'problem in day_tracker \nReason :{e}')
 
             try:
                 self.fifty_per_management(pending_order,filled_order,F.NineTwenty)
-                print(f'{self.current_time}---------------- fifty_per_management -  {F.NineTwenty} ------------------')
+                # print(f'{self.current_time}---------------- fifty_per_management -  {F.NineTwenty} ------------------')
             except Exception as e:
                 emergency_bot(f'problem in fifty_per_management for : {F.NineTwenty} \nReason :{e}')
 
             try:
                 self.re_entry_management(pending_order,filled_order,F.NineThirty)
-                print(f'{self.current_time}---------------- re_entry_management -  {F.NineThirty} ------------------')
+                # print(f'{self.current_time}---------------- re_entry_management -  {F.NineThirty} ------------------')
             except Exception as e:
                 emergency_bot(f'problem in re_entry_management for : {F.NineThirty} \nReason :{e}')
 
             try:
                 self.wait_n_trade(pending_order,filled_order,F.NineFourtyFive)
-                print(f'{self.current_time}---------------- wait_n_trade -  {F.NineFourtyFive} ------------------')
+                # print(f'{self.current_time}---------------- wait_n_trade -  {F.NineFourtyFive} ------------------')
             except Exception as e:
                 emergency_bot(f'problem in wait_n_trade for : {F.NineFourtyFive} \nReason :{e}')
                 
             try:
                 self.re_entry_management(pending_order,filled_order,F.TenThirty)
-                print(f'{self.current_time}---------------- re_entry_management -  {F.TenThirty} ------------------')
+                # print(f'{self.current_time}---------------- re_entry_management -  {F.TenThirty} ------------------')
             except Exception as e:
                 emergency_bot(f'problem in re_entry_management for : {F.NineThirty} \nReason :{e}')
             
             try:
                 self.re_entry_management(pending_order,filled_order,F.Eleven)
-                print(f'{self.current_time}---------------- re_entry_management -  {F.Eleven} ------------------')
+                # print(f'{self.current_time}---------------- re_entry_management -  {F.Eleven} ------------------')
             except Exception as e:
                 emergency_bot(f'problem in re_entry_management for : {F.NineThirty} \nReason :{e}')
 
             try:
                 self.check_ltp_above_sl(pending_order,filled_order)
-                print(f'{self.current_time}---------------- check_ltp_above_sl ------------------')
+                # print(f'{self.current_time}---------------- check_ltp_above_sl ------------------')
             except Exception as e:
                 emergency_bot(f'problem in check_ltp_above_sl\nReason :{e}')
                 
             try:
                 self.rejected_order_management()
-                print(f'{self.current_time}---------------- rejected_order_management ------------------')
+                # print(f'{self.current_time}---------------- rejected_order_management ------------------')
             except Exception as e:
                 emergency_bot(f'problem in rejected_order_management\nReason :{e}')
                 
@@ -149,7 +149,7 @@ class Checking:
         pending_order_list = pending_order[F.order_id].to_list()
         for i in NineThirty_db:
             count = i[F.exit_order_count]
-            if (i[F.exit_orderid] not in pending_order_list) and (i[F.exit_orderid_status] ==  F.open): # re-entry pending order place
+            if (i[F.exit_orderid] not in pending_order_list) and (i[F.exit_orderid_status] ==  F.open) and (i[F.exit_reason] == '---'): # re-entry pending order place
                 #----------------------------------- Upadate 1st order details ---------------------------------------------------------
                 sl_price = filled_order[filled_order[F.order_id]==i[F.exit_orderid]].iloc[0][F.price]
                 self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_price : float(sl_price), F.exit_order_execuation_type : F.limit_order, F.exit_time : str(self.current_time),F.exit_order_count : count+1 } } )
@@ -207,7 +207,7 @@ class Checking:
                     
                     pass# handel issue in emergrncy 
 
-            if (i[F.entry_orderid] not in pending_order_list) and (i[F.entry_orderid_status] == F.re_entry_open) and (i[F.exit_reason] == '---'): 
+            if (i[F.entry_orderid] not in pending_order_list) and (i[F.entry_orderid_status] == F.re_entry_open) : 
                 # Check is re-entry pending order is threre if not place sl for re-entry 
                 self.database[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.entry_orderid_status: F.closed, F.entry_time : self.current_time, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count+1 } } )
 
@@ -245,7 +245,7 @@ class Checking:
 
         for i in NineFourtyFive_db:
             count = i[F.exit_order_count]
-            if (i[F.entry_orderid_status] == F.open) and (i[F.entry_orderid] not in pending_order_list):
+            if (i[F.entry_orderid_status] == F.open) and (i[F.entry_orderid] not in pending_order_list) and (i[F.exit_reason] == '---'):
                 logger_bot(f'Placed at broker-end  :  {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}')
                 #--------------- Place limit sl ----------------------------
                 tag = f"{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}"
