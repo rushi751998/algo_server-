@@ -131,14 +131,14 @@ if __name__ == '__main__':
                 placing(current_time = current_time, broker_name = broker_name, broker_session = broker_session)
                 
             if is_socket_alive:
-                checking_thread = Thread(name = 'checking_thread', target = checking_thread_fun, kwargs = {'expiry_base_instrument' : env.expiry_base_instrument,'broker_session': broker_session,'broker_name' : broker_name})
+                checking_thread = Thread(name = 'checking_thread', target = checking_thread_fun, kwargs = {'broker_name': broker_name, 'broker_session': broker_session})
                 env.thread_list.append(checking_thread)
                 checking_thread.start()
                 # print(4)
                 time.sleep(60 - (get_ist_now().second - start_time))
                 
             if not is_socket_alive : 
-                start_socket_thread = Thread(name = 'socket_thread_restart', target = socket_thread_fun, kwargs = {'broker_name': broker_name, 'broker_session': broker_session})
+                start_socket_thread = Thread(name = 'socket_thread_restart', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : env.expiry_base_instrument,'broker_session': broker_session,'broker_name' : broker_name})
                 env.thread_list.append(start_socket_thread)
                 start_socket_thread.start()
                 # print(5)
