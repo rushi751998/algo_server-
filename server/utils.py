@@ -376,7 +376,8 @@ def alert_bot(bot_message_ : str,send_image : bool = False):
     
     if send_image : 
         with open('plot.png', 'rb') as file:
-            response = requests.post(url, data={'chat_id': CHAT_ID}, files={'photo': file})
+            url = url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
+            response = requests.post(url, data={'chat_id': bot_chatId}, files={'photo': file})
             if response.status_code != 200:
                 emergency_bot("alert_bot not able to send image")
     else : 
