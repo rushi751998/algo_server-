@@ -134,7 +134,7 @@ class Checking:
         NineTwenty_db = self.database[str(self.date)].find({F.stratagy: {'$eq':stratagy}})
         pending_order_list = pending_order[F.order_id].to_list()
         for i in NineTwenty_db:
-            if i[F.exit_orderid] not in pending_order_list :
+            if i[F.exit_orderid] not in pending_order_list and (i[F.exit_orderid_status] ==  F.open) :
                 sl_price = filled_order[filled_order[F.order_id]==i[F.exit_orderid]].iloc[0][F.price]
                 exit_time = self.current_time
                 sl_orderid_status = F.closed
