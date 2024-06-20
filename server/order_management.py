@@ -168,8 +168,8 @@ class Order_management :
                             F.exit_tag: '',  #tag_contains stratagy_name+option_type+loop no
                             #-------- Other parameter --------------
                             F.exit_price : 0,
-                            F.exit_time : '',
-                            F.exit_reason : '',              # sl_hit/day_end
+                            F.exit_time : '---',
+                            F.exit_reason : '---',              # sl_hit/day_end
                             F.exit_order_count : 0,
                             F.exit_order_execuation_type : None,
                             F.stratagy : stratagy,

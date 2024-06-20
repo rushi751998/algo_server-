@@ -240,7 +240,8 @@ class Checking:
                 logger_bot(f"re-entry Sl hit !!! \nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nPrice : {sl_price}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}")
                          
     def wait_n_trade(self,pending_order,filled_order,stratagy):
-        NineFourtyFive_db = self.database[str(self.date)].find({F.stratagy: {'$eq': stratagy}})
+        query = {F.stratagy: {'$eq': stratagy}}
+        NineFourtyFive_db = self.database[str(self.date)].find(query)
         pending_order_list = pending_order[F.order_id].to_list()
 
         for i in NineFourtyFive_db:
