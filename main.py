@@ -124,7 +124,7 @@ if __name__ == '__main__':
             
         if is_market_time() and not hoilyday:
             current_time = dt.strftime(get_ist_now(), '%H:%M')
-            is_socket_open = env.socket_open    
+            is_socket_alive = env.socket_open    
             if is_socket_alive and (current_time in event_list ):
                 placing(current_time = current_time, broker_name = broker_name, broker_session = broker_session)
                 
