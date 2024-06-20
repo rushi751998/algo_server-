@@ -185,7 +185,7 @@ class Order_management :
                             }
 
                     self.database [str(self.date )].insert_one(order)
-                    logger_bot(f"{stratagy} {option_type} \nlimit order placed SucessFully !!! \nMessage : {order_number}")
+                    logger_bot(f"limit order placed ...\nStratagy : {stratagy}\nOption Type : {option_type}\nMessage : {order_number}")
 
             elif not is_order_placed :
                 emergency_bot(f'Not able to palce {stratagy} order \nmessage :{message}')
@@ -203,7 +203,7 @@ class Order_management :
                     count = row[F.entry_order_count]
                     if (row[F.entry_orderid]  not in pending_order[F.order_id].tolist()):
                         self.database [str(self.date )].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {F.entry_time : str(dt.now()),F.entry_orderid_status: F.closed, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count+1 } }) # it will update if sl hit  modificarion status to slhit
-                        logger_bot(f'Placed in broker end \nOrder id : {row[F.entry_orderid]} \nOption Type : {row[F.option_type]}')
+                        logger_bot(f'Placed in broker end \nOrder id : {row[F.entry_orderid]} \nOption Type : {row[F.option_type]}\nStratagy : {row[F.option_type]}')
                         time.sleep(1)
                         continue
                     elif count<5:
@@ -222,7 +222,7 @@ class Order_management :
                         is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
                         if is_modified and not is_order_rejected:
                             self.database [str(self.date )].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {  F.entry_price : new_price , F.entry_order_count: count + 1 } }) # it will update updated price to database
-                            logger_bot(f"Entry price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {new_price} \nRemaning Qty : {remaning_qty}\nSide : {row[F.option_type]}")
+                            logger_bot(f"Entry price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {new_price} \nRemaning Qty : {remaning_qty}\nSide : {row[F.option_type]}\nStratagy : {row[F.option_type]}")
                             
                         elif not is_modified :
                             emergency_bot(f'Not able to modify sl in Smart Execuator(kotak.modify_order)\nMessage : {message}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}')
@@ -238,7 +238,7 @@ class Order_management :
                             # print( f"Final market price : ", market_execute_price )
                             
                             self.database [str(self.date )].update_one({F.entry_orderid : order_number}, { "$set": {F.entry_price : float(market_execute_price) , F.entry_order_count: count + 1 , F.entry_order_execuation_type : F.market_order} })
-                            logger_bot(f"Executed at Market Order \nMessage :{order_number} \nRemaning Qty : {remaning_qty}\nSide : {row[F.option_type]}")
+                            logger_bot(f"Executed at Market Order \nMessage :{order_number} \nRemaning Qty : {remaning_qty}\nSide : {row[F.option_type]}\nStratagy : {row[F.option_type]}")
                         elif not is_modified :
                             emergency_bot(f'Not able to modify sl in Smart Executer SOD Market Order\nMessage : {message}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}')
                             
@@ -268,7 +268,7 @@ class Order_management :
         is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
         if sl_placed and not is_order_rejected:
             self.database [str(self.date )].update_one({ "entry_tag": tag}, { "$set": {F.exit_orderid : order_number,  F.exit_orderid_status :  F.open , F.exit_price : stoploos, F.exit_price_initial : stoploos, F.exit_tag: tag+'_sl'} } )
-            logger_bot(f"Sl order palced Sucessfully !!! \nOrder Number : {order_number}\nPrice : {stoploos}\nSide : {option_type}\ntag : {tag}")
+            logger_bot(f"Sl order palced Sucessfully !!! \nOrder Number : {order_number}\nPrice : {stoploos}\nSide : {option_type}\nStratagy : {tag.split('_')[0]}")
 
         elif not sl_placed:
             self.database [str(self.date )].update_one({ "entry_tag": tag}, { "$set": {F.exit_orderid_status :  F.rejected }})
@@ -307,10 +307,10 @@ class Order_management :
                         if is_modified :
                             if count == 0 :
                                 self.database [str(self.date )].update_one({F.entry_orderid : row[F.entry_orderid]}, {"$set": {F.exit_price_initial : ltp, F.exit_price : ltp , F.exit_order_count: count + 1 }}) # it will update updated price to database
-                                logger_bot(f"Exit price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {ltp} \nRemaning Qty : {remaning_qty}")
+                                logger_bot(f"Exit price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {ltp} \nRemaning Qty : {remaning_qty}\nStratagy : {row[F.stratagy]}")
                             else : 
                                 self.database [str(self.date )].update_one({F.entry_orderid : row[F.entry_orderid]}, {"$set": {F.exit_price : ltp , F.exit_order_count: count + 1 }}) # it will update updated price to database
-                                logger_bot(f"Exit price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {ltp} \nRemaning Qty : {remaning_qty}")
+                                logger_bot(f"Exit price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {ltp} \nRemaning Qty : {remaning_qty}\nStratagy : {row[F.stratagy]}")
                                 
                         elif not is_modified :
                             emergency_bot(f'Not able to modify sl in exit_orders_dayend(kotak.modify_order)\nMessage : {message}')
@@ -332,7 +332,7 @@ class Order_management :
                     is_canceled,order_number, message  = OrderExecuation(self.broker_name,self.broker_session).cancel_order(i[F.entry_orderid])
                     if is_canceled : 
                         self.database [str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, {"$set": {F.exit_reason : F.day_end}}) 
-                        logger_bot(f"pending order \nMessage :{order_number} is canceled")
+                        logger_bot(f"pending order \nMessage :{order_number} is canceled\nStratagy : {i[F.stratagy]}")
                     else : 
                         emergency_bot(f'Not able to cancle order {i[F.exit_orderid]} in cancel_pending_order()\n Reason : {message}')
                         

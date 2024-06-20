@@ -231,7 +231,7 @@ class Checking:
                     logger_bot(f"re-entry Sl order palced Sucessfully !!! \nMessage : {order_number}\nTicker : {i[F.ticker]}\nPrice : {stoploos}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}")
                 elif not sl_placed:
                     self.database [str(self.date )].update_one({ "entry_tag": tag}, { "$set": {F.exit_orderid_status :  F.rejected }})
-                    emergency_bot(f'Problem in palcing limit_sl\nMessage : {message}')
+                    emergency_bot(f'Problem in palcing limit_sl\nStratagy : {i[F.entry_orderid]}\Side : {i[F.option_type]}\nMessage : {message}')
                 
             if (i[F.exit_orderid] not in pending_order_list) and i[F.exit_orderid_status] == F.re_entry_open :
                 # Track re-entry sl order is sl hit
