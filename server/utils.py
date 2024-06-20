@@ -111,9 +111,9 @@ def trailing_points():
         
     return points
             
-def get_db(db_name='order_book'):
+def get_db():
     mongo_db = pymongo.MongoClient(env_variables.mongodb_link)
-    entry_id= mongo_db[db_name]
+    entry_id= mongo_db[env_variables.database_name]
     return entry_id
 
 def set_coloumn_name(df,broker_name):
@@ -205,6 +205,7 @@ class env_variables:
     expiry_base_instrument : bool
     
     mongodb_link : str
+    database_name : str
     consumer_key : str
     secretKey : str
     mobileNumber : str
@@ -241,6 +242,7 @@ class env_variables:
         
         self.expiry_base_instrument = bool(os.environ['expiry_base_instrument'])
         self.mongodb_link = os.environ['mongodb_link'] 
+        self.database_name = os.environ['database_name'] 
         self.consumer_key = os.environ['consumer_key'] 
         self.secretKey = os.environ['secretKey'] 
         self.mobileNumber = os.environ['mobileNumber'] 
