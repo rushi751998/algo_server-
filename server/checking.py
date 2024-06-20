@@ -86,17 +86,17 @@ class Checking:
         
     def day_tracker(self):
         # -------------------------------- Upload each leg wise pl to order db ---------------------------------------------
-
-        myquery = {'$or': [{F.exit_orderid_status : F.open},{F.exit_orderid_status : F.re_entry_open}]}
-        db_data = self.database[str(self.date)].find(myquery)
-        # print(pd.DataFrame(db_data))
-        for i in db_data:
-            ltp = get_ltp(i[F.token], self.broker_name)
-            pl =  round((i[F.entry_price]-ltp)*i[F.qty])
-            # print('order_id: ',i[F.exit_orderid] )
-            self.database[str(self.date)].update_one({F.exit_orderid :i[F.exit_orderid]},{'$push': {F.recording: {'Time':self.current_time, 'pl': pl}}}) #procuction
-        
-            # entry_id[str(date)].update_one({F.ticker :i[F.ticker]},{'$push': {F.recording: {'Time':current_time , 'pl': pl,'datetime':dt.now()}}})
+        if env.day_tracker : 
+            myquery = {'$or': [{F.exit_orderid_status : F.open},{F.exit_orderid_status : F.re_entry_open}]}
+            db_data = self.database[str(self.date)].find(myquery)
+            # print(pd.DataFrame(db_data))
+            for i in db_data:
+                ltp = get_ltp(i[F.token], self.broker_name)
+                pl =  round((i[F.entry_price]-ltp)*i[F.qty])
+                # print('order_id: ',i[F.exit_orderid] )
+                self.database[str(self.date)].update_one({F.exit_orderid :i[F.exit_orderid]},{'$push': {F.recording: {'Time':self.current_time, 'pl': pl}}}) #procuction
+            
+                # entry_id[str(date)].update_one({F.ticker :i[F.ticker]},{'$push': {F.recording: {'Time':current_time , 'pl': pl,'datetime':dt.now()}}})
 
 
         # # -------------------------------- Upload Stratagy wise pl to pl db ---------------------------------------------

@@ -205,6 +205,7 @@ class env_variables:
     expiry_base_instrument : bool
     
     mongodb_link : str
+    day_tracker : bool
     database_name : str
     consumer_key : str
     secretKey : str
@@ -241,8 +242,11 @@ class env_variables:
         self.index = ''
         
         self.expiry_base_instrument = bool(os.environ['expiry_base_instrument'])
+        self.day_tracker = bool(os.environ['day_tracker'])
+        
         self.mongodb_link = os.environ['mongodb_link'] 
         self.database_name = os.environ['database_name'] 
+        
         self.consumer_key = os.environ['consumer_key'] 
         self.secretKey = os.environ['secretKey'] 
         self.mobileNumber = os.environ['mobileNumber'] 
@@ -250,6 +254,7 @@ class env_variables:
         self.broker_name = os.environ['broker_name']    
         self.session_validation_key = os.environ['session_validation_key'] 
         self.two_factor_code = os.environ['two_factor_code'] 
+        
         self.allowed_loss_percent = float(os.environ['allowed_loss_percent'] )
         # self.hoilydays =os.environ['hoilydays'] 
         self.exceptational_tradingdays =  ast.literal_eval(os.environ['exceptational_tradingdays'] )
