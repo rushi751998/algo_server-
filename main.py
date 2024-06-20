@@ -110,7 +110,7 @@ if __name__ == '__main__':
         start_time = get_ist_now().second
         if not env.env_variable_initilised or (env.today != date):
             is_env = env.load_env_variable()
-            event_list = [env.login, env.NineTwenty, env.NineTwenty, env.NineThirty, env.NineFourtyFive, env.TenThirty, env.exit_orders, env.logout_session]
+            event_list = [env.login, env.NineTwenty, env.NineTwenty, env.NineThirty, env.NineFourtyFive, env.TenThirty, env.Eleven, env.exit_orders, env.logout_session]
             broker_name = env.broker_name
             hoilyday, holiday_reason = is_hoilyday()
             if not hoilyday:
