@@ -50,6 +50,7 @@ def placing(current_time, broker_name, broker_session):
 
     elif current_time == env.NineThirty:
         for i in range(env.qty_partation_loop):
+            i = 3
             ce_thread = Thread(name = f'CE_{F.NineThirty}', target = order_placer, kwargs = {F.option_type : F.CE, 'option_price' : re_entry_price, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
             pe_thread = Thread(name = f'PE_{F.NineThirty}', target = order_placer, kwargs = {F.option_type : F.PE, 'option_price' : re_entry_price, F.loop_no : i, F.stratagy :  F.NineThirty, F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
             env.thread_list.append(ce_thread)
@@ -122,10 +123,12 @@ if __name__ == '__main__':
         # print(env.option_chain_set)        
         if is_market_time() and not hoilyday and env.option_chain_set:
             current_time = dt.strftime(get_ist_now(), '%H:%M')
-            is_socket_open = env.socket_open    
+            is_socket_open = env.socket_open   
+            print(is_socket_open)
+             
             if is_socket_open and (current_time in event_list ):
                 placing(current_time = current_time, broker_name = broker_name, broker_session = broker_session)
-                
+
             if is_socket_open:
                 Checking(broker_session,broker_name).check()
                 time.sleep(60 - (get_ist_now().second - start_time))

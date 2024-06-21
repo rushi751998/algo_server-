@@ -17,7 +17,7 @@ class OrderExecuation :
                 is_order_rejected, is_mis_blocked = is_order_rejected_func(responce[F.nOrdNo], self.broker_session, self.broker_name)
                 if is_order_rejected and is_mis_blocked :
                     # Try With NRML order 
-                    new_tag = tag + env.product_type
+                    new_tag = tag + '_' + env.product_type
                     responce = self.broker_session.place_order(product = env.product_type, price = str(price), trigger_price = str(trigger_price), order_type = order_type, quantity = str(qty), trading_symbol = ticker,
                                 transaction_type = kotak_transaction_type_dict[transaction_type], amo = "NO", disclosed_quantity = "0", market_protection = "0", pf="N", validity = "DAY",exchange_segment = "nse_fo",tag = new_tag) #production
                     if responce[F.stCode] == 200 :
@@ -29,8 +29,8 @@ class OrderExecuation :
                     # return MIS order
                     return True, responce[F.nOrdNo], env.product_type, new_tag
                     
-            else : 
-                return False, 0, responce['errMsg']
+            else :
+                return False, 0, env.product_type , tag
         
     def modify_order(self, order_id, new_price, quantity, trigger_price = None, order_type = "SL"):
         if self.broker_name  == F.kotak_neo: 

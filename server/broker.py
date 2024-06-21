@@ -124,7 +124,7 @@ class Socket_handling:
                     self.broker_session.on_error = self.on_error  # called when any error or exception occurs in code or websocket
                     self.broker_session.on_open = self.on_open  # called when websocket successfully connects
                     self.broker_session.on_close = self.on_close  # called when websocket connection is closed
-                    # self.broker_session.subscribe(token_list, isIndex=False, isDepth=False)
+                    self.broker_session.subscribe(token_list, isIndex=False, isDepth=False)
                     self.stocket_started = True
                 except Exception as e:
                     emergency_bot(f'Facing Issue in Socket.start \nissue : {e}')
@@ -257,14 +257,14 @@ def is_order_rejected_func(order_id,broker_session,broker_name):
             is_not_empty, all_orders,filled_order, pending_order = order_details.order_book()
             order_status = all_orders[all_orders['order_id'] == str(order_id)].iloc[0]
             if order_status['order_status'] == 'rejected':
-                if 'MIS PRODUCT TYPE BLOCKED' in order_status["message"] : 
-                    emergency_bot(f'Order rejected\nOrder ID : {order_id}\nTicker : {order_status["order_symbol"]}\nProduct Type : {env.product_type}\nMessage : {order_status["message"]}\nPlacing NRML order..')
+                if 'MIS PRODUCT TYPE BLOCKED' in order_status["message"] or 'MIS TRADING NOT ALLOWED' in order_status["message"]: 
+                    emergency_bot(f'Order rejected\nOrder ID : {order_id}\nProduct Type : {env.product_type}\nMessage : {order_status["message"]}\nPlacing NRML order..')
                     env.product_type = 'NRML'
                     return True, True
                 else : 
-                    emergency_bot(f'Order rejected\nOrder ID : {order_id}\nTicker : {order_status["order_symbol"]}\nProduct Type : {env.product_type}\nMessage : {order_status["message"]}')
+                    emergency_bot(f'Order rejected\nOrder ID : {order_id}\nProduct Type : {env.product_type}\nMessage : {order_status["message"]}')
                     return True, False
                     
             else : 
-                return False
-        return False
+                return False, False
+        return False , False

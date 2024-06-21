@@ -92,6 +92,7 @@ class Order_management :
                             F.ticker  : ticker,
                             F.token : get_token(ticker),
                             F.transaction_type : transaction_type,
+                            F.product_type : product_type,
                             F.option_type : option_type,
                             F.qty: qty,
                             #-------------- Entry order details -------------
@@ -127,8 +128,8 @@ class Order_management :
                             }
 
                     self.database [str(self.date )].insert_one(order)
-                    logger_bot(f"{stratagy} {option_type} limit order placed SucessFully !!! \nMessage : {order_number}")
-                    self.smart_executer(stratagy=stratagy,exit_percent=exit_percent,option_type=option_type)
+                    logger_bot(f"limit order placed...\nStratagy : {stratagy}\nOption Type :  {option_type}\nMessage : {order_number}")
+                    self.smart_executer(stratagy=stratagy, exit_percent=exit_percent, option_type=option_type, entry_orderid = order_number)
             elif not is_order_placed :
                     emergency_bot(f'Not able to palce {stratagy} order \nmessage : {message}')
 
@@ -149,6 +150,7 @@ class Order_management :
                             "ltp": 0,
                             F.transaction_type : transaction_type,
                             F.option_type : option_type,
+                            F.product_type : product_type,
                             F.qty : qty,
                             #-------------- Entry order details -------------
                             F.entry_orderid : order_number,
@@ -188,20 +190,19 @@ class Order_management :
             elif not is_order_placed :
                 emergency_bot(f'Not able to palce {stratagy} order \nmessage :{message}')
 
-    def smart_executer(self,stratagy,exit_percent,option_type) :
+    def smart_executer(self, stratagy, exit_percent, option_type, entry_orderid) :
         while True:
-            order_details =  Order_details(self.broker_session,self.broker_name)
+            order_details = Order_details(self.broker_session,self.broker_name)
             is_not_empty, all_orders, filled_order, pending_order = order_details.order_book()
-            myquery = {F.stratagy: { "$eq": stratagy }, F.option_type: { "$eq": option_type } , F.entry_orderid_status: {"$eq":  F.open }}
+            myquery = {F.entry_orderid: { "$eq": entry_orderid }}
             db_data = self.database [str(self.date )].find(myquery)
             pending_orders_db = pd.DataFrame(db_data)
-            if len(pending_orders_db)!=0:
-                # print("New loop started\n")
+            if len(pending_orders_db) != 0 :
                 for index,row in pending_orders_db.iterrows():
                     count = row[F.entry_order_count]
                     if (row[F.entry_orderid]  not in pending_order[F.order_id].tolist()):
                         self.database [str(self.date )].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {F.entry_time : str(dt.now()), F.entry_orderid_status: F.closed, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count+1 } }) # it will update if sl hit  modificarion status to slhit
-                        logger_bot(f'Placed in broker end \nOrder id : {row[F.entry_orderid]} \nOption Type : {row[F.option_type]}\nStratagy : {row[F.option_type]}')
+                        logger_bot(f'Placed in broker end \nOrder id : {row[F.entry_orderid]} \nOption Type : {row[F.option_type]}\nStratagy : {row[F.stratagy]}')
                         time.sleep(1)
                         continue
                     elif count<5:
@@ -226,7 +227,7 @@ class Order_management :
                             emergency_bot(f'Not able to modify sl in Smart Execuator(kotak.modify_order)\nMessage : {message}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}')
 
                     else:
-                        remaning_qty = pending_order[pending_order[F.order_id]==row[F.entry_orderid]].iloc[0][F.qty]
+                        remaning_qty = pending_order[pending_order[F.order_id] == row[F.entry_orderid]].iloc[0][F.qty]
                         is_modified, order_number, message  = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.entry_orderid], new_price = 0 ,quantity = remaning_qty, trigger_price = 0, order_type = "MKT")
                         is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
                         if is_modified and not is_order_rejected:
@@ -244,12 +245,11 @@ class Order_management :
 
 
             else:
-                myquery = {F.entry_orderid_status : {"$eq": F.closed},F.stratagy : { "$eq": stratagy }, F.option_type : { "$eq" : option_type }, F.exit_orderid : { "$eq": '---' }}
+                myquery = {F.entry_orderid: { "$eq": entry_orderid}}
                 pending_orders_db = self.database [str(self.date )].find(myquery)
                 for i in pending_orders_db:
-                    tag = f'{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}'
                     # print(f"ticker={i[F.ticker]},qty={i[F.qty]},transaction_type={i[F.transaction_type]},avg_price={(i[F.entry_price])},exit_percent={exit_percent},tag = {tag}")
-                    self.place_limit_sl(ticker = i[F.ticker], qty = i[F.qty], transaction_type_ = i[F.transaction_type], avg_price = (i[F.entry_price]), exit_percent = exit_percent, option_type = i[F.option_type], tag = tag)
+                    self.place_limit_sl(ticker = i[F.ticker], qty = i[F.qty], transaction_type_ = i[F.transaction_type], avg_price = (i[F.entry_price]), exit_percent = exit_percent, option_type = i[F.option_type], tag = i[F.entry_tag])
                 break
 
     def place_limit_sl(self,ticker,qty,transaction_type_,avg_price,exit_percent,option_type,tag):
