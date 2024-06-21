@@ -96,7 +96,6 @@ class Order_details :
                     emergency_bot(f'Not albe o get orderbook\nMessage : {e}')
                     return None,None,None
 
-
 class Socket_handling:
     stocket_started = False
     future_token : str
@@ -118,17 +117,18 @@ class Socket_handling:
                 emergency_bot(f'Facing Issue in prepare_option_chain_Future_token \nissue : {e}')
                     
         if self.broker_name == F.kotak_neo : 
-            token_list = [{"instrument_token":i,"exchange_segment":'nse_fo'} for i in option_chain.keys()]
-            
-            try : 
-                self.broker_session.on_message = self.update_option_chain  # called when message is received from websocket
-                self.broker_session.on_error = self.on_error  # called when any error or exception occurs in code or websocket
-                self.broker_session.on_open = self.on_open  # called when websocket successfully connects
-                self.broker_session.on_close = self.on_close  # called when websocket connection is closed
-                self.broker_session.subscribe(token_list, isIndex=False, isDepth=False)
-                self.stocket_started = True
-            except Exception as e:
-                emergency_bot(f'Facing Issue in Socket.start \nissue : {e}')
+            if self.is_prepared : 
+                print(self.is_prepared)
+                token_list = [{"instrument_token":i,"exchange_segment":'nse_fo'} for i in option_chain.keys()]
+                try : 
+                    self.broker_session.on_message = self.update_option_chain  # called when message is received from websocket
+                    self.broker_session.on_error = self.on_error  # called when any error or exception occurs in code or websocket
+                    self.broker_session.on_open = self.on_open  # called when websocket successfully connects
+                    self.broker_session.on_close = self.on_close  # called when websocket connection is closed
+                    # self.broker_session.subscribe(token_list, isIndex=False, isDepth=False)
+                    self.stocket_started = True
+                except Exception as e:
+                    emergency_bot(f'Facing Issue in Socket.start \nissue : {e}')
         
     def on_error(self,message):
         env.socket_open = False
@@ -171,7 +171,7 @@ class Socket_handling:
 
     def prepare_option_chain_Future_token(self,expiry_base_instrument): 
         if self.broker_name == F.kotak_neo : 
-            script_master =   [i  for i in  self.broker_session.scrip_master()['filesPaths']  if 'nse_fo' in  i]   
+            script_master =   [i for i in  self.broker_session.scrip_master()['filesPaths']  if 'nse_fo' in  i]   
             df = pd.read_csv(script_master[0],low_memory=False)
             df.columns=[i.strip() for i in df.columns]
             df = df[df['pSymbolName'].isin(['NIFTY', 'FINNIFTY','BANKNIFTY' , 'MIDCPNIFTY'])][['pSymbol','pSymbolName','pTrdSymbol','pOptionType','pScripRefKey','lLotSize','lExpiryDate','dStrikePrice;', 'iMaxOrderSize', 'iLotSize', 'dOpenInterest']]
@@ -192,7 +192,7 @@ class Socket_handling:
                 option_tickers = option_tickers[(option_tickers['days_to_expire'] == option_tickers['days_to_expire'].min())]
                 index_list = option_tickers['index'].unique()
                 
-                if len(index_list) == 1:
+                if len(index_list) >= 1:
                     if 'BANKNIFTY' in index_list : 
                         index = 'BANKNIFTY'
                     elif 'NIFTY' in index_list : 
@@ -201,9 +201,9 @@ class Socket_handling:
                         index = 'FINNIFTY'
                     elif 'MIDCPNIFTY' in index_list : 
                         index = 'MIDCPNIFTY'
-                        
-                option_tickers = option_tickers[option_tickers['index'] == index]
-                future_tickers = future_tickers[future_tickers['index'] == index]
+                    # print(index)
+                    option_tickers = option_tickers[option_tickers['index'] == index]
+                    future_tickers = future_tickers[future_tickers['index'] == index]
                 
             else:
                 index = 'BANKNIFTY'
@@ -215,6 +215,7 @@ class Socket_handling:
                 
                 option_tickers = option_tickers[(option_tickers['days_to_expire'] == option_tickers['days_to_expire'].min())]
             env.index = index
+            print(index)
             df = pd.concat([option_tickers, future_tickers])
             df.reset_index(inplace=True,drop=True)
 
@@ -227,7 +228,7 @@ class Socket_handling:
                     ticker_to_token[row['ticker']]=row['token']
             logger_bot('prepared opetion chain')
             return df, future_token,True
-
+        
 def get_option_chain():
     return option_chain
 

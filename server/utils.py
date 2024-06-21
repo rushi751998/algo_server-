@@ -367,7 +367,7 @@ def emergency_bot(bot_message):
     bot_chatId = os.environ['chatId']
     # print(bot_message,'\n')
     send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
-    response = requests.get(send_text)
+    # response = requests.get(send_text)
     if response.status_code != 200:
         alert_bot("emergency_bot not able to send message")
         
