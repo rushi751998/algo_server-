@@ -203,6 +203,7 @@ class env_variables:
     lot_size : int
     index : str 
     expiry_base_instrument : bool
+    product_type : str
     
     mongodb_link : str
     day_tracker : bool
@@ -254,7 +255,9 @@ class env_variables:
         self.broker_name = os.environ['broker_name']    
         self.session_validation_key = os.environ['session_validation_key'] 
         self.two_factor_code = os.environ['two_factor_code'] 
-        
+        if self.broker_name == Fields.kotak_neo : 
+            self.product_type = 'MIS'
+            
         self.allowed_loss_percent = float(os.environ['allowed_loss_percent'] )
         # self.hoilydays =os.environ['hoilydays'] 
         self.exceptational_tradingdays =  ast.literal_eval(os.environ['exceptational_tradingdays'] )
@@ -306,6 +309,7 @@ class Fields :
     qty = 'qty'
     Buy = 'Buy'
     Sell = 'Sell'
+    product_type = 'product_type'
     price = 'price'
     loop_no = 'loop_no'
     recording = 'recording'
