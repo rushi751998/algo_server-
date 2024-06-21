@@ -22,7 +22,7 @@ from random import randint
 
 
 def socket_thread_fun(**kwargs):
-    Socket_handling(kwargs['broker_name'],kwargs['broker_session']).start_socket(kwargs['expiry_base_instrument'])
+    Socket_handling(broker_name,broker_session).start_socket(kwargs['expiry_base_instrument'])
 
 
 def order_placer(option_type,option_price,loop_no,stratagy,exit_percent,qty,transaction_type,broker_name,broker_session,wait_percent = None):
@@ -121,15 +121,6 @@ if __name__ == '__main__':
                 # logger_bot('Socket thread Started')
         # print(env.option_chain_set)        
         if is_market_time() and not hoilyday and env.option_chain_set:
-                if is_login:
-                    start_socket_thread = Thread(name = 'socket_thread', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : env.expiry_base_instrument,'broker_session': broker_session,'broker_name' : broker_name})
-                    env.thread_list.append(start_socket_thread)
-                    start_socket_thread.start()
-                    logger_bot(f'Todays instrument : {env.index}')
-                    # print(1)
-                    time.sleep(10)
-            
-        if is_market_time() and not hoilyday:
             current_time = dt.strftime(get_ist_now(), '%H:%M')
             is_socket_open = env.socket_open    
             if is_socket_open and (current_time in event_list ):
