@@ -98,7 +98,6 @@ class Order_details :
 
 
 class Socket_handling:
-    stocket_started = False
     future_token : str
     
     def __init__(self,broker_name,broker_session):
@@ -110,7 +109,7 @@ class Socket_handling:
     def start_socket(self,expiry_base_instrument):
         if not self.is_prepared : 
             try : 
-                df, future_token, is_prepared = self.prepare_option_chain_Future_token(expiry_base_instrument)
+                df,future_token,is_prepared = self.prepare_option_chain_Future_token(expiry_base_instrument)
                 with self._lock:
                             self.future_token = future_token
                             self.is_prepared = is_prepared
@@ -126,7 +125,6 @@ class Socket_handling:
                 self.broker_session.on_open = self.on_open  # called when websocket successfully connects
                 self.broker_session.on_close = self.on_close  # called when websocket connection is closed
                 self.broker_session.subscribe(token_list, isIndex=False, isDepth=False)
-                self.stocket_started = True
             except Exception as e:
                 emergency_bot(f'Facing Issue in Socket.start \nissue : {e}')
         
@@ -136,6 +134,7 @@ class Socket_handling:
                 
     def on_open(self,message):
         env.socket_open = True
+        env.option_chain_set = True
         logger_bot(f'Socket Started : {message}')
         
     def on_close(self,message):
@@ -226,6 +225,7 @@ class Socket_handling:
                     option_chain[row['token']] = {'v':0,'oi':0,'ltp':0,'option_type':row['optionType'],'ticker':row['ticker']}
                     ticker_to_token[row['ticker']]=row['token']
             logger_bot('prepared opetion chain')
+            logger_bot(f'Todays instrument : {env.index}')
             return df, future_token,True
 
 def get_option_chain():

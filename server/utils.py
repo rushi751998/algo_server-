@@ -196,6 +196,7 @@ def get_qty_option_price(broker_name):
             
 class env_variables:
     env_variable_initilised = False
+    option_chain_set = False
     today = None
     thread_list = []
     socket_open = False
