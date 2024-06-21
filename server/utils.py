@@ -196,6 +196,7 @@ def get_qty_option_price(broker_name):
             
 class env_variables:
     env_variable_initilised = False
+    option_chain_set = False
     today = None
     thread_list = []
     socket_open = False
@@ -237,6 +238,7 @@ class env_variables:
         load_dotenv() 
         
         self.env_variable_initilised= True
+        self.option_chain_set = False
         self.thread_list = []
         self.today = dt.today().date()
         self.lot_size = 1
@@ -367,7 +369,7 @@ def emergency_bot(bot_message):
     bot_chatId = os.environ['chatId']
     # print(bot_message,'\n')
     send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
-    # response = requests.get(send_text)
+    response = requests.get(send_text)
     if response.status_code != 200:
         alert_bot("emergency_bot not able to send message")
         

@@ -115,6 +115,12 @@ if __name__ == '__main__':
             hoilyday, holiday_reason = is_hoilyday()
             if not hoilyday:
                 is_login, broker_session = Login().setup()
+                start_socket_thread = Thread(name = 'socket_thread', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : env.expiry_base_instrument,'broker_session': broker_session,'broker_name' : broker_name})
+                env.thread_list.append(start_socket_thread)
+                start_socket_thread.start()
+                # logger_bot('Socket thread Started')
+        # print(env.option_chain_set)        
+        if is_market_time() and not hoilyday and env.option_chain_set:
                 if is_login:
                     start_socket_thread = Thread(name = 'socket_thread', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : env.expiry_base_instrument,'broker_session': broker_session,'broker_name' : broker_name})
                     env.thread_list.append(start_socket_thread)
@@ -131,14 +137,13 @@ if __name__ == '__main__':
                 
             if is_socket_open:
                 Checking(broker_session,broker_name).check()
-                # print(4)
                 time.sleep(60 - (get_ist_now().second - start_time))
                 
             if not is_socket_open : 
                 start_socket_thread = Thread(name = 'socket_thread_restart', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : env.expiry_base_instrument,'broker_session': broker_session,'broker_name' : broker_name})
+                emergency_bot('Socket thread Re-started')
                 env.thread_list.append(start_socket_thread)
                 start_socket_thread.start()
-                # print(5)
                                   
         if not is_market_time() or hoilyday:
             
