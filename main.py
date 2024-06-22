@@ -95,12 +95,9 @@ def placing(current_time, broker_name, broker_session):
 
     elif current_time == env.logout_session:
         for thread in env.thread_list:
-            thread.join()
-            
-        pass
+            thread.join()            
+        Order_management(broker_name,broker_session).calculate_pl()
 
-    else:
-        print(f"not getting time : {current_time}\n")
 
 
 
@@ -124,7 +121,7 @@ if __name__ == '__main__':
         if is_market_time() and not hoilyday and env.option_chain_set:
             current_time = dt.strftime(get_ist_now(), '%H:%M')
             is_socket_open = env.socket_open   
-            print(is_socket_open)
+            # print(is_socket_open)
              
             if is_socket_open and (current_time in event_list ):
                 placing(current_time = current_time, broker_name = broker_name, broker_session = broker_session)

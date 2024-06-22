@@ -113,8 +113,10 @@ def trailing_points():
             
 def get_db():
     mongo_db = pymongo.MongoClient(env_variables.mongodb_link)
-    entry_id= mongo_db[env_variables.database_name]
-    return entry_id
+    data = mongo_db[env_variables.database_name]
+    data = data[str(dt.today().date())]
+    # data = data['2024-06-20']
+    return data
 
 def set_coloumn_name(df,broker_name):
     if  broker_name == 'kotak_neo' :
@@ -317,6 +319,7 @@ class Fields :
     recording = 'recording'
     index = 'index'
     charges = 'charges'
+    pl = 'pl'
     drift_points = 'drift_points'
     drift_rs = 'drift_rs'
     transaction_type = 'transaction_type'
