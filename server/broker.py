@@ -250,21 +250,26 @@ def get_token(ticker):
     return ticker_to_token[ticker]
 
 def is_order_rejected_func(order_id,broker_session,broker_name):
-    if broker_name == 'kotak_neo' :
-        if order_id != 0 : 
-            time.sleep(5)
-            order_details =  Order_details(broker_session, broker_name)
-            is_not_empty, all_orders,filled_order, pending_order = order_details.order_book()
-            order_status = all_orders[all_orders['order_id'] == str(order_id)].iloc[0]
+    time.sleep(5)
+    order_details =  Order_details(broker_session, broker_name)
+    is_not_empty, all_orders,filled_order, pending_order = order_details.order_book()
+    order_status = all_orders[all_orders['order_id'] == str(order_id)].iloc[0]
+    
+    if order_id != 0 : 
+        if broker_name == 'kotak_neo' :
             if order_status['order_status'] == 'rejected':
-                if 'MIS PRODUCT TYPE BLOCKED' in order_status["message"] or 'MIS TRADING NOT ALLOWED' in order_status["message"]: 
+                if ('MIS PRODUCT TYPE BLOCKED' in order_status["message"]) or ('MIS TRADING NOT ALLOWED' in order_status["message"]) : 
                     emergency_bot(f'Order rejected\nOrder ID : {order_id}\nProduct Type : {env.product_type}\nMessage : {order_status["message"]}\nPlacing NRML order..')
                     env.product_type = 'NRML'
                     return True, True
+                # add more rejection types here
                 else : 
                     emergency_bot(f'Order rejected\nOrder ID : {order_id}\nProduct Type : {env.product_type}\nMessage : {order_status["message"]}')
                     return True, False
                     
             else : 
                 return False, False
-        return False , False
+        # Add other broker code here
+            
+    else : 
+        return True , False
