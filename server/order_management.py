@@ -350,16 +350,19 @@ class Order_management :
         stratagy_df = pd.DataFrame({F.stratagy: [F.NineTwenty, F.NineThirty, F.NineFourtyFive, F.TenThirty, F.Eleven]})
 
         df = pd.DataFrame(self.database.find())
-        df_stratagy_cal = df[[F.stratagy,'pl',F.drift_points,F.drift_rs]].groupby(F.stratagy).sum().reset_index()
+        df_stratagy_cal = df[[F.stratagy,'pl',F.drift_points,F.drift_rs,F.entry_order_count,F.exit_order_count,F.index]]
+        df_stratagy_cal = df_stratagy_cal.groupby(F.stratagy).agg({'pl' : 'sum', F.drift_points : 'sum', F.drift_rs : 'sum',F.entry_order_count : 'sum',F.exit_order_count : 'sum' ,F.index : 'count' }).reset_index()
         df_stratagy_cal = stratagy_df.merge(df_stratagy_cal,on=F.stratagy,how= 'left')
+        df_stratagy_cal['total_count'] = df_stratagy_cal[F.entry_order_count] +  df_stratagy_cal[F.exit_order_count]
 
         # Total Calculation for the day
         total_pl = df_stratagy_cal['pl'].sum()
         total_drift_points = df_stratagy_cal[F.drift_points].sum()
         total_drift_rs = df_stratagy_cal[F.drift_rs].sum()
+        total_modifications = df_stratagy_cal['total_count'].sum()
         total_orders = len(df)
 
-        message  = f'\nInstrument : {env.index}\nTotal PL : {pl}\nTotal Drift-Points : {total_drift_points}\nTotal Drift in RS : {total_drift_rs}\nTotal Orders : {total_orders}\n{25 * "-"}\nStratagy Wise Report :\n{25 * "-"}\n'
+        message  = f'\nInstrument : {env.index}\nTotal PL : {pl}\nTotal Drift-Points : {total_drift_points}\nTotal Drift in RS : {total_drift_rs}\nTotal Orders : {total_orders}\nTotal Modifications : {total_modifications}\n{25 * "-"}\nStratagy Wise Report :\n{25 * "-"}\n'
         for index,row in df_stratagy_cal.iterrows():
-            message += (f'Strtatagy : {row[F.stratagy]}\nPL : {row["pl"]}\nDrift in Points : {row[F.drift_points] }\nDrift in RS : {row[F.drift_rs] }\n{25 * "-"}\n')
+            message += (f'Strtatagy : {row[F.stratagy]}\nPL : {row["pl"]}\nDrift in Points : {row[F.drift_points]}\nDrift in RS : {row[F.drift_rs]}\nOrders : {row[F.index]}\nModifications  : {(row["total_count"])}\n{25 * "-"}\n')
         logger_bot(message)
