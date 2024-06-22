@@ -201,7 +201,8 @@ class Order_management :
                 for index,row in pending_orders_db.iterrows():
                     count = row[F.entry_order_count]
                     if (row[F.entry_orderid]  not in pending_order[F.order_id].tolist()):
-                        self.database [str(self.date )].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {F.entry_time : str(dt.now()), F.entry_orderid_status: F.closed, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count+1 } }) # it will update if sl hit  modificarion status to slhit
+                        entry_price = filled_order[filled_order[F.order_id] == row[F.entry_orderid]].iloc[0][F.price]
+                        self.database [str(self.date )].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {F.entry_time : str(dt.now()), F.entry_price : entry_price, F.entry_orderid_status: F.closed, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count+1 } }) # it will update if sl hit  modificarion status to slhit
                         logger_bot(f'Placed in broker end \nOrder id : {row[F.entry_orderid]} \nOption Type : {row[F.option_type]}\nStratagy : {row[F.stratagy]}')
                         time.sleep(1)
                         continue
@@ -221,7 +222,7 @@ class Order_management :
                         is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
                         if is_modified and not is_order_rejected:
                             self.database [str(self.date )].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {F.entry_price : new_price , F.entry_order_count: count + 1 } }) # it will update updated price to database
-                            logger_bot(f"Entry price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {new_price} \nRemaning Qty : {remaning_qty}\nSide : {row[F.option_type]}\nStratagy : {row[F.option_type]}")
+                            logger_bot(f"Entry price modified \nMessage :{order_number} order modified\nOld Price : {price}New Price : {new_price} \nRemaning Qty : {remaning_qty}\nSide : {row[F.option_type]}\nStratagy : {row[F.stratagy]}")
                             
                         elif not is_modified :
                             emergency_bot(f'Not able to modify sl in Smart Execuator(kotak.modify_order)\nMessage : {message}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}')
