@@ -37,12 +37,12 @@ class Login(login_Engine):
             
 
     def login(self):
-        if   self.broker_name == F.kotak_neo :
+        if self.broker_name == F.kotak_neo :
             broker_session = neo_api_client.NeoAPI(consumer_key=env.consumer_key,
                                consumer_secret=env.secretKey, environment='prod',
                                access_token=None, neo_fin_key=None)
             broker_session.login(mobilenumber=env.mobileNumber, password=env.login_password)
-            session = broker_session.session_2fa(env.two_factor_code)     
+            session = broker_session.session_2fa(env.two_factor_code)
             return session[F.data]['greetingName'],broker_session 
             
         else : 
@@ -56,7 +56,7 @@ class Order_details :
         self.broker_name = broker_name
 
     def order_book(self):
-        if  self.broker_name == F.kotak_neo   :
+        if self.broker_name == F.kotak_neo :
             responce = self.broker_session.order_report()
             # print(responce[F.data][0])
             if responce[F.stCode] == 200 : 
@@ -67,7 +67,7 @@ class Order_details :
                     filled_order = all_orders[all_orders['order_status']=='complete']
                     # pending_order = all_orders[all_orders['order_status'] == 'open']
                     pending_order = all_orders[all_orders['order_status'].isin(['trigger pending','open'])]
-                    return  True,all_orders,filled_order,pending_order
+                    return True,all_orders,filled_order,pending_order
                 except KeyError:
                     print('KeyError in order_book')
                     # return all_orders,filled_order,pending_order
@@ -77,11 +77,11 @@ class Order_details :
                     return False,all_orders,filled_order,pending_order
             
     def position_book(self):
-        if   self.broker_name == F.kotak_neo   :
+        if self.broker_name == F.kotak_neo :
             responce = self.broker_session.positions()
             if responce[F.stCode] == 200 : 
                 try :
-                    responce_code =  None if responce[F.stCode] == 200 else emergency_bot(f"Not able to get position_book due to : {order_staus_dict[responce[F.stCode]]}")
+                    responce_code = None if responce[F.stCode] == 200 else emergency_bot(f"Not able to get position_book due to : {order_staus_dict[responce[F.stCode]]}")
                     all_positions = pd.DataFrame(responce[F.data]) [['trdSym','type','optTp','buyAmt' ,'prod','exSeg','tok','flBuyQty','flSellQty','sellAmt','stkPrc','expDt',]]
                     all_positions = set_coloumn_name(all_positions, self.broker_name)
                     option_positions = all_positions[all_positions[F.option_type].isin([F.CE, F.PE])]
@@ -112,7 +112,7 @@ class Socket_handling:
                 with self._lock:
                             self.future_token = future_token
                             self.is_prepared = is_prepared
-            except Exception as e  :
+            except Exception as e :
                 emergency_bot(f'Facing Issue in prepare_option_chain_Future_token \nissue : {e}')
                     
         if self.broker_name == F.kotak_neo : 
@@ -171,7 +171,7 @@ class Socket_handling:
 
     def prepare_option_chain_Future_token(self,expiry_base_instrument): 
         if self.broker_name == F.kotak_neo : 
-            script_master =   [i for i in  self.broker_session.scrip_master()['filesPaths']  if 'nse_fo' in  i]   
+            script_master =   [i for i in  self.broker_session.scrip_master()['filesPaths'] if 'nse_fo' in i]
             df = pd.read_csv(script_master[0],low_memory=False)
             df.columns=[i.strip() for i in df.columns]
             df = df[df['pSymbolName'].isin(['NIFTY', 'FINNIFTY','BANKNIFTY' , 'MIDCPNIFTY'])][['pSymbol','pSymbolName','pTrdSymbol','pOptionType','pScripRefKey','lLotSize','lExpiryDate','dStrikePrice;', 'iMaxOrderSize', 'iLotSize', 'dOpenInterest']]
@@ -234,15 +234,15 @@ def get_option_chain():
     return option_chain
 
 def get_symbol(option_type,option_price,broker_name):
-    if   broker_name == F.kotak_neo   :
+    if broker_name == F.kotak_neo :
         chain = pd.DataFrame(get_option_chain()).T
-        chain = chain[(chain['v']>100000)&(chain['oi']>100000)]
+        chain = chain[(chain['v'] > 100000) & (chain['oi'] > 100000)]
         ce = chain[chain[F.option_type]==option_type]
         strike = ce[ce['ltp']<=option_price].sort_values('ltp',ascending=False).iloc[0]
         return strike['ticker'], strike['ltp']
 
 def get_ltp(instrument_token,broker_name):
-    if   broker_name == F.kotak_neo   :
+    if broker_name == F.kotak_neo :
         ltp = option_chain[instrument_token]['ltp']
         return ltp
     
@@ -251,7 +251,7 @@ def get_token(ticker):
 
 def is_order_rejected_func(order_id,broker_session,broker_name):
     time.sleep(5)
-    order_details =  Order_details(broker_session, broker_name)
+    order_details = Order_details(broker_session, broker_name)
     is_not_empty, all_orders,filled_order, pending_order = order_details.order_book()
     order_status = all_orders[all_orders['order_id'] == str(order_id)].iloc[0]
     

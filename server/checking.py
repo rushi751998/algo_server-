@@ -20,7 +20,7 @@ class Checking:
     def check(self):
         is_not_empty = False
         try : 
-            order_details =  Order_details(self.broker_session,self.broker_name)
+            order_details = Order_details(self.broker_session,self.broker_name)
             is_not_empty, all_orders, filled_order, pending_order = order_details.order_book()
             all_positions, open_position, closed_position = order_details.position_book()
         except : 
@@ -111,17 +111,17 @@ class Checking:
             if i[F.stratagyy] == F.NineTwenty:
                 for j in (i[F.recording]):
                     NineTwenty.append(j)
-                self.database.update_one({F.stratagyy : {'$eq"':  F.NineTwenty}}, {F.recording : NineTwenty })
+                self.database.update_one({F.stratagyy : {'$eq"': F.NineTwenty}}, {F.recording : NineTwenty })
 
             elif i[F.stratagy] == F.NineThirty:
                 for j in (i[F.recording]):
                     NineThirty.append(j)
-                self.database.update_one({F.stratagy : {'$eq"':  F.NineThirty}}, {F.recording : NineThirty })
+                self.database.update_one({F.stratagy : {'$eq"': F.NineThirty}}, {F.recording : NineThirty })
 
             elif i[F.stratagy] == F.NineFourtyFive:
                 for j in (i[F.recording]):
                     NineFourtyFive.append(j)
-                self.database.update_one({F.stratagy : {'$eq"':  F.NineFourtyFive}}, {F.recording : NineFourtyFive })
+                self.database.update_one({F.stratagy : {'$eq"': F.NineFourtyFive}}, {F.recording : NineFourtyFive })
 
         # print( F.NineTwenty , NineTwenty)
         combine_pl = NineTwenty + NineThirty + NineFourtyFive
@@ -133,7 +133,7 @@ class Checking:
         NineTwenty_db = self.database.find({F.stratagy : {'$eq':stratagy}})
         pending_order_list = pending_order[F.order_id].to_list()
         for i in NineTwenty_db:
-            if i[F.exit_orderid] not in pending_order_list and (i[F.exit_orderid_status] ==  F.open) :
+            if i[F.exit_orderid] not in pending_order_list and (i[F.exit_orderid_status] == F.open) :
                 sl_price = filled_order[filled_order[F.order_id] == i[F.exit_orderid]].iloc[0][F.price]
                 exit_time = self.current_time
                 self.database.update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_order_execuation_type : F.limit_order, F.exit_price : float(sl_price), F.exit_time : str(exit_time)}} )
@@ -146,7 +146,7 @@ class Checking:
         pending_order_list = pending_order[F.order_id].to_list()
         for i in NineThirty_db:
             count = i[F.exit_order_count]
-            if (i[F.exit_orderid] not in pending_order_list) and (i[F.exit_orderid_status] ==  F.open) and (i[F.exit_reason] == '---'): # re-entry pending order place
+            if (i[F.exit_orderid] not in pending_order_list) and (i[F.exit_orderid_status] == F.open) and (i[F.exit_reason] == '---'): # re-entry pending order place
                 #----------------------------------- Upadate 1st order details ---------------------------------------------------------
                 sl_price = filled_order[filled_order[F.order_id] == i[F.exit_orderid]].iloc[0][F.price]
                 self.database.update_one({F.exit_orderid : i[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_price : float(sl_price), F.exit_order_execuation_type : F.limit_order, F.exit_time : str(self.current_time), F.exit_order_count : count + 1 } } )
@@ -211,10 +211,10 @@ class Checking:
                 #------------- Place new re-entry stoploss --------------
 
                 if i[F.transaction_type] == F.Buy:
-                    transaction_type =  F.Sell
+                    transaction_type = F.Sell
 
                 elif i[F.transaction_type] == F.Sell:
-                    transaction_type =  F.Buy
+                    transaction_type = F.Buy
 
                 tag = i[F.entry_tag]
                 ticker = i[F.ticker]
@@ -223,7 +223,7 @@ class Checking:
                 trigger_price = stoploos - 0.1
                 is_order_placed, order_number, product_type, new_tag = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price, qty = qty, ticker = ticker , transaction_type = transaction_type, tag = tag + '_sl')
                 if is_order_placed : 
-                    self.database.update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.exit_orderid : order_number,  F.exit_orderid_status : F.re_entry_open, F.entry_order_execuation_type : F.limit_order, F.exit_price : stoploos, F.exit_price_initial : stoploos , F.exit_tag : tag + '_sl'} } )
+                    self.database.update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.exit_orderid : order_number, F.exit_orderid_status : F.re_entry_open, F.entry_order_execuation_type : F.limit_order, F.exit_price : stoploos, F.exit_price_initial : stoploos , F.exit_tag : tag + '_sl'} } )
                     logger_bot(f"re-entry Sl order palced Sucessfully !!! \nMessage : {order_number}\nTicker : {i[F.ticker]}\nPrice : {stoploos}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}")
                 elif not is_order_placed:
                     self.database.update_one({"entry_tag": tag}, {"$set": {F.exit_orderid_status : F.rejected }})
@@ -252,14 +252,14 @@ class Checking:
             if (i[F.exit_orderid_status] == F.open):
                 #--------------- Trail sl ----------------------------
                 new_ltp = get_ltp(i[F.token],self.broker_name)
-                points =  trailing_points()
+                points = trailing_points()
                 net_points = (i["ltp"] - new_ltp)//points
                 # print(net_points)
                 if net_points > 0:
-                    new_sl = i[F.exit_price] -  net_points
+                    new_sl = i[F.exit_price] - net_points
                     is_modified,order_number,message = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = i[F.exit_orderid], new_price = new_sl, quantity = i[F.qty])
                     is_order_rejected = is_order_rejected_func(order_number, self.broker_session, self.broker_name)
-                    if is_modified and not is_order_rejected :  
+                    if is_modified and not is_order_rejected :
                         self.database.update_one({F.entry_orderid : {'$eq' : i[F.entry_orderid]}},{"$set" : {F.exit_price : new_sl, F.exit_price_initial : new_sl, "ltp" : new_ltp}})
                         logger_bot(f"SL trailed from {i[F.exit_price]} to {new_sl} of {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nSide : {i[F.option_type]}\nStratagy : {i[F.stratagy]}")
 
@@ -284,8 +284,8 @@ class Checking:
                 # print(f'order_id = {i[F.exit_orderid]},new_price={new_price},quantity = {qty}')
                 is_modified, order_number,message = OrderExecuation(self.broker_name, self.broker_session).modify_order(order_id = i[F.exit_orderid], new_price = new_price, quantity = qty)
                 is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
-                if is_modified and not is_order_rejected :  
-                    logger_bot(f"ltp is above stoploss  \nMessage :{order_number} order modified\nTicker: {i[F.ticker]}\nPrice : {new_price}")
+                if is_modified and not is_order_rejected :
+                    logger_bot(f"ltp is above stoploss \nMessage :{order_number} order modified\nTicker: {i[F.ticker]}\nPrice : {new_price}")
                     self.database.update_one({F.exit_orderid : i[F.exit_orderid]}, { "$set": {F.exit_price : new_price, F.exit_order_count : count + 1 } }) # it will update updated price to database
                 else : 
                     emergency_bot(f'Not able to modify sl in check_ltp_above_sl\nMessage : {order_number}') 

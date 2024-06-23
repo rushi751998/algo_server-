@@ -33,9 +33,9 @@ class OrderExecuation :
                 return False, 0, env.product_type , tag
         
     def modify_order(self, order_id, new_price, quantity, trigger_price = None, order_type = "SL"):
-        if self.broker_name  == F.kotak_neo: 
-            responce = self.broker_session.modify_order(order_id = order_id, price = str(new_price), quantity = str(quantity), trigger_price =  str(trigger_price if trigger_price != None else new_price-0.05), validity = "DAY", order_type = order_type, amo = "")
-            # print(f'modify_order  : {responce}')
+        if self.broker_name == F.kotak_neo: 
+            responce = self.broker_session.modify_order(order_id = order_id, price = str(new_price), quantity = str(quantity), trigger_price = str(trigger_price if trigger_price != None else new_price-0.05), validity = "DAY", order_type = order_type, amo = "")
+            # print(f'modify_order : {responce}')
             if responce[F.stCode] == 200 :
                 return True,responce[F.nOrdNo],"Placed Sucessfully"
             else : 
