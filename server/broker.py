@@ -215,7 +215,7 @@ class Socket_handling:
                 
                 option_tickers = option_tickers[(option_tickers['days_to_expire'] == option_tickers['days_to_expire'].min())]
             env.index = index
-            print(index)
+            # print(index)
             df = pd.concat([option_tickers, future_tickers])
             df.reset_index(inplace=True,drop=True)
 
@@ -260,7 +260,6 @@ def is_order_rejected_func(order_id,broker_session,broker_name):
             if order_status['order_status'] == 'rejected':
                 if ('MIS PRODUCT TYPE BLOCKED' in order_status["message"]) or ('MIS TRADING NOT ALLOWED' in order_status["message"]) : 
                     emergency_bot(f'Order rejected\nOrder ID : {order_id}\nProduct Type : {env.product_type}\nMessage : {order_status["message"]}\nPlacing NRML order..')
-                    env.product_type = 'NRML'
                     return True, True
                 # add more rejection types here
                 else : 

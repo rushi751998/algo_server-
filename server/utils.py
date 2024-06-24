@@ -111,10 +111,10 @@ def trailing_points():
         
     return points
             
-def get_db():
+def database():
     mongo_db = pymongo.MongoClient(env_variables.mongodb_link)
     data = mongo_db[env_variables.database_name]
-    data = data[str(dt.today().date())]
+    # data = data[str(dt.today().date())]
     # data = data['2024-06-20']
     return data
 
@@ -375,6 +375,7 @@ def emergency_bot(bot_message):
     response = requests.get(send_text)
     if response.status_code != 200:
         alert_bot("emergency_bot not able to send message")
+        print(response)
         
 def alert_bot(bot_message_ : str,send_image : bool = False):
     """ It is used for sending price alert"""
