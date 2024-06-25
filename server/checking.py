@@ -5,6 +5,7 @@ from server.execuations import OrderExecuation
 import pandas as pd
 from  datetime import datetime as dt
 import pymongo
+import time
 from server.order_management import Order_management
 from server.utils import database , Fields as F, trailing_points,env_variables as env
 from server.utils import emergency_bot,logger_bot
@@ -95,6 +96,7 @@ class Checking:
                 pl =  round((i[F.entry_price] - ltp) * i[F.qty])
                 # print('order_id: ',i[F.exit_orderid] )
                 self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]},{'$push' : {F.recording: {'Time': self.current_time, 'pl' : pl}}}) #procuction
+            time.sleep(1)
             
                 # entry_id[str(date)].update_one({F.ticker :i[F.ticker]},{'$push': {F.recording: {'Time':current_time , 'pl': pl,'datetime':dt.now()}}})
 
@@ -139,8 +141,7 @@ class Checking:
                 exit_time = self.current_time
                 self.database[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_order_execuation_type : F.limit_order, F.exit_price : float(sl_price), F.exit_time : str(exit_time)}} )
                 logger_bot(f'Sl hit {i[F.exit_orderid]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}')
-            else:
-                pass
+            time.sleep(1)
         
     def re_entry_management(self,pending_order,filled_order,stratagy):
         NineThirty_db = self.database[str(self.date)].find({F.stratagy : {'$eq': stratagy}})
@@ -234,7 +235,9 @@ class Checking:
                 sl_price = filled_order[filled_order[F.order_id] == i[F.exit_orderid]].iloc[0][F.price]
                 self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_order_execuation_type : F.limit_order, F.exit_price : float(sl_price), F.exit_time : str(self.current_time), F.exit_order_count : count + 1} } )
                 logger_bot(f"re-entry Sl hit !!! \nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nPrice : {sl_price}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}")
-                         
+            
+            time.sleep(1)
+                                     
     def wait_n_trade(self,pending_order,filled_order,stratagy):
         query = {F.stratagy : {'$eq': stratagy}}
         NineFourtyFive_db = self.database[str(self.date)].find(query)
@@ -268,6 +271,7 @@ class Checking:
                 sl_price = filled_order[filled_order[F.order_id] == i[F.exit_orderid]].iloc[0][F.price]
                 self.database[str(self.date)].update_one({F.entry_orderid :{'$eq' : i[F.entry_orderid]}},{"$set" : {F.exit_orderid_status : F.closed, F.exit_price : sl_price, F.exit_reason : F.sl_hit, F.exit_order_execuation_type : F.limit_order, F.exit_order_count : count + 1 , F.exit_time : self.current_time}})
                 logger_bot(f"Sl hit !!! \nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nPrice : {sl_price}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}")
+            time.sleep(1)                
         
     def check_ltp_above_sl(self,pending_order,filled_order):
         myquery = {'$or': [{F.exit_orderid_status : F.open},{F.exit_orderid_status : F.re_entry_open}]}
@@ -289,10 +293,8 @@ class Checking:
                     logger_bot(f"ltp is above stoploss \nMessage :{order_number} order modified\nTicker: {i[F.ticker]}\nPrice : {new_price}")
                 else : 
                     emergency_bot(f'Not able to modify sl in check_ltp_above_sl\nMessage : {message}') 
+                time.sleep(2)
 
-            else :
-                # print('-----------',ltp,sl_price,i[F.exit_orderid])
-                pass
     
     def rejected_order_management(self):
         myquery = {'$or': [{F.exit_orderid_status : F.rejected},{F.entry_orderid_status : F.rejected}]}

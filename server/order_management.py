@@ -204,7 +204,7 @@ class Order_management :
                     if (row[F.entry_orderid] not in pending_order[F.order_id].tolist()) and (row[F.entry_orderid_status] == F.open) :
                         entry_price = filled_order[filled_order[F.order_id] == row[F.entry_orderid]].iloc[0][F.price]
                         self.database[str(self.date)].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {F.entry_time : self.time, F.entry_price : float(entry_price), F.entry_orderid_status: F.closed, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count + 1}}) # it will update if sl hit  modificarion status to slhit
-                        logger_bot(f'Placed in broker end \nOrder id : {row[F.entry_orderid]}\nOption Type : {row[F.option_type]}\nExecuation Type : {row[F.entry_order_execuation_type]}\nStratagy : {row[F.stratagy]}')
+                        logger_bot(f'Placed in broker end \nOrder id : {row[F.entry_orderid]}\nOption Type : {row[F.option_type]}\nExecuation Type : {F.limit_order}\nStratagy : {row[F.stratagy]}')
                         time.sleep(5)
                     elif (count < 5) and (row[F.entry_orderid_status] == F.open) :
                         ltp = get_ltp(row[F.token],self.broker_name)
