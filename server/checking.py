@@ -207,7 +207,7 @@ class Checking:
             if (i[F.entry_orderid] not in pending_order_list) and (i[F.entry_orderid_status] == F.re_entry_open) : 
                 # Check is re-entry pending order is threre if not place sl for re-entry 
                 self.database[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.entry_orderid_status : F.closed, F.entry_time : self.current_time, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count + 1 } } )
-
+                logger_bot(f"re-entry placed broker end...\Order id : {i[F.entry_orderid]}\nTicker : {i[F.ticker]}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}")
                 #------------- Place new re-entry stoploss --------------
 
                 if i[F.transaction_type] == F.Buy:

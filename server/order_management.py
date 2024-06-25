@@ -70,12 +70,12 @@ class Order_management :
                             }
 
                     self.database[str(self.date)].insert_one(order)
-                    logger_bot(f"limit order placed... \nStratagy : {stratagy}\nOption Type : {option_type}\nMessage : {order_number}")
+                    logger_bot(f"limit order placed... \nStratagy : {stratagy}\nOption Type : {option_type}\nProduct Type : {product_type}\nMessage : {order_number}")
                     self.smart_executer(stratagy = stratagy, exit_percent = exit_percent, option_type = option_type, entry_orderid = order_number )
 
 
             elif not is_order_placed :
-                emergency_bot(f'Not able to place {stratagy} order \nmessage : {message}')
+                emergency_bot(f'Not able to place {stratagy} order \nmessage : {order_number}')
 
         if stratagy in [F.NineThirty, F.TenThirty, F.Eleven]:
             trigger_price = price + 0.05
@@ -195,7 +195,7 @@ class Order_management :
         while True:
             order_details = Order_details(self.broker_session,self.broker_name)
             is_not_empty, all_orders, filled_order, pending_order = order_details.order_book()
-            myquery = {F.entry_orderid: { "$eq": entry_orderid }}
+            myquery = {F.entry_orderid: { "$eq": entry_orderid }, F.entry_orderid_status: { "$eq": F.open }}
             db_data = self.database[str(self.date)].find(myquery)
             pending_orders_db = pd.DataFrame(db_data)
             if len(pending_orders_db) != 0 :
@@ -215,22 +215,22 @@ class Order_management :
                         else:
                             new_price = round(abs(price) - abs(ltp-price)/2,1)
                         # logger_bot(f" Modification of : {row[F.entry_orderid]}\nltp :{ltp} old_price:{price} new_price :{new_price} count : {count}\n\n")
-                        # try : 
-                        remaning_qty = all_orders[all_orders[F.order_id] == row[F.entry_orderid]].iloc[0][F.qty]
-                        is_modified, order_number, message = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.entry_orderid], new_price = new_price ,quantity = remaning_qty)
-                        is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
-                        if is_modified and not is_order_rejected:
-                            self.database[str(self.date)].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {F.entry_price : new_price , F.entry_order_count: count + 1 } }) # it will update updated price to database
-                            logger_bot(f"Entry price modified \nMessage :{order_number} order modified\nOld Price : {price}New Price : {new_price} \nRemaning Qty : {remaning_qty}\nSide : {row[F.option_type]}\nStratagy : {row[F.stratagy]}")
-                            
-                        elif not is_modified :
-                            emergency_bot(f'Not able to modify sl in Smart Execuator(kotak.modify_order)\nMessage : {message}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}')
+                        try : 
+                            remaning_qty = pending_order[pending_order[F.order_id] == row[F.entry_orderid]].iloc[0][F.qty]
+                            is_modified, order_number, message = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.entry_orderid], new_price = new_price ,quantity = remaning_qty)
+                            is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
+                            if is_modified and not is_order_rejected:
+                                self.database[str(self.date)].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {F.entry_price : new_price , F.entry_order_count: count + 1 } }) # it will update updated price to database
+                                logger_bot(f"Entry price modified \nMessage :{order_number} order modified\nOld Price : {price}New Price : {new_price} \nRemaning Qty : {remaning_qty}\nSide : {row[F.option_type]}\nStratagy : {row[F.stratagy]}")
                                 
-                        # except Exception as e : 
-                        #     emergency_bot(f'Not able to modify sl in Smart Execuator(kotak.modify_order)\nMessage : {e}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}')
+                            elif not is_modified :
+                                emergency_bot(f'Not able to modify sl in Smart Execuator(kotak.modify_order)\nMessage : {message}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}')
+                                    
+                        except Exception as e : 
+                            emergency_bot(f'Not able to modify sl in Smart Execuator(kotak.modify_order)\nMessage : {e}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}')
 
                     else:
-                        remaning_qty = all_orders[all_orders[F.order_id] == row[F.entry_orderid]].iloc[0][F.qty]
+                        remaning_qty = pending_order[pending_order[F.order_id] == row[F.entry_orderid]].iloc[0][F.qty]
                         is_modified, order_number, message = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.entry_orderid], new_price = 0 ,quantity = remaning_qty, trigger_price = 0, order_type = "MKT")
                         is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
                         if is_modified and not is_order_rejected:
@@ -280,7 +280,7 @@ class Order_management :
             if len(pending_orders_db) != 0:
                 for index,row in pending_orders_db.iterrows():
                     count = row[F.exit_order_count]
-                    if (row[F.exit_orderid]  not in pending_order[F.order_id].tolist()):
+                    if (row[F.exit_orderid]  not in pending_order[F.order_id].tolist()) and (row[F.exit_orderid_status] == F.open) :
                         exit_price = filled_order[filled_order[F.order_id] == row[F.exit_orderid]].iloc[0][F.price]
                         self.database[str(self.date)].update_one({F.exit_orderid : row[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.day_end, F.exit_price : float(exit_price), F.exit_time : self.time, F.exit_order_execuation_type : F.limit_order, F.exit_order_count : count+1} } )
                         logger_bot(f'Day end exit order \nOrder id : {row[F.exit_orderid]}\nOption Type : {row[F.option_type]}\nExecuation Type : {row[F.exit_order_execuation_type]}\nStratagy : {row[F.stratagy]}')
@@ -295,7 +295,7 @@ class Order_management :
                         #     new_price = round(abs(price) - abs(ltp - price)/2 ,1)
                         # print(f"ltp :{ltp} old_price:{price} new_price :{new_price} count : {count}\n\n")
                         try : 
-                            remaning_qty = all_orders[all_orders[F.order_id] == row[F.entry_orderid]].iloc[0][F.qty]
+                            remaning_qty = pending_order[pending_order[F.order_id] == row[F.entry_orderid]].iloc[0][F.qty]
                             is_modified, order_number, message = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.exit_orderid], new_price = ltp ,quantity = remaning_qty)
                             if is_modified :
                                 if count == 0 :
@@ -311,7 +311,7 @@ class Order_management :
                             emergency_bot(f'Not able to modify sl in exit_orders_dayend(kotak.modify_order)\nMessage : {e}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}')
                         
                     else:
-                        remaning_qty = all_orders[all_orders[F.order_id] == row[F.entry_orderid]].iloc[0][F.qty]
+                        remaning_qty = pending_order[pending_order[F.order_id] == row[F.entry_orderid]].iloc[0][F.qty]
                         is_modified, order_number, message = OrderExecuation(self.broker_name, self.broker_session).modify_order(order_id = row[F.exit_orderid], new_price = 0, quantity = remaning_qty, trigger_price = 0, order_type = "MKT")
                         if is_modified :
                             # logger_bot(f"Executed at Market Order \nMessage :{order_number}")

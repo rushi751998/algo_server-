@@ -32,7 +32,7 @@ class OrderExecuation :
                         
                 else :
                     # return MIS order
-                    return False, responce['errMsg'], env.product_type, new_tag
+                    return True, responce[F.nOrdNo], env.product_type, new_tag
                     
             else :
                 return False, 0, env.product_type , tag
