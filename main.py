@@ -115,7 +115,7 @@ if __name__ == '__main__':
     while True:
         date = dt.today().date()
         start_time = get_ist_now().second
-        print(f'start time : {get_ist_now()}')
+        # print(f'start time : {get_ist_now()}')
         
         if not env.env_variable_initilised or (env.today != date):
             is_env = env.load_env_variable()
@@ -146,7 +146,7 @@ if __name__ == '__main__':
                 env.thread_list.append(start_socket_thread)
                 start_socket_thread.start()
                 
-        print(f'end time : {get_ist_now()}\n')
+        # print(f'end time : {get_ist_now()}\n')
         time.sleep(60 - (get_ist_now().second - start_time))
                                   
         if not is_market_time() or hoilyday:
