@@ -247,7 +247,7 @@ class Order_management :
                 pending_orders_db = self.database[str(self.date)].find(myquery)
                 for i in pending_orders_db:
                     # print(f"ticker={i[F.ticker]},qty={i[F.qty]},transaction_type={i[F.transaction_type]},avg_price={(i[F.entry_price])},exit_percent={exit_percent},tag = {tag}")
-                    self.place_limit_sl(ticker = i[F.ticker], qty = i[F.qty], transaction_type_ = i[F.transaction_type], avg_price = (i[F.entry_price]), exit_percent = exit_percent, option_type = i[F.option_type], tag = i[F.entry_tag])
+                    self.place_limit_sl(ticker = i[F.ticker], qty = i[F.qty], transaction_type_ = i[F.transaction_type], avg_price = (i[F.entry_price]), exit_percent = i[F.exit_percent], option_type = i[F.option_type], tag = i[F.entry_tag])
                 break
 
     def place_limit_sl(self,ticker,qty,transaction_type_,avg_price,exit_percent,option_type,tag):
@@ -282,7 +282,7 @@ class Order_management :
                     count = row[F.exit_order_count]
                     if (row[F.exit_orderid]  not in pending_order[F.order_id].tolist()) and (row[F.exit_orderid_status] == F.open) :
                         exit_price = filled_order[filled_order[F.order_id] == row[F.exit_orderid]].iloc[0][F.price]
-                        self.database[str(self.date)].update_one({F.exit_orderid : row[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.day_end, F.exit_price : float(exit_price), F.exit_time : self.time, F.exit_order_execuation_type : F.limit_order, F.exit_order_count : count+1} } )
+                        self.database[str(self.date)].update_one({F.exit_orderid : row[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.day_end, F.exit_price : float(exit_price) , F.exit_price_initial : float(exit_price), F.exit_time : self.time, F.exit_order_execuation_type : F.limit_order, F.exit_order_count : count+1} } )
                         logger_bot(f'Day end exit order \nOrder id : {row[F.exit_orderid]}\nOption Type : {row[F.option_type]}\nExecuation Type : {row[F.exit_order_execuation_type]}\nStratagy : {row[F.stratagy]}')
                     elif count<5:
                         ltp = get_ltp(row[F.token],self.broker_name)

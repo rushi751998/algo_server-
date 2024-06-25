@@ -96,6 +96,12 @@ def sleep_till_next_day():
 def get_ist_now():
     return dt.now() + timedelta(0)
 
+def wait_until_next_minute():
+    now = dt.now()
+    next_minute = (now + timedelta(minutes=1)).replace(second=0, microsecond=0)
+    sleep_time = (next_minute - now).total_seconds()
+    time.sleep(sleep_time)
+
 def trailing_points():
     if env_variables.index == 'BANKNIFTY' : 
         points = 5
@@ -159,40 +165,41 @@ def get_qty_option_price(broker_name):
     re_entry_risk = 1875
     wait_trade_risk  = 1500
     lot_size = env_variables.lot_size
+    hedge_cost = 0
     
 
     if  broker_name == 'kotak_neo' : 
         if env_variables.index == 'BANKNIFTY' : 
             fifty_per_qty = lot_size
-            fifty_per_price = fifty_per_risk / lot_size
+            fifty_per_price = (fifty_per_risk / lot_size) + hedge_cost
             re_entry_qty = lot_size
-            re_entry_price = re_entry_risk / lot_size
+            re_entry_price = (re_entry_risk / lot_size) + hedge_cost
             wait_trade_qty  = lot_size  
-            wait_trade_price = wait_trade_risk / lot_size
+            wait_trade_price = (wait_trade_risk / lot_size) + hedge_cost
             
         elif env_variables.index == 'NIFTY' : 
             fifty_per_qty = lot_size
-            fifty_per_price = fifty_per_risk / lot_size
+            fifty_per_price = (fifty_per_risk / lot_size) + hedge_cost
             re_entry_qty = lot_size
-            re_entry_price = re_entry_risk / lot_size
+            re_entry_price = (re_entry_risk / lot_size) + hedge_cost
             wait_trade_qty  = lot_size  
-            wait_trade_price = wait_trade_risk / lot_size
+            wait_trade_price = (wait_trade_risk / lot_size) + hedge_cost
             
         elif env_variables.index == 'FINNIFTY' : 
             fifty_per_qty = lot_size
-            fifty_per_price = fifty_per_risk / lot_size
+            fifty_per_price = (fifty_per_risk / lot_size) + hedge_cost
             re_entry_qty = lot_size
-            re_entry_price = re_entry_risk / lot_size
+            re_entry_price = (re_entry_risk / lot_size) + hedge_cost
             wait_trade_qty  = lot_size  
-            wait_trade_price = wait_trade_risk / lot_size
+            wait_trade_price = (wait_trade_risk / lot_size) + hedge_cost
         
         elif env_variables.index == 'MIDCPNIFTY' : 
             fifty_per_qty = lot_size
-            fifty_per_price = fifty_per_risk / lot_size
+            fifty_per_price = (fifty_per_risk / lot_size) + hedge_cost
             re_entry_qty = lot_size
-            re_entry_price = re_entry_risk / lot_size
+            re_entry_price = (re_entry_risk / lot_size) + hedge_cost
             wait_trade_qty  = lot_size  
-            wait_trade_price = wait_trade_risk / lot_size
+            wait_trade_price = (wait_trade_risk / lot_size) + hedge_cost
             
     return fifty_per_qty, fifty_per_price, re_entry_qty, re_entry_price, wait_trade_qty, wait_trade_price
             
@@ -374,8 +381,10 @@ def emergency_bot(bot_message):
     send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
     response = requests.get(send_text)
     if response.status_code != 200:
-        alert_bot("emergency_bot not able to send message")
-        print(response)
+        bot_message = "emergency_bot not able to send message"
+        send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
+        logger_bot(bot_message)
+        # print(response)
         
 def alert_bot(bot_message_ : str,send_image : bool = False):
     """ It is used for sending price alert"""

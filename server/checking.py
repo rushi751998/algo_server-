@@ -246,7 +246,7 @@ class Checking:
                 logger_bot(f'Placed at broker-end  :  {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}')
                 #--------------- Place limit sl ----------------------------
                 tag = f"{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}"
-                Order_management(self.broker_name, self.broker_session).place_limit_sl(i[F.ticker], i[F.qty], i[F.transaction_type], i[F.entry_price], i[F.exit_percent], i[F.option_type], tag)
+                Order_management(self.broker_name, self.broker_session).place_limit_sl(ticker = i[F.ticker], qty = i[F.qty], transaction_type_ = i[F.transaction_type], avg_price = (i[F.entry_price]), exit_percent = i[F.exit_percent], option_type = i[F.option_type], tag = i[F.entry_tag])
                 ltp = get_ltp(i[F.token],self.broker_name)
                 self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.entry_orderid_status : F.closed ,F.entry_time : self.current_time, F.entry_order_execuation_type : F.limit_order, "ltp" : ltp, F.entry_order_count : count + 1}})
             if (i[F.exit_orderid_status] == F.open):
@@ -285,12 +285,10 @@ class Checking:
                 is_modified, order_number,message = OrderExecuation(self.broker_name, self.broker_session).modify_order(order_id = i[F.exit_orderid], new_price = new_price, quantity = qty)
                 is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
                 if is_modified and not is_order_rejected :
-                    logger_bot(f"ltp is above stoploss \nMessage :{order_number} order modified\nTicker: {i[F.ticker]}\nPrice : {new_price}")
                     self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]}, { "$set": {F.exit_price : new_price, F.exit_order_count : count + 1 } }) # it will update updated price to database
+                    logger_bot(f"ltp is above stoploss \nMessage :{order_number} order modified\nTicker: {i[F.ticker]}\nPrice : {new_price}")
                 else : 
-                    emergency_bot(f'Not able to modify sl in check_ltp_above_sl\nMessage : {order_number}') 
-                    
-
+                    emergency_bot(f'Not able to modify sl in check_ltp_above_sl\nMessage : {message}') 
 
             else :
                 # print('-----------',ltp,sl_price,i[F.exit_orderid])

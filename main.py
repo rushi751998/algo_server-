@@ -7,7 +7,9 @@ from server.utils import (get_ist_now,
                    sleep_till_next_day,
                    env_variables as env ,
                    database , Fields as F,
-                   get_qty_option_price)
+                   get_qty_option_price,
+                   wait_until_next_minute
+                   )
 
 from server.utils import emergency_bot, logger_bot
 from server.order_management import Order_management
@@ -114,7 +116,7 @@ if __name__ == '__main__':
 
     while True:
         date = dt.today().date()
-        start_time = get_ist_now().second
+        # start_time = get_ist_now().second
         # print(f'start time : {get_ist_now()}')
         
         if not env.env_variable_initilised or (env.today != date):
@@ -127,8 +129,7 @@ if __name__ == '__main__':
                 start_socket_thread = Thread(name = 'socket_thread', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : env.expiry_base_instrument,'broker_session': broker_session,'broker_name' : broker_name})
                 env.thread_list.append(start_socket_thread)
                 start_socket_thread.start()
-                # logger_bot('Socket thread Started')
-        # print(env.option_chain_set)
+                
         if is_market_time() and not hoilyday and env.option_chain_set:
             current_time = dt.strftime(get_ist_now(), '%H:%M')
             is_socket_open = env.socket_open
@@ -139,15 +140,13 @@ if __name__ == '__main__':
             if is_socket_open:
                 Checking(broker_session,broker_name).check()
                 
-                
             if not is_socket_open : 
                 start_socket_thread = Thread(name = 'socket_thread_restart', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : env.expiry_base_instrument,'broker_session': broker_session,'broker_name' : broker_name})
                 emergency_bot('Socket thread Re-started')
                 env.thread_list.append(start_socket_thread)
                 start_socket_thread.start()
                 
-        # print(f'end time : {get_ist_now()}\n')
-        time.sleep(60 - (get_ist_now().second - start_time))
+        # time.sleep(60 - (get_ist_now().second - start_time))
                                   
         if not is_market_time() or hoilyday:
             
@@ -162,3 +161,5 @@ if __name__ == '__main__':
                 ticker_to_token.clear()
                 emergency_bot("Market is Stopped, Catch You Tomorrow... !!")
                 sleep_till_next_day()
+                
+        wait_until_next_minute()

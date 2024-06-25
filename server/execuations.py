@@ -46,7 +46,7 @@ class OrderExecuation :
                     return True,responce[F.nOrdNo],"Placed Sucessfully"
 
             except Exception as e : 
-                return False,order_id , responce['Error']
+                return False,order_id , str(responce)
         
     def cancel_order(self, order_number):
         if self.broker_name == F.kotak_neo: 
