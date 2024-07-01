@@ -126,7 +126,6 @@ def database(day_tracker = False):
         data = mongo_db[f'Performance_{dt.now().year}'] 
     return data
         
-
 def set_coloumn_name(df,broker_name):
     if  broker_name == 'kotak_neo' :
         column_name_dict = {
@@ -164,14 +163,9 @@ def set_coloumn_name(df,broker_name):
     return df
 
 def get_qty_option_price(broker_name):
-    # fifty_per_risk = 2250
-    # re_entry_risk = 1875
-    # wait_trade_risk  = 1500
-    
-    fifty_per_risk = 500
-    re_entry_risk = 500
-    wait_trade_risk  = 500
-    
+    fifty_per_risk = env_variables.fifty_per_risk
+    re_entry_risk = env_variables.re_entry_risk
+    wait_trade_risk = env_variables.wait_trade_risk 
     lot_size = env_variables.lot_size
     hedge_cost = 0
     
@@ -222,6 +216,10 @@ class env_variables:
     index : str 
     expiry_base_instrument : bool
     product_type : str
+    
+    fifty_per_risk : float
+    re_entry_risk : float
+    wait_trade_risk  : float
     
     mongodb_link : str
     day_tracker : bool
@@ -282,6 +280,10 @@ class env_variables:
         # self.hoilydays =os.environ['hoilydays'] 
         self.exceptational_tradingdays =  ast.literal_eval(os.environ['exceptational_tradingdays'] )
         self.exceptational_hoilydays = ast.literal_eval(os.environ['exceptational_hoilydays'] )
+        
+        self.fifty_per_risk = float(os.environ['fifty_per_risk'])
+        self.re_entry_risk = float(os.environ['re_entry_risk'])
+        self.wait_trade_risk = float(os.environ['wait_trade_risk'])
         
         # self.login = dt.strftime(get_ist_now(),'%H:%M')
         # self.exit_orders = dt.strftime(get_ist_now(),'%H:%M')
@@ -390,7 +392,6 @@ class Fields :
     tag = 'tag'
     option_type = 'option_type'
     
-      
 def send_message(message,stratagy = None, emergency = False, send_image = False):
     telegram_api_dict = env_variables.telegram_api_dict
     current_time = get_ist_now()
