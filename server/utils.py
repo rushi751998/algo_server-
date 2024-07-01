@@ -10,6 +10,7 @@ import datetime
 import time
 import logging
 
+
 kotak_transaction_type_dict= {
                             'Buy' : 'B',
                             'Sell' : 'S'
@@ -63,7 +64,7 @@ def is_hoilyday() :
                     holiday_name = columns[2].text.strip()
                     hoilyday_dict[str(date_fetched)] = holiday_name
                 
-                # logger_bot(f'hoilyday_dict : {hoilyday_dict}')
+                # send_message(message = f'hoilyday_dict : {hoilyday_dict}')
                 if (date in hoilyday_dict) or (weekday in hoilyday_dict):
                     reason = hoilyday_dict[date] if date in hoilyday_dict else hoilyday_dict[weekday]
                     return True, reason
@@ -71,16 +72,16 @@ def is_hoilyday() :
                     return False, None
 
             else:
-                emergency_bot("Holiday table not found on the page.")
+                send_message(message = "Holiday table not found on the page.", emergency = True)
                 return False, False
     except Exception as e :     
-        emergency_bot("Failed to retrieve NSE holiday data. Status code: {e}")
+        send_message(message = "Failed to retrieve NSE holiday data. Status code: {e}", emergency = True)
         return False, False
         
 def is_market_time():
     current_time = dt.today().time()
-    start_time = time_(hour=9,minute=15,second=30)
-    end_time = time_(hour=15,minute=30,second=0)
+    start_time = time_(hour = 9, minute = 10, second = 0)
+    end_time = time_(hour = 15, minute = 30, second = 0)
     if (current_time > start_time) and (current_time < end_time):
         return True
     else : 
@@ -98,7 +99,7 @@ def get_ist_now():
 
 def wait_until_next_minute():
     now = dt.now()
-    next_minute = (now + timedelta(minutes=1)).replace(second=0, microsecond=0)
+    next_minute = (now + timedelta(minutes = 1)).replace(second = 0, microsecond = 0)
     sleep_time = (next_minute - now).total_seconds()
     time.sleep(sleep_time)
 
@@ -117,12 +118,14 @@ def trailing_points():
         
     return points
             
-def database():
+def database(day_tracker = False):
     mongo_db = pymongo.MongoClient(env_variables.mongodb_link)
-    data = mongo_db[env_variables.database_name]
-    # data = data[str(dt.today().date())]
-    # data = data['2024-06-20']
+    if not day_tracker : 
+        data = mongo_db[env_variables.database_name]
+    else : 
+        data = mongo_db[f'Performance_{dt.now().year}'] 
     return data
+        
 
 def set_coloumn_name(df,broker_name):
     if  broker_name == 'kotak_neo' :
@@ -161,9 +164,14 @@ def set_coloumn_name(df,broker_name):
     return df
 
 def get_qty_option_price(broker_name):
-    fifty_per_risk = 2250
-    re_entry_risk = 1875
-    wait_trade_risk  = 1500
+    # fifty_per_risk = 2250
+    # re_entry_risk = 1875
+    # wait_trade_risk  = 1500
+    
+    fifty_per_risk = 500
+    re_entry_risk = 500
+    wait_trade_risk  = 500
+    
     lot_size = env_variables.lot_size
     hedge_cost = 0
     
@@ -230,16 +238,17 @@ class env_variables:
     exceptational_tradingdays  : list
 
     login : str
-    NineTwenty : str
-    NineThirty : str
-    NineFourtyFive : str
-    TenThirty : str
-    Eleven : str
+    FS_First : str
+    RE_First : str
+    WNT_First : str
+    RE_Second : str
+    RE_Third : str
     exit_orders : str
     logout_session : str
     
     capital : str
     qty_partation_loop : int
+    telegram_api_dict : dict
     
     @classmethod
     def load_env_variable (self):
@@ -251,7 +260,7 @@ class env_variables:
         self.thread_list = []
         self.today = dt.today().date()
         self.lot_size = 1
-        self.index = ''
+        self.index = None
         
         self.expiry_base_instrument = bool(os.environ['expiry_base_instrument'])
         self.day_tracker = bool(os.environ['day_tracker'])
@@ -278,17 +287,29 @@ class env_variables:
         # self.exit_orders = dt.strftime(get_ist_now(),'%H:%M')
         
         self.login = os.environ['login']
-        self.NineTwenty = os.environ['first_order']
-        self.NineThirty = os.environ['second_order']
-        self.NineFourtyFive = os.environ['third_order']
-        self.TenThirty = os.environ['fourth_order']
-        self.Eleven = os.environ['fifth_order']
+        self.FS_First = os.environ['FS_First']
+        self.RE_First = os.environ['RE_First']
+        self.WNT_First = os.environ['WNT_First']
+        self.RE_Second = os.environ['RE_Second']
+        self.RE_Third = os.environ['RE_Third']
         self.exit_orders = os.environ['exit_orders']
         self.logout_session = os.environ['logout_session']  
         self.capital = float(os.environ['capital'])
         self.qty_partation_loop = int(os.environ['qty_partation_loop'])
         self.logger = setup_daily_logger()
-        logger_bot('env variable initilised')    
+        
+        self.telegram_api_dict = {
+                                Fields.FS_First : os.environ['nine_twenty_bot_token'],
+                                Fields.RE_First  : os.environ['nine_thirty_bot_token'],
+                                Fields.WNT_First : os.environ['nine_fourty_five_bot_token'],
+                                Fields.RE_Second : os.environ['ten_thirty_bot_token'],
+                                Fields.RE_Third : os.environ['eleven_bot_token'],
+                                'emergency' : os.environ['emergency_bot_token'],
+                                'common_logger' : os.environ['common_loggger'],
+                                'chat_id' : os.environ['chatId']
+                                }
+        
+        send_message(message = 'env variable initilised')    
         return True
     
 class Fields : 
@@ -351,11 +372,11 @@ class Fields :
     
     # Staratgy Names
     stratagy = 'stratagy'
-    NineTwenty = 'NineTwenty'
-    NineThirty =  'NineThirty'
-    NineFourtyFive = 'NineFourtyFive'
-    TenThirty = 'TenThirty'
-    Eleven = 'Eleven'
+    FS_First = 'FS_First'
+    RE_First =  'RE_First'
+    WNT_First = 'WNT_First'
+    RE_Second = 'RE_Second'
+    RE_Third = 'RE_Third'
     
     # Other
     kotak_neo = 'kotak_neo'
@@ -369,66 +390,43 @@ class Fields :
     tag = 'tag'
     option_type = 'option_type'
     
-  
-def emergency_bot(bot_message):
-    """ It is used for sending alert to Emergeny situation"""
+      
+def send_message(message,stratagy = None, emergency = False, send_image = False):
+    telegram_api_dict = env_variables.telegram_api_dict
     current_time = get_ist_now()
-    env_variables.logger.warning(f'{bot_message}\n')
-    bot_message = f'{dt.strftime(current_time,"%H:%M:%S")}\n{bot_message}'
-    bot_token = os.environ['emergency_bot_token']
-    bot_chatId = os.environ['chatId']
-    # print(bot_message,'\n')
-    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
-    response = requests.get(send_text)
-    if response.status_code != 200:
-        bot_message = "emergency_bot not able to send message"
-        send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
-        logger_bot(bot_message)
-        # print(response)
-        
-def alert_bot(bot_message_ : str,send_image : bool = False):
-    """ It is used for sending price alert"""
-    current_time = get_ist_now()
-    bot_message = f'{dt.strftime(current_time,"%H:%M:%S")}\n{bot_message_}'
-    bot_token = os.environ['alert_bot_token']
-    bot_chatId = os.environ['chatId']
-    
+    bot_chatId = telegram_api_dict['chat_id' ]
+    if not send_image : 
+        if emergency : 
+            bot_token = telegram_api_dict['emergency']
+            env_variables.logger.warning(f'{message}\n')
+            
+        elif stratagy == None: 
+            bot_token = telegram_api_dict['common_logger']
+            env_variables.logger.info(f'{message}\n')
+
+        else : 
+            bot_token = telegram_api_dict[stratagy]
+            env_variables.logger.info(f'{message}\n')
+            
+        message = f'{dt.strftime(current_time,"%H:%M:%S")}\n{message}'
+        response = requests.post(f'https://api.telegram.org/bot{bot_token}/sendMessage', json = {'chat_id': bot_chatId,'text': message})
+        if response.status_code != 200:
+            message = f"{stratagy}_bot not able to send message Reason : {response.text}" 
+            env_variables.logger.warning(f'Retry Trigger_finder responce : {message}')
+            bot_token = telegram_api_dict['emergency']
+            message = f'{dt.strftime(current_time,"%H:%M:%S")}\n{message}'
+            response = requests.post(f'https://api.telegram.org/bot{bot_token}/sendMessage', json = {'chat_id': bot_chatId,'text': message})
+            env_variables.logger.warning(f'Responce from retry : {response}')
+            
+            
     if send_image : 
         with open('plot.png', 'rb') as file:
+            bot_token = telegram_api_dict[F.FS_First]
             url = url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
             response = requests.post(url, data={'chat_id': bot_chatId}, files={'photo': file})
             if response.status_code != 200:
-                emergency_bot("alert_bot not able to send image")
-    else : 
-        # print(bot_message,'\n')
-        env_variables.logger.info(f'{bot_message}\n')
-
-        send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
-        response = requests.get(send_text)
-
-def logger_bot(bot_message):
-    """ It is used for sending order manangemant"""
-    current_time = get_ist_now()
-    env_variables.logger.info(f'{bot_message}\n')
-    bot_message = f'{dt.strftime(current_time,"%H:%M:%S")} {bot_message}'
-    bot_token = os.environ['logger_bot_token']
-    bot_chatId = os.environ['chatId']
-    # print(bot_message,'\n')
-    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
-    response = requests.get(send_text)
-    if response.status_code != 200:
-        emergency_bot("logger_bot not able to send message")
-
-def Trigger_finder(bot_message):
-    """ It is used for sending alert to Emergeny situation"""
-    current_time = get_ist_now()
-    env_variables.logger.info(f'{bot_message}\n')
-    bot_message = f'{dt.strftime(current_time,"%H:%M:%S")}\n{bot_message}'
-    bot_token = os.environ['Trigger_finder_token']
-    bot_chatId = os.environ['chatId']
-    # print(bot_message,'\n')
-    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatId + '&parse_mode=Markdown&text=' + bot_message
-    response = requests.get(send_text)
-    if response.status_code != 200:
-        emergency_bot("Trigger_finder not able to send message")
-    
+                message = ("Not able to send image")
+                bot_token = telegram_api_dict['emergency']
+                env_variables.logger.warning(f'Retry Trigger_finder responce : {message}') 
+                response = requests.post(f'https://api.telegram.org/bot{bot_token}/sendMessage', json = {'chat_id': bot_chatId,'text': message})
+                env_variables.logger.warning(f'Responce from retry-image : {response}')

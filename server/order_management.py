@@ -1,8 +1,9 @@
 from server.execuations import OrderExecuation
-from server.utils import logger_bot,emergency_bot
+from server.utils import send_message
 from  datetime import datetime as dt
 import pandas as pd
 import time
+import json
 from server.broker import Order_details, get_ltp, get_token, is_order_rejected_func
 from server.utils import env_variables as env ,database , Fields as F
 
@@ -19,7 +20,7 @@ class Order_management :
 
     def order_place(self,ticker,qty, transaction_type, stratagy, exit_percent, loop_no, price, option_type,):
         tag = f'{stratagy}_{option_type}_{loop_no}'
-        if stratagy == F.NineTwenty:
+        if stratagy == F.FS_First:
             price = round(price, 1) # remoe in production 
             trigger_price = price + 0.05
             is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price, trigger_price, qty, ticker, transaction_type, tag)
@@ -40,20 +41,20 @@ class Order_management :
                             F.entry_orderid : order_number,
                             F.entry_orderid_status  : F.open,    #To check order is complete
                             F.entry_price : price,
-                            F.entry_price_initial: price,
+                            F.entry_price_initial : price,
                             F.entry_tag : tag,  #tag_contains stratagy_name+option_type+loop no
                             F.entry_order_count : 0,
                             F.entry_order_execuation_type : None,
                             #-------------- sl order details -------------
-                            F.exit_orderid : '---',
-                            F.exit_orderid_status :'---',
+                            F.exit_orderid : None,
+                            F.exit_orderid_status : None,
                             F.exit_price : 0,
                             F.exit_price_initial : 0,
-                            F.exit_tag: '---',  #tag_contains stratagy_name+option_type+loop no
+                            F.exit_tag : None,  #tag_contains stratagy_name+option_type+loop no
                             #-------- Other parameter --------------
                             F.exit_price:0,
-                            F.exit_time:'---',
-                            F.exit_reason : '---',              # sl_hit/day_end
+                            F.exit_time: None,
+                            F.exit_reason : None,              # sl_hit/day_end
                             F.exit_order_count : 0,
                             F.exit_order_execuation_type : None,
                             F.stratagy : stratagy,
@@ -70,14 +71,14 @@ class Order_management :
                             }
 
                     self.database[str(self.date)].insert_one(order)
-                    logger_bot(f"limit order placed... \nStratagy : {stratagy}\nOption Type : {option_type}\nProduct Type : {product_type}\nMessage : {order_number}")
+                    send_message(message = f"limit order placed... \nStratagy : {stratagy}\nOption Type : {option_type}\nProduct Type : {product_type}\nMessage : {order_number}",stratagy = stratagy)
                     self.smart_executer(stratagy = stratagy, exit_percent = exit_percent, option_type = option_type, entry_orderid = order_number )
 
 
             elif not is_order_placed :
-                emergency_bot(f'Not able to place {stratagy} order \nmessage : {order_number}')
+                send_message(message = f'Not able to place {stratagy} order \nmessage : {order_number}',emergency = True)
 
-        if stratagy in [F.NineThirty, F.TenThirty, F.Eleven]:
+        if stratagy in [F.RE_First, F.RE_Second, F.RE_Third]:
             trigger_price = price + 0.05
             
             is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price, trigger_price, qty, ticker, transaction_type, tag)
@@ -88,7 +89,7 @@ class Order_management :
                 if order_number in all_filled_orders:
                     order = {
                             F.entry_time : self.time,
-                            F.ticker  : ticker,
+                            F.ticker : ticker,
                             F.token : get_token(ticker),
                             F.transaction_type : transaction_type,
                             F.product_type : product_type,
@@ -103,17 +104,17 @@ class Order_management :
                             F.entry_tag : tag,  #tag_contains stratagy_name+option_type+loop 
                             F.entry_order_execuation_type: None,
                             #-------------- sl order details -------------
-                            F.exit_orderid : '---',
-                            F.exit_orderid_status : '---',
+                            F.exit_orderid : None,
+                            F.exit_orderid_status : None,
                             F.exit_price : 0,
                             F.exit_price_initial : 0,
-                            F.exit_tag : '',  #tag_contains stratagy_name+option_type+loop no
+                            F.exit_tag : None,  #tag_contains stratagy_name+option_type+loop no
                             F.exit_order_count : 0,
                             F.exit_order_execuation_type : None ,
                             #-------- Other parameter --------------
                             F.exit_price : 0,
-                            F.exit_time : '---',
-                            F.exit_reason : '---',              # sl_hit/day_end
+                            F.exit_time : None,
+                            F.exit_reason : None,              # sl_hit/day_end
                             F.stratagy : stratagy,
                             F.index : env.index,
                             F.loop_no : loop_no,
@@ -128,12 +129,12 @@ class Order_management :
                             }
 
                     self.database[str(self.date)].insert_one(order)
-                    logger_bot(f"limit order placed... \nStratagy : {stratagy}\nOption Type : {option_type}\nMessage : {order_number}")
+                    send_message(message = f"limit order placed... \nStratagy : {stratagy}\nOption Type : {option_type}\nMessage : {order_number}", stratagy = stratagy)
                     self.smart_executer(stratagy=stratagy, exit_percent=exit_percent, option_type=option_type, entry_orderid = order_number)
             elif not is_order_placed :
-                    emergency_bot(f'Not able to place {stratagy} order \nmessage : {order_number}')
+                    send_message(message = f'Not able to place {stratagy} order \nmessage : {order_number}', emergency = True)
 
-        if stratagy == F.NineFourtyFive:
+        if stratagy == F.WNT_First:
             price = round(price * 0.95,1)
             trigger_price = price + 0.05
             
@@ -145,7 +146,7 @@ class Order_management :
                 if order_number in all_filled_orders:
                     order = { 
                             F.entry_time : self.time,
-                            F.ticker  : ticker,
+                            F.ticker : ticker,
                             F.token : get_token(ticker),
                             "ltp": 0,
                             F.transaction_type : transaction_type,
@@ -156,20 +157,20 @@ class Order_management :
                             F.entry_orderid : order_number,
                             F.entry_orderid_status  : F.open,    #To check order is complete
                             F.entry_price : price,
-                            F.entry_price_initial: price,
+                            F.entry_price_initial : price,
                             F.entry_tag : tag,  #tag_contains stratagy_name+option_type+loop no
                             F.entry_order_count : 0,
                             F.entry_order_execuation_type : None,
                             #-------------- sl order details -------------
-                            F.exit_orderid :'',
-                            F.exit_orderid_status :'',
+                            F.exit_orderid : None,
+                            F.exit_orderid_status : None,
                             F.exit_price : 0,
                             F.exit_price_initial : 0,
-                            F.exit_tag: '',  #tag_contains stratagy_name+option_type+loop no
+                            F.exit_tag : None,  #tag_contains stratagy_name+option_type+loop no
                             #-------- Other parameter --------------
                             F.exit_price : 0,
-                            F.exit_time : '---',
-                            F.exit_reason : '---',              # sl_hit/day_end
+                            F.exit_time : None,
+                            F.exit_reason : None,              # sl_hit/day_end
                             F.exit_order_count : 0,
                             F.exit_order_execuation_type : None,
                             F.stratagy : stratagy,
@@ -186,10 +187,10 @@ class Order_management :
                             }
 
                     self.database[str(self.date)].insert_one(order)
-                    logger_bot(f"limit order placed... \nStratagy : {stratagy}\nOption Type : {option_type}\nMessage : {order_number}")
+                    send_message(message = f"limit order placed... \nStratagy : {stratagy}\nOption Type : {option_type}\nMessage : {order_number}", stratagy= stratagy)
 
             elif not is_order_placed :
-                emergency_bot(f'Not able to place {stratagy} order \nmessage :{order_number}')
+                send_message(message = f'Not able to place {stratagy} order \nmessage :{order_number}', emergency = True)
 
     def smart_executer(self, stratagy, exit_percent, option_type, entry_orderid) :
         while True:
@@ -203,9 +204,15 @@ class Order_management :
                     count = row[F.entry_order_count]
                     if (row[F.entry_orderid] not in pending_order[F.order_id].tolist()) and (row[F.entry_orderid_status] == F.open) :
                         entry_price = filled_order[filled_order[F.order_id] == row[F.entry_orderid]].iloc[0][F.price]
-                        self.database[str(self.date)].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {F.entry_time : self.time, F.entry_price : float(entry_price), F.entry_orderid_status: F.closed, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count + 1}}) # it will update if sl hit  modificarion status to slhit
-                        logger_bot(f'Placed in broker end \nOrder id : {row[F.entry_orderid]}\nOption Type : {row[F.option_type]}\nExecuation Type : {F.limit_order}\nStratagy : {row[F.stratagy]}')
-                        time.sleep(5)
+                        if row[F.entry_order_execuation_type] == None : 
+                            self.database[str(self.date)].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {F.entry_time : self.time, F.entry_price : float(entry_price), F.entry_orderid_status: F.closed, F.entry_order_execuation_type : F.limit_order}}) # it will update if sl hit  modificarion status to slhit
+                            send_message(message = f'Placed in broker end \nOrder id : {row[F.entry_orderid]}\nOption Type : {row[F.option_type]}\nExecuation Type : {F.limit_order}\nCount : {count}\nStratagy : {row[F.stratagy]}', stratagy = row[F.stratagy])
+                            time.sleep(5)
+                        else : 
+                            self.database[str(self.date)].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {F.entry_time : self.time, F.entry_price : float(entry_price), F.entry_orderid_status: F.closed}}) # it will update if sl hit  modificarion status to slhit
+                            send_message(message = f'Placed in broker end \nOrder id : {row[F.entry_orderid]}\nOption Type : {row[F.option_type]}\nExecuation Type : {row[F.entry_order_execuation_type]}\nCount : {count}\nStratagy : {row[F.stratagy]}', stratagy = row[F.stratagy])
+                            time.sleep(5)
+                        
                     elif (count < 5) and (row[F.entry_orderid_status] == F.open) :
                         ltp = get_ltp(row[F.token],self.broker_name)
                         price = row[F.entry_price] 
@@ -214,30 +221,30 @@ class Order_management :
                             new_price = round(abs(price) + abs(ltp-price)/2,1)
                         else:
                             new_price = round(abs(price) - abs(ltp-price)/2,1)
-                        # logger_bot(f" Modification of : {row[F.entry_orderid]}\nltp :{ltp} old_price:{price} new_price :{new_price} count : {count}\n\n")
+                        # send_message(message = f" Modification of : {row[F.entry_orderid]}\nltp :{ltp} old_price:{price} new_price :{new_price} count : {count}\n\n")
                         try : 
                             remaning_qty = pending_order[pending_order[F.order_id] == row[F.entry_orderid]].iloc[0][F.qty]
                             is_modified, order_number, message = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.entry_orderid], new_price = new_price ,quantity = remaning_qty)
-                            is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
+                            is_order_rejected, is_mis_blocked = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
                             if is_modified and not is_order_rejected:
                                 self.database[str(self.date)].update_one({F.entry_orderid : row[F.entry_orderid]}, { "$set": {F.entry_price : new_price , F.entry_order_count: count + 1 } }) # it will update updated price to database
-                                logger_bot(f"Entry price modified \nMessage :{order_number} order modified\nOld Price : {price}New Price : {new_price} \nRemaning Qty : {remaning_qty}\nSide : {row[F.option_type]}\nStratagy : {row[F.stratagy]}")
+                                send_message(message = f"Entry price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {new_price} \nRemaning Qty : {remaning_qty}\nSide : {row[F.option_type]}\nStratagy : {row[F.stratagy]}", stratagy = row[F.stratagy])
                                 
                             elif not is_modified :
-                                emergency_bot(f'Not able to modify sl in Smart Execuator(kotak.modify_order)\nMessage : {message}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}')
+                                send_message(message = f'Not able to modify sl in Smart Execuator(kotak.modify_order)\nMessage : {message}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}\nOrder Id : {order_number}', emergency = True)
                                     
                         except Exception as e : 
-                            emergency_bot(f'Not able to modify sl in Smart Execuator(kotak.modify_order)\nMessage : {e}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}')
+                            send_message(message = f'Not able to modify sl in Smart Execuator(kotak.modify_order)\nMessage : {e}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}\nOrder Id : {order_number}', emergency = True)
 
                     else:
                         remaning_qty = pending_order[pending_order[F.order_id] == row[F.entry_orderid]].iloc[0][F.qty]
                         is_modified, order_number, message = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.entry_orderid], new_price = 0 ,quantity = remaning_qty, trigger_price = 0, order_type = "MKT")
-                        is_order_rejected = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
+                        is_order_rejected, is_mis_blocked = is_order_rejected_func(order_number,self.broker_session,self.broker_name)
                         if is_modified and not is_order_rejected:
-                            self.database[str(self.date)].update_one({F.entry_orderid : order_number}, { "$set": {F.entry_order_execuation_type : F.market_order} })
-                            # logger_bot(f"Executed at Market Order \nMessage :{order_number} \nRemaning Qty : {remaning_qty}\nSide : {row[F.option_type]}\nStratagy : {row[F.option_type]}")
+                            self.database[str(self.date)].update_one({F.entry_orderid : order_number}, { "$set": {F.entry_order_execuation_type : F.market_order, F.entry_order_count : count + 1} })
+                            #  send_message(message = f"Executed at Market Order \nMessage :{order_number} \nRemaning Qty : {remaning_qty}\nSide : {row[F.option_type]}\nStratagy : {row[F.option_type]}", stratagy = row[F.stratagy])
                         elif not is_modified :
-                            emergency_bot(f'Not able to modify sl in Smart Executer SOD Market Order\nMessage : {message}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}')
+                            send_message(message = f'Not able to modify sl in Smart Executer SOD Market Order\nMessage : {message}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}\nOrder Id : {order_number}', emergency = True)
                             
                     time.sleep(5)
 
@@ -247,26 +254,25 @@ class Order_management :
                 pending_orders_db = self.database[str(self.date)].find(myquery)
                 for i in pending_orders_db:
                     # print(f"ticker={i[F.ticker]},qty={i[F.qty]},transaction_type={i[F.transaction_type]},avg_price={(i[F.entry_price])},exit_percent={exit_percent},tag = {tag}")
-                    self.place_limit_sl(ticker = i[F.ticker], qty = i[F.qty], transaction_type_ = i[F.transaction_type], avg_price = (i[F.entry_price]), exit_percent = i[F.exit_percent], option_type = i[F.option_type], tag = i[F.entry_tag])
+                    self.place_limit_sl(ticker = i[F.ticker], qty = i[F.qty], transaction_type_ = i[F.transaction_type], avg_price = (i[F.entry_price]), exit_percent = i[F.exit_percent], option_type = i[F.option_type],stratagy = stratagy, tag = i[F.entry_tag])
                 break
 
-    def place_limit_sl(self,ticker,qty,transaction_type_,avg_price,exit_percent,option_type,tag):
+    def place_limit_sl(self,ticker,qty,transaction_type_,avg_price,exit_percent,option_type,stratagy,tag):
         if transaction_type_ == F.Buy:
             transaction_type = F.Sell
 
         elif transaction_type_ == F.Sell:
             transaction_type = F.Buy
-
         stoploos = round(round(0.05 * round(avg_price / 0.05), 2) * ((100 + exit_percent) / 100), 1)
         trigger_price = round(stoploos - 0.05,2) # 0.05 is the diffrance betweeen limit price and trigger price
         is_order_placed, order_number, product_type, new_tag = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price , qty = qty, ticker = ticker , transaction_type = transaction_type, tag = tag + '_sl')
         if is_order_placed :
-            self.database[str(self.date)].update_one({ "entry_tag" : tag}, { "$set" : {F.exit_orderid : order_number, F.exit_orderid_status : F.open , F.exit_price : stoploos, F.exit_price_initial : stoploos, F.exit_tag: tag + '_sl'}})
-            logger_bot(f"Sl order palced Sucessfully !!! \nOrder Number : {order_number}\nPrice : {stoploos}\nSide : {option_type}\nStratagy : {tag.split('_')[0]}")
+            self.database[str(self.date)].update_one({ "entry_tag" : tag}, { "$set" : {F.exit_orderid : order_number, F.exit_orderid_status : F.open , F.exit_price : stoploos, F.exit_price_initial : stoploos, F.exit_tag : tag + '_sl'}})
+            send_message(message = f"Sl order palced Sucessfully !!! \nOrder Number : {order_number}\nPrice : {stoploos}\nSide : {option_type}\nStratagy : {stratagy}", stratagy = stratagy)
 
         elif not is_order_placed:
             self.database[str(self.date)].update_one({ "entry_tag": tag}, { "$set": {F.exit_orderid_status : F.rejected }})
-            emergency_bot(f'Problem in palcing limit_sl\nMessage : {message}')
+            send_message(message = f'Problem in palcing limit_sl\nMessage : {order_number}', emergency = True)
 
     def exit_orders_dayend(self,option_type) :
         while True:
@@ -282,9 +288,13 @@ class Order_management :
                     count = row[F.exit_order_count]
                     if (row[F.exit_orderid]  not in pending_order[F.order_id].tolist()) and (row[F.exit_orderid_status] == F.open) :
                         exit_price = filled_order[filled_order[F.order_id] == row[F.exit_orderid]].iloc[0][F.price]
-                        self.database[str(self.date)].update_one({F.exit_orderid : row[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.day_end, F.exit_price : float(exit_price) , F.exit_price_initial : float(exit_price), F.exit_time : self.time, F.exit_order_execuation_type : F.limit_order, F.exit_order_count : count+1} } )
-                        logger_bot(f'Day end exit order \nOrder id : {row[F.exit_orderid]}\nOption Type : {row[F.option_type]}\nExecuation Type : {row[F.exit_order_execuation_type]}\nStratagy : {row[F.stratagy]}')
-                    elif count<5:
+                        if row[F.exit_order_execuation_type] == None : 
+                            self.database[str(self.date)].update_one({F.exit_orderid : row[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.day_end, F.exit_price : float(exit_price) , F.exit_price_initial : float(exit_price), F.exit_time : self.time, F.exit_order_execuation_type : F.limit_order} } )
+                            send_message(message = f'Day end exit order \nOrder id : {row[F.exit_orderid]}\nOption Type : {row[F.option_type]}\nExecuation Type : {F.limit_order}\nStratagy : {row[F.stratagy]}', stratagy = row[F.stratagy])
+                        else : 
+                            self.database[str(self.date)].update_one({F.exit_orderid : row[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.day_end, F.exit_price : float(exit_price) , F.exit_price_initial : float(exit_price), F.exit_time : self.time} } )
+                            send_message(message = f'Day end exit order \nOrder id : {row[F.exit_orderid]}\nOption Type : {row[F.option_type]}\nExecuation Type : {row[F.exit_order_execuation_type]}\nStratagy : {row[F.stratagy]}', stratagy = row[F.stratagy])
+                    elif count < 5:
                         ltp = get_ltp(row[F.token],self.broker_name)
                         # ltp = 40
                         price = row[F.exit_price] 
@@ -295,29 +305,29 @@ class Order_management :
                         #     new_price = round(abs(price) - abs(ltp - price)/2 ,1)
                         # print(f"ltp :{ltp} old_price:{price} new_price :{new_price} count : {count}\n\n")
                         try : 
-                            remaning_qty = pending_order[pending_order[F.order_id] == row[F.entry_orderid]].iloc[0][F.qty]
+                            remaning_qty = pending_order[pending_order[F.order_id] == row[F.exit_orderid]].iloc[0][F.qty]
                             is_modified, order_number, message = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = row[F.exit_orderid], new_price = ltp ,quantity = remaning_qty)
                             if is_modified :
                                 if count == 0 :
                                     self.database[str(self.date)].update_one({F.entry_orderid : row[F.entry_orderid]}, {"$set": {F.exit_price_initial : ltp, F.exit_price : ltp , F.exit_order_count : count + 1 }}) # it will update updated price to database
-                                    logger_bot(f"Exit price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {ltp} \nRemaning Qty : {remaning_qty}\nStratagy : {row[F.stratagy]}")
+                                    send_message(message = f"Exit price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {ltp} \nRemaning Qty : {remaning_qty}\nStratagy : {row[F.stratagy]}", stratagy = row[F.stratagy])
                                 else : 
                                     self.database[str(self.date)].update_one({F.entry_orderid : row[F.entry_orderid]}, {"$set": {F.exit_price : ltp , F.exit_order_count: count + 1 }}) # it will update updated price to database
-                                    logger_bot(f"Exit price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {ltp} \nRemaning Qty : {remaning_qty}\nStratagy : {row[F.stratagy]}")
+                                    send_message(message = f"Exit price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {ltp} \nRemaning Qty : {remaning_qty}\nStratagy : {row[F.stratagy]}", stratagy = row[F.stratagy])
                                     
                             elif not is_modified :
-                                emergency_bot(f'Not able to modify sl in exit_orders_dayend(kotak.modify_order)\nMessage : {message}')
+                                send_message(message = f'Not able to modify sl in exit_orders_dayend(kotak.modify_order)\nStratagy : {row[F.stratagy]}\nMessage : {message}\nOrder Id : {order_number}', emergency = True)
                         except Exception as e : 
-                            emergency_bot(f'Not able to modify sl in exit_orders_dayend(kotak.modify_order)\nMessage : {e}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}')
+                           send_message(message = f'Not able to modify sl in exit_orders_dayend(kotak.modify_order)\nMessage : {e}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}\nOrder Id : {order_number}', emergency = True)
                         
                     else:
-                        remaning_qty = pending_order[pending_order[F.order_id] == row[F.entry_orderid]].iloc[0][F.qty]
+                        remaning_qty = pending_order[pending_order[F.order_id] == row[F.exit_orderid]].iloc[0][F.qty]
                         is_modified, order_number, message = OrderExecuation(self.broker_name, self.broker_session).modify_order(order_id = row[F.exit_orderid], new_price = 0, quantity = remaning_qty, trigger_price = 0, order_type = "MKT")
                         if is_modified :
-                            # logger_bot(f"Executed at Market Order \nMessage :{order_number}")
-                            self.database[str(self.date)].update_one({F.exit_orderid : row[F.exit_orderid]}, {"$set": {F.exit_order_execuation_type : F.market_order }})
+                            # send_message(message = f"Executed at Market Order \nMessage :{order_number}")
+                            self.database[str(self.date)].update_one({F.exit_orderid : row[F.exit_orderid]}, {"$set": {F.exit_order_execuation_type : F.market_order, F.exit_order_count : count + 1 }})
                         elif not is_modified:
-                            emergency_bot(f'Not able to modify sl in exit_orders_dayend() Market Order\nMessage : {message}')
+                            send_message(message = f'Not able to modify sl in exit_orders_dayend() Market Order\nMessage : {message}\nOrder Id : {order_number}', emergency = True)
                 time.sleep(5)
             else:
                 myquery = {F.option_type:{'$eq' : option_type},'$or': [{F.entry_orderid_status : F.open},{F.entry_orderid_status : F.re_entry_open}]}
@@ -326,39 +336,53 @@ class Order_management :
                     is_canceled,order_number, message = OrderExecuation(self.broker_name,self.broker_session).cancel_order(i[F.entry_orderid])
                     if is_canceled : 
                         self.database[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, {"$set": {F.exit_reason : F.day_end}}) 
-                        logger_bot(f"pending order \nMessage :{order_number} is canceled\nStratagy : {i[F.stratagy]}")
+                        send_message(message = f"pending order \nMessage :{order_number} is canceled\nStratagy : {i[F.stratagy]}", stratagy = row[F.stratagy])
                     else : 
-                        emergency_bot(f'Not able to cancle order {i[F.exit_orderid]} in cancel_pending_order()\n Reason : {message}')
+                        send_message(f'Not able to cancle order {i[F.exit_orderid]} in cancel_pending_order()\n Reason : {message}', emergency = True)
                         
                 break
     
-    def calculate_pl(self): 
+    def calculate_pl(self):         
         # Update calculation to database
-        for i in self.database[str(self.date)].find() : 
-            if i['entry_orderid_status'] == 'closed' and i['exit_orderid_status'] == 'closed':
-                pl = round((i['entry_price'] * i['qty']) - (i['exit_price'] * i['qty']), 2)
-                drift_points = round(abs(i['entry_price_initial'] - i['entry_price']) + (i['exit_price_initial'] - i['exit_price']), 2)
-                drift_rs = round((abs(i['entry_price_initial'] - i['entry_price']) + (i['exit_price_initial'] - i['exit_price'])) * i['qty'], 2)
-                self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {'pl' : pl, 'drift_points' : drift_points, 'drift_rs' : drift_rs}})
-                # print(f'{i[F.entry_orderid]} pl : {pl} Slippage points : {drift_points} Slippage-rs : {drift_rs}')
-                
-        # Calculate stratagy wise pl and drift
-        stratagy_df = pd.DataFrame({F.stratagy: [F.NineTwenty, F.NineThirty, F.NineFourtyFive, F.TenThirty, F.Eleven]})
+        try : 
+            for i in self.database[str(date)].find() : 
+                if i['entry_orderid_status'] == 'closed' and i['exit_orderid_status'] == 'closed':
+                    pl = round((i[F.entry_price] * i[F.qty]) - (i['exit_price'] * i[F.qty]), 2)
+                    drift_points = round(abs(i[F.entry_price_initial] - i[F.entry_price]) + (i[F.exit_price_initial] - i[F.exit_price]), 2)
+                    drift_rs = round((abs(i[F.entry_price_initial] - i[F.entry_price]) + (i[F.exit_price_initial] - i[F.exit_price])) * i[F.qty], 2)
+                    self.database[str(date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.pl : pl, F.drift_points: drift_points, F.drift_rs : drift_rs}})
+                    # print(f'{i[F.entry_orderid]} pl : {pl} Slippage points : {drift_points} Slippage-rs : {drift_rs}')
+                    
+            # Calculate stratagy wise pl and drift
+            stratagy_df = pd.DataFrame({F.stratagy: [F.FS_First, F.RE_First, F.WNT_First, F.RE_Second, F.RE_Third]})
+            df = pd.DataFrame(self.database[str(date)].find())
+            df_stratagy_cal = df[[F.stratagy,F.pl,F.drift_points,F.drift_rs,F.entry_order_count,F.exit_order_count,F.index]]
+            df_stratagy_cal = df_stratagy_cal.groupby(F.stratagy).agg({F.pl : 'sum', F.drift_points : 'sum', F.drift_rs : 'sum',F.entry_order_count : 'sum',F.exit_order_count : 'sum' ,F.index : 'count' }).reset_index()
+            df_stratagy_cal = stratagy_df.merge(df_stratagy_cal,on=F.stratagy,how= 'left')
+            df_stratagy_cal['total_count'] = df_stratagy_cal[F.entry_order_count] + df_stratagy_cal[F.exit_order_count]
 
-        df = pd.DataFrame(self.database[str(self.date)].find())
-        df_stratagy_cal = df[[F.stratagy,'pl',F.drift_points,F.drift_rs,F.entry_order_count,F.exit_order_count,F.index]]
-        df_stratagy_cal = df_stratagy_cal.groupby(F.stratagy).agg({'pl' : 'sum', F.drift_points : 'sum', F.drift_rs : 'sum',F.entry_order_count : 'sum',F.exit_order_count : 'sum' ,F.index : 'count' }).reset_index()
-        df_stratagy_cal = stratagy_df.merge(df_stratagy_cal,on=F.stratagy,how= 'left')
-        df_stratagy_cal['total_count'] = df_stratagy_cal[F.entry_order_count] + df_stratagy_cal[F.exit_order_count]
+            # Total Calculation for the day
+            total_pl = df_stratagy_cal[F.pl].sum()
+            total_drift_points = df_stratagy_cal[F.drift_points].sum()
+            total_drift_rs = df_stratagy_cal[F.drift_rs].sum()
+            total_modifications = df_stratagy_cal['total_count'].sum()
+            total_orders = len(df)
 
-        # Total Calculation for the day
-        total_pl = df_stratagy_cal['pl'].sum()
-        total_drift_points = df_stratagy_cal[F.drift_points].sum()
-        total_drift_rs = df_stratagy_cal[F.drift_rs].sum()
-        total_modifications = df_stratagy_cal['total_count'].sum()
-        total_orders = len(df)
+            message  = f'\nInstrument : {env.index}\nTotal PL : {pl}\nTotal Drift-Points : {total_drift_points}\nTotal Drift in RS : {total_drift_rs}\nTotal Orders : {total_orders}\nTotal Modifications : {total_modifications}\n{25 * "-"}\nStratagy Wise Report :\n{25 * "-"}\n'
+            for index,row in df_stratagy_cal.iterrows():
+                message += (f'Strtatagy : {row[F.stratagy]}\nPL : {row["pl"]}\nDrift in Points : {round(row[F.drift_points],2)}\nDrift in RS : {row[F.drift_rs]}\nOrders : {row[F.index]}\nModifications  : {(row["total_count"])}\n{25 * "-"}\n')
 
-        message  = f'\nInstrument : {env.index}\nTotal PL : {pl}\nTotal Drift-Points : {total_drift_points}\nTotal Drift in RS : {total_drift_rs}\nTotal Orders : {total_orders}\nTotal Modifications : {total_modifications}\n{25 * "-"}\nStratagy Wise Report :\n{25 * "-"}\n'
-        for index,row in df_stratagy_cal.iterrows():
-            message += (f'Strtatagy : {row[F.stratagy]}\nPL : {row["pl"]}\nDrift in Points : {row[F.drift_points]}\nDrift in RS : {row[F.drift_rs]}\nOrders : {row[F.index]}\nModifications  : {(row["total_count"])}\n{25 * "-"}\n')
-        logger_bot(message)
+            # Update to Performance Tracker
+            column_sums = df_stratagy_cal.sum()
+            df_stratagy_cal.loc[len(df_stratagy_cal)] = column_sums
+            df_stratagy_cal.rename(columns = {'index' : 'no_orders'},inplace=True)
+            df_stratagy_cal = df_stratagy_cal.replace({df_stratagy_cal.iloc[-1].stratagy : 'Total'})
+            df_stratagy_cal['date'] = str(dt.today().date())
+            df_stratagy_cal['index'] = env.index
+            df_stratagy_cal = df_stratagy_cal[['date','index','stratagy', 'pl', 'drift_points', 'drift_rs', 'entry_order_count','exit_order_count', 'no_orders', 'total_count']]
+            data = json.loads(df_stratagy_cal.to_json(orient='records'))
+            database(day_tracker = True)[dt.now().strftime('%b')].insert_many(data)
+            send_message(message = message)
+        except Exception as e : 
+            send_message(message = f'Problem in palcing limit_sl\nMessage : {e}', emergency = True)
+            

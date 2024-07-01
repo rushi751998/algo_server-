@@ -1,10 +1,11 @@
 import neo_api_client
 from server.engine import login_Engine
-from server.utils import logger_bot,emergency_bot
+from server.utils import send_message
 import pandas as pd
 from  datetime import datetime as dt
 from dateutil.relativedelta import relativedelta
 import time
+import pandas as pd
 import threading
 from server.utils import set_coloumn_name, order_staus_dict, env_variables as env, Fields as F
 nan = 'nan'
@@ -25,14 +26,14 @@ class Login(login_Engine):
             self.broker_name = env.broker_name
             session_validation_key,broker_session = self.login()
         except Exception as e :
-            emergency_bot(f'Facing Issue in def login \nissue :{e}')
+            send_message(message = f'Facing Issue in def login \nissue :{e}', emergency = True)
         
         check_validation_key = env.session_validation_key
         if session_validation_key == check_validation_key:
             return True,broker_session
 
         else:
-            emergency_bot('Not able to Login issue in session_validation_key')
+            send_message(message = 'Not able to Login issue in session_validation_key', emergency = True)
             return False, None
             
 
@@ -46,7 +47,7 @@ class Login(login_Engine):
             return session[F.data]['greetingName'],broker_session 
             
         else : 
-            emergency_bot ("Not ale to get broker_name ")
+            emergency_bot ("Not ale to get broker_name ", emergency = True)
             
     
 class Order_details : 
@@ -57,6 +58,7 @@ class Order_details :
 
     def order_book(self):
         if self.broker_name == F.kotak_neo :
+            all_orders,filled_order,pending_order = pd.DataFrame(),pd.DataFrame(),pd.DataFrame()
             responce = self.broker_session.order_report()
             # print(responce[F.data][0])
             if responce[F.stCode] == 200 : 
@@ -69,11 +71,11 @@ class Order_details :
                     pending_order = all_orders[all_orders['order_status'].isin(['trigger pending','open'])]
                     return True,all_orders,filled_order,pending_order
                 except KeyError:
-                    print('KeyError in order_book')
-                    # return all_orders,filled_order,pending_order
+                    env.logger.warning(f"Func : Order_details.order_book Input:  Output: {False} Error : KeyError \n{responce}")
+                    return False,all_orders,filled_order,pending_order
 
                 except Exception as e:
-                    emergency_bot(f'Not albe o get orderbook\nMessage : {e},{responce["errMsg"]}')
+                    send_message(message = f'Not able to get orderbook\nMessage : {e},{responce}', emergency = True)
                     return False,all_orders,filled_order,pending_order
             
     def position_book(self):
@@ -81,7 +83,7 @@ class Order_details :
             responce = self.broker_session.positions()
             if responce[F.stCode] == 200 : 
                 try :
-                    responce_code = None if responce[F.stCode] == 200 else emergency_bot(f"Not able to get position_book due to : {order_staus_dict[responce[F.stCode]]}")
+                    responce_code = None if responce[F.stCode] == 200 else send_message(message = f"Not able to get position_book due to : {order_staus_dict[responce[F.stCode]]}", emergency = True)
                     all_positions = pd.DataFrame(responce[F.data]) [['trdSym','type','optTp','buyAmt' ,'prod','exSeg','tok','flBuyQty','flSellQty','sellAmt','stkPrc','expDt',]]
                     all_positions = set_coloumn_name(all_positions, self.broker_name)
                     option_positions = all_positions[all_positions[F.option_type].isin([F.CE, F.PE])]
@@ -89,11 +91,11 @@ class Order_details :
                     closed_position = option_positions[option_positions['filed_buy_qty'] == option_positions['filed_sell_qty']]
                     return all_positions,open_position,closed_position
                 except KeyError:
-                    # Nedd to add alert
+                    env.logger.warning(f"Func : Order_details.position_book Input:  Output: {False} Error : KeyError\n{responce}")
                     return None,None,None
 
                 except Exception as e:
-                    emergency_bot(f'Not albe o get orderbook\nMessage : {e}')
+                    send_message(message = f'Not able to get position_book\nMessage : {e}\n{responce}')
                     return None,None,None
 
 class Socket_handling:
@@ -113,7 +115,7 @@ class Socket_handling:
                             self.future_token = future_token
                             self.is_prepared = is_prepared
             except Exception as e :
-                emergency_bot(f'Facing Issue in prepare_option_chain_Future_token \nissue : {e}')
+                send_message(message = f'Facing Issue in prepare_option_chain_Future_token \nissue : {e}', emergency = True)
                     
         if self.broker_name == F.kotak_neo : 
             if self.is_prepared : 
@@ -127,20 +129,20 @@ class Socket_handling:
                     self.broker_session.subscribe(token_list, isIndex=False, isDepth=False)
                     self.stocket_started = True
                 except Exception as e:
-                    emergency_bot(f'Facing Issue in Socket.start \nissue : {e}')
+                    send_message(message = f'Facing Issue in Socket.start \nissue : {e}', emergency = True)
         
     def on_error(self,message):
         env.socket_open = False
-        emergency_bot(f'Issue in Socket : {message}')
+        send_message(message = f'Issue in Socket : {message}', emergency = True)
                 
     def on_open(self,message):
         env.socket_open = True
         env.option_chain_set = True
-        logger_bot(f'Socket Started : {message}')
+        send_message(message = f'Socket Started : {message}')
         
     def on_close(self,message):
         env.socket_open = False
-        logger_bot(f'Socket Stopped : {message}')
+        send_message(message = f'Socket Stopped : {message}')
             
     def update_option_chain(self, message):
         for tick in message[F.data]:
@@ -226,8 +228,7 @@ class Socket_handling:
                 for index,row in df.iterrows():
                     option_chain[row['token']] = {'v':0,'oi':0,'ltp':0,'option_type':row['optionType'],'ticker':row['ticker']}
                     ticker_to_token[row['ticker']]=row['token']
-            logger_bot('prepared opetion chain')
-            logger_bot(f'Todays instrument : {env.index}')
+            send_message(message = f'prepared opetion chain\nTodays instrument : {env.index}')
             return df, future_token,True
         
 def get_option_chain():
@@ -239,12 +240,19 @@ def get_symbol(option_type,option_price,broker_name):
         chain = chain[(chain['v'] > 100000) & (chain['oi'] > 100000)]
         ce = chain[chain[F.option_type]==option_type]
         strike = ce[ce['ltp']<=option_price].sort_values('ltp',ascending=False).iloc[0]
+        env.logger.info(f"Func : get_symbol Input: {option_type},{option_price},{broker_name} Output: {strike['ticker']}, {strike['ltp']}")
         return strike['ticker'], strike['ltp']
 
 def get_ltp(instrument_token,broker_name):
     if broker_name == F.kotak_neo :
-        ltp = option_chain[instrument_token]['ltp']
-        return ltp
+        try:
+            ltp = option_chain[instrument_token]['ltp']
+            # env.logger.info(f"Token: {instrument_token} LTP: {ltp}")
+            return ltp
+        except Exception as e : 
+            send_message(message = f"not able to get lpt", emergency = True)
+        
+        
     
 def get_token(ticker):
     return ticker_to_token[ticker]
@@ -259,11 +267,11 @@ def is_order_rejected_func(order_id,broker_session,broker_name):
         if broker_name == 'kotak_neo' :
             if order_status['order_status'] == 'rejected':
                 if ('MIS PRODUCT TYPE BLOCKED' in order_status["message"]) or ('MIS TRADING NOT ALLOWED' in order_status["message"]) : 
-                    emergency_bot(f'Order rejected\nOrder ID : {order_id}\nProduct Type : {env.product_type}\nMessage : {order_status["message"]}\nPlacing NRML order..')
+                    send_message(message = f'Order rejected\nOrder ID : {order_id}\nProduct Type : {env.product_type}\nMessage : {order_status["message"]}\nPlacing NRML order..', emergency = True)
                     return True, True
                 # add more rejection types here
                 else : 
-                    emergency_bot(f'Order rejected\nOrder ID : {order_id}\nProduct Type : {env.product_type}\nMessage : {order_status["message"]}')
+                    send_message(message = f'Order rejected\nOrder ID : {order_id}\nProduct Type : {env.product_type}\nMessage : {order_status["message"]}', emergency = True)
                     return True, False
                     
             else : 
