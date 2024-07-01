@@ -290,15 +290,15 @@ class Order_management :
                         exit_price = filled_order[filled_order[F.order_id] == row[F.exit_orderid]].iloc[0][F.price]
                         if row[F.exit_order_execuation_type] == None : 
                             self.database[str(self.date)].update_one({F.exit_orderid : row[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.day_end, F.exit_price : float(exit_price) , F.exit_price_initial : float(exit_price), F.exit_time : self.time, F.exit_order_execuation_type : F.limit_order} } )
-                            send_message(message = f'Day end exit order \nOrder id : {row[F.exit_orderid]}\nPrice : {exit_price}\nOption Type : {row[F.option_type]}\nExecuation Type : {F.limit_order}\nStratagy : {row[F.stratagy]}', stratagy = row[F.stratagy])
+                            send_message(message = f'Day end exit order \nOrder id : {row[F.exit_orderid]}\nPrice : {exit_price}\nOption Type : {row[F.option_type]}\nExecuation Type : {F.limit_order}\nCount : {row[F.exit_order_count]}\nStratagy : {row[F.stratagy]}', stratagy = row[F.stratagy])
                         else : 
                             self.database[str(self.date)].update_one({F.exit_orderid : row[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.day_end, F.exit_price : float(exit_price) , F.exit_price_initial : float(exit_price), F.exit_time : self.time} } )
-                            send_message(message = f'Day end exit order \nOrder id : {row[F.exit_orderid]}\nOption Type : {row[F.option_type]}\nExecuation Type : {row[F.exit_order_execuation_type]}\nStratagy : {row[F.stratagy]}', stratagy = row[F.stratagy])
+                            send_message(message = f'Day end exit order \nOrder id : {row[F.exit_orderid]}\nOption Type : {row[F.option_type]}\nExecuation Type : {row[F.exit_order_execuation_type]}\nCount : {row[F.exit_order_count]}\nStratagy : {row[F.stratagy]}', stratagy = row[F.stratagy])
                     elif count < 5:
                         ltp = get_ltp(row[F.token],self.broker_name)
                         # ltp = 40
                         price = row[F.exit_price] 
-                        ## code for the modification to mean price
+                        ## code for the modification to mean price  
                         # if ltp > price:
                         #     new_price = round(abs(price) + abs(ltp - price)/2 ,1)
                         # else:
@@ -336,7 +336,7 @@ class Order_management :
                     is_canceled,order_number, message = OrderExecuation(self.broker_name,self.broker_session).cancel_order(i[F.entry_orderid])
                     if is_canceled : 
                         self.database[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, {"$set": {F.exit_reason : F.day_end}}) 
-                        send_message(message = f"pending order \nMessage :{order_number} is canceled\nStratagy : {i[F.stratagy]}", stratagy = row[F.stratagy])
+                        send_message(message = f"pending order \nMessage : {order_number} is canceled\nStratagy : {i[F.stratagy]}", stratagy = i[F.stratagy])
                     else : 
                         send_message(f'Not able to cancle order {i[F.exit_orderid]} in cancel_pending_order()\n Reason : {message}', emergency = True)
                         
@@ -345,17 +345,17 @@ class Order_management :
     def calculate_pl(self):         
         # Update calculation to database
         try : 
-            for i in self.database[str(date)].find() : 
+            for i in self.database[str(self.date)].find() : 
                 if i['entry_orderid_status'] == 'closed' and i['exit_orderid_status'] == 'closed':
                     pl = round((i[F.entry_price] * i[F.qty]) - (i['exit_price'] * i[F.qty]), 2)
                     drift_points = round(abs(i[F.entry_price_initial] - i[F.entry_price]) + (i[F.exit_price_initial] - i[F.exit_price]), 2)
                     drift_rs = round((abs(i[F.entry_price_initial] - i[F.entry_price]) + (i[F.exit_price_initial] - i[F.exit_price])) * i[F.qty], 2)
-                    self.database[str(date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.pl : pl, F.drift_points: drift_points, F.drift_rs : drift_rs}})
+                    self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.pl : pl, F.drift_points: drift_points, F.drift_rs : drift_rs}})
                     # print(f'{i[F.entry_orderid]} pl : {pl} Slippage points : {drift_points} Slippage-rs : {drift_rs}')
                     
             # Calculate stratagy wise pl and drift
             stratagy_df = pd.DataFrame({F.stratagy: [F.FS_First, F.RE_First, F.WNT_First, F.RE_Second, F.RE_Third]})
-            df = pd.DataFrame(self.database[str(date)].find())
+            df = pd.DataFrame(self.database[str(self.date)].find())
             df_stratagy_cal = df[[F.stratagy,F.pl,F.drift_points,F.drift_rs,F.entry_order_count,F.exit_order_count,F.index]]
             df_stratagy_cal = df_stratagy_cal.groupby(F.stratagy).agg({F.pl : 'sum', F.drift_points : 'sum', F.drift_rs : 'sum',F.entry_order_count : 'sum',F.exit_order_count : 'sum' ,F.index : 'count' }).reset_index()
             df_stratagy_cal = stratagy_df.merge(df_stratagy_cal,on=F.stratagy,how= 'left')
@@ -368,7 +368,7 @@ class Order_management :
             total_modifications = df_stratagy_cal['total_count'].sum()
             total_orders = len(df)
 
-            message  = f'\nInstrument : {env.index}\nTotal PL : {pl}\nTotal Drift-Points : {total_drift_points}\nTotal Drift in RS : {total_drift_rs}\nTotal Orders : {total_orders}\nTotal Modifications : {total_modifications}\n{25 * "-"}\nStratagy Wise Report :\n{25 * "-"}\n'
+            message  = f'Instrument : {env.index}\nTotal PL : {pl}\nTotal Drift-Points : {total_drift_points}\nTotal Drift in RS : {total_drift_rs}\nTotal Orders : {total_orders}\nTotal Modifications : {total_modifications}\n{25 * "-"}\nStratagy Wise Report :\n{25 * "-"}\n'
             for index,row in df_stratagy_cal.iterrows():
                 message += (f'Strtatagy : {row[F.stratagy]}\nPL : {row["pl"]}\nDrift in Points : {round(row[F.drift_points],2)}\nDrift in RS : {row[F.drift_rs]}\nOrders : {row[F.index]}\nModifications  : {(row["total_count"])}\n{25 * "-"}\n')
 
@@ -384,5 +384,5 @@ class Order_management :
             database(day_tracker = True)[dt.now().strftime('%b')].insert_many(data)
             send_message(message = message)
         except Exception as e : 
-            send_message(message = f'Problem in palcing limit_sl\nMessage : {e}', emergency = True)
+            send_message(message = f'Problem in palcing Calculate PL\nMessage : {e}', emergency = True)
             

@@ -210,7 +210,7 @@ class Checking:
                 elif not is_order_placed :
                     send_message(message = f'Not able to place {stratagy} re-entry order \nmessage :{order_number}', emergency = True)
 
-            if (i[F.entry_orderid] not in pending_order_list) and (i[F.entry_orderid_status] == F.re_entry_open) : 
+            if (i[F.entry_orderid] not in pending_order_list) and (i[F.entry_orderid_status] == F.re_entry_open) and  (i[F.exit_reason] == None): 
                 # Check is re-entry pending order is threre if not place sl for re-entry 
                 self.database[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.entry_orderid_status : F.closed, F.entry_time : self.current_time, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count + 1 } } )
                 send_message(message = f"re-entry placed broker end...\nOrder id : {i[F.entry_orderid]}\nTicker : {i[F.ticker]}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}", stratagy = i[F.stratagy])
@@ -266,7 +266,7 @@ class Checking:
                 new_ltp = get_ltp(i[F.token],self.broker_name)
                 points = trailing_points()
                 net_points = (i["ltp"] - new_ltp)//points
-                # print(net_points)
+                # print(f'Order id : {i[F.exit_orderid]} New LTP : {new_ltp} old ltp : {i["ltp"]} Points : {points} net_points : {net_points}')
                 if net_points > 0:
                     new_sl = round(i[F.exit_price] - net_points)
                     is_modified,order_number,message = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = i[F.exit_orderid], new_price = new_sl, quantity = i[F.qty])

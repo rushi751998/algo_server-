@@ -28,12 +28,12 @@ def socket_thread_fun(**kwargs):
 
 
 def order_placer(option_type,option_price,loop_no,stratagy,exit_percent,qty,transaction_type,broker_name,broker_session,wait_percent = None):
-    # try :
-    ticker,ltp = get_symbol(option_type,option_price,broker_name)
-    price = round(ltp * ((100-wait_percent)/100),1) if wait_percent != None else ltp
-    Order_management(broker_name,broker_session).order_place(ticker,qty = qty,transaction_type = transaction_type, stratagy = stratagy, exit_percent = exit_percent, loop_no = loop_no ,price = price, option_type = option_type)
-    # except Exception as e : 
-    #     send_message(f'Issue in order placer : {e}', emergency = True)
+    try :
+        ticker,ltp = get_symbol(option_type,option_price,broker_name)
+        price = round(ltp * ((100-wait_percent)/100),1) if wait_percent != None else ltp
+        Order_management(broker_name,broker_session).order_place(ticker,qty = qty,transaction_type = transaction_type, stratagy = stratagy, exit_percent = exit_percent, loop_no = loop_no ,price = price, option_type = option_type)
+    except Exception as e : 
+        send_message(f'Issue in order placer : {e}', emergency = True)
         
 def day_end(broker_name,broker_session,option_type):
     try : 
