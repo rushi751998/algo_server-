@@ -153,10 +153,10 @@ class Checking:
                 sl_price = filled_order[filled_order[F.order_id] == i[F.exit_orderid]].iloc[0][F.price]
                 if i[F.exit_order_execuation_type] == None : 
                     self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_price : float(sl_price), F.exit_order_execuation_type : F.limit_order, F.exit_time : str(self.current_time) } } )
-                    send_message(message = f'Sl hit\nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nPrice : {sl_price}\nExecuation Type : {F.limit_order}', stratagy = i[F.stratagy])
+                    send_message(message = f'Sl hit...\nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nPrice : {sl_price}\nExecuation Type : {F.limit_order}', stratagy = i[F.stratagy])
                 else : 
                     self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_price : float(sl_price), F.exit_time : str(self.current_time)} } )
-                    send_message(message = f'Sl hit\nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nPrice : {sl_price}\nExecuation Type : {i[F.entry_order_execuation_type]}', stratagy = i[F.stratagy])
+                    send_message(message = f'Sl hit...\nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nPrice : {sl_price}\nExecuation Type : {i[F.entry_order_execuation_type]}', stratagy = i[F.stratagy])
                     
                 #----------------------------------- Place re-entry order ---------------------------------------------------------
                 tag = f'{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}_re_entry'
@@ -230,7 +230,7 @@ class Checking:
                 is_order_placed, order_number, product_type, new_tag = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price, qty = qty, ticker = ticker , transaction_type = transaction_type, tag = tag + '_sl')
                 if is_order_placed : 
                     self.database[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.exit_orderid : order_number, F.exit_orderid_status : F.re_entry_open, F.entry_order_execuation_type : F.limit_order, F.exit_price : stoploos, F.exit_price_initial : stoploos , F.exit_tag : tag + '_sl'} } )
-                    send_message(message = f"re-entry Sl order palced Sucessfully...\nMessage : {order_number}\nTicker : {i[F.ticker]}\nPrice : {stoploos}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}",stratagy = i[F.stratagy])
+                    send_message(message = f"re-entry Sl order palced...\nMessage : {order_number}\nTicker : {i[F.ticker]}\nPrice : {stoploos}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}",stratagy = i[F.stratagy])
                 elif not is_order_placed:
                     self.database[str(self.date)].update_one({"entry_tag": tag}, {"$set": {F.exit_orderid_status : F.rejected }})
                     send_message(message =f'Problem in palcing re-entry limit_sl\nStratagy : {i[F.entry_orderid]}\Side : {i[F.option_type]}\nMessage : {message}', emergency = True)

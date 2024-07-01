@@ -71,7 +71,7 @@ class Order_management :
                             }
 
                     self.database[str(self.date)].insert_one(order)
-                    send_message(message = f"limit order placed... \nStratagy : {stratagy}\nOption Type : {option_type}\nProduct Type : {product_type}\nMessage : {order_number}",stratagy = stratagy)
+                    send_message(message = f"limit order placed... \nStratagy : {stratagy}\nPrice : {price}\nOption Type : {option_type}\nProduct Type : {product_type}\nMessage : {order_number}",stratagy = stratagy)
                     self.smart_executer(stratagy = stratagy, exit_percent = exit_percent, option_type = option_type, entry_orderid = order_number )
 
 
@@ -129,7 +129,7 @@ class Order_management :
                             }
 
                     self.database[str(self.date)].insert_one(order)
-                    send_message(message = f"limit order placed... \nStratagy : {stratagy}\nOption Type : {option_type}\nMessage : {order_number}", stratagy = stratagy)
+                    send_message(message = f"limit order placed... \nStratagy : {stratagy}\nPrice : {price}\nOption Type : {option_type}\nMessage : {order_number}", stratagy = stratagy)
                     self.smart_executer(stratagy=stratagy, exit_percent=exit_percent, option_type=option_type, entry_orderid = order_number)
             elif not is_order_placed :
                     send_message(message = f'Not able to place {stratagy} order \nmessage : {order_number}', emergency = True)
@@ -187,7 +187,7 @@ class Order_management :
                             }
 
                     self.database[str(self.date)].insert_one(order)
-                    send_message(message = f"limit order placed... \nStratagy : {stratagy}\nOption Type : {option_type}\nMessage : {order_number}", stratagy= stratagy)
+                    send_message(message = f"limit order placed... \nStratagy : {stratagy}\nPrice : {price}\nOption Type : {option_type}\nMessage : {order_number}", stratagy= stratagy)
 
             elif not is_order_placed :
                 send_message(message = f'Not able to place {stratagy} order \nmessage :{order_number}', emergency = True)
@@ -268,11 +268,11 @@ class Order_management :
         is_order_placed, order_number, product_type, new_tag = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price , qty = qty, ticker = ticker , transaction_type = transaction_type, tag = tag + '_sl')
         if is_order_placed :
             self.database[str(self.date)].update_one({ "entry_tag" : tag}, { "$set" : {F.exit_orderid : order_number, F.exit_orderid_status : F.open , F.exit_price : stoploos, F.exit_price_initial : stoploos, F.exit_tag : tag + '_sl'}})
-            send_message(message = f"Sl order palced Sucessfully !!! \nOrder Number : {order_number}\nPrice : {stoploos}\nSide : {option_type}\nStratagy : {stratagy}", stratagy = stratagy)
+            send_message(message = f"Sl order placed... \nOrder Number : {order_number}\nPrice : {stoploos}\nSide : {option_type}\nStratagy : {stratagy}", stratagy = stratagy)
 
         elif not is_order_placed:
             self.database[str(self.date)].update_one({ "entry_tag": tag}, { "$set": {F.exit_orderid_status : F.rejected }})
-            send_message(message = f'Problem in palcing limit_sl\nMessage : {order_number}', emergency = True)
+            send_message(message = f'Problem in plaing limit_sl\nMessage : {order_number}', emergency = True)
 
     def exit_orders_dayend(self,option_type) :
         while True:
@@ -290,7 +290,7 @@ class Order_management :
                         exit_price = filled_order[filled_order[F.order_id] == row[F.exit_orderid]].iloc[0][F.price]
                         if row[F.exit_order_execuation_type] == None : 
                             self.database[str(self.date)].update_one({F.exit_orderid : row[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.day_end, F.exit_price : float(exit_price) , F.exit_price_initial : float(exit_price), F.exit_time : self.time, F.exit_order_execuation_type : F.limit_order} } )
-                            send_message(message = f'Day end exit order \nOrder id : {row[F.exit_orderid]}\nOption Type : {row[F.option_type]}\nExecuation Type : {F.limit_order}\nStratagy : {row[F.stratagy]}', stratagy = row[F.stratagy])
+                            send_message(message = f'Day end exit order \nOrder id : {row[F.exit_orderid]}\nPrice : {exit_price}\nOption Type : {row[F.option_type]}\nExecuation Type : {F.limit_order}\nStratagy : {row[F.stratagy]}', stratagy = row[F.stratagy])
                         else : 
                             self.database[str(self.date)].update_one({F.exit_orderid : row[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.day_end, F.exit_price : float(exit_price) , F.exit_price_initial : float(exit_price), F.exit_time : self.time} } )
                             send_message(message = f'Day end exit order \nOrder id : {row[F.exit_orderid]}\nOption Type : {row[F.option_type]}\nExecuation Type : {row[F.exit_order_execuation_type]}\nStratagy : {row[F.stratagy]}', stratagy = row[F.stratagy])
@@ -310,10 +310,10 @@ class Order_management :
                             if is_modified :
                                 if count == 0 :
                                     self.database[str(self.date)].update_one({F.entry_orderid : row[F.entry_orderid]}, {"$set": {F.exit_price_initial : ltp, F.exit_price : ltp , F.exit_order_count : count + 1 }}) # it will update updated price to database
-                                    send_message(message = f"Exit price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {ltp} \nRemaning Qty : {remaning_qty}\nStratagy : {row[F.stratagy]}", stratagy = row[F.stratagy])
+                                    send_message(message = f"Exit price modified \nMessage :{order_number}\nOld Price : {price} New Price : {ltp} \nRemaning Qty : {remaning_qty}\nStratagy : {row[F.stratagy]}", stratagy = row[F.stratagy])
                                 else : 
                                     self.database[str(self.date)].update_one({F.entry_orderid : row[F.entry_orderid]}, {"$set": {F.exit_price : ltp , F.exit_order_count: count + 1 }}) # it will update updated price to database
-                                    send_message(message = f"Exit price modified \nMessage :{order_number} order modified\nOld Price : {price} New Price : {ltp} \nRemaning Qty : {remaning_qty}\nStratagy : {row[F.stratagy]}", stratagy = row[F.stratagy])
+                                    send_message(message = f"Exit price modified \nMessage :{order_number}\nOld Price : {price} New Price : {ltp} \nRemaning Qty : {remaning_qty}\nStratagy : {row[F.stratagy]}", stratagy = row[F.stratagy])
                                     
                             elif not is_modified :
                                 send_message(message = f'Not able to modify sl in exit_orders_dayend(kotak.modify_order)\nStratagy : {row[F.stratagy]}\nMessage : {message}\nOrder Id : {order_number}', emergency = True)
