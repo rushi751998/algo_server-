@@ -213,7 +213,7 @@ class Order_management :
                             send_message(message = f'Placed in broker end \nOrder id : {row[F.entry_orderid]}\nOption Type : {row[F.option_type]}\nExecuation Type : {row[F.entry_order_execuation_type]}\nCount : {count}\nStratagy : {row[F.stratagy]}', stratagy = row[F.stratagy])
                             time.sleep(5)
                         
-                    elif (count < 5) and (row[F.entry_orderid_status] == F.open) :
+                    elif (count < 3) and (row[F.entry_orderid_status] == F.open) :
                         ltp = get_ltp(row[F.token],self.broker_name)
                         price = row[F.entry_price] 
 
@@ -294,7 +294,7 @@ class Order_management :
                         else : 
                             self.database[str(self.date)].update_one({F.exit_orderid : row[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.day_end, F.exit_price : float(exit_price) , F.exit_price_initial : float(exit_price), F.exit_time : self.time} } )
                             send_message(message = f'Day end exit order \nOrder id : {row[F.exit_orderid]}\nOption Type : {row[F.option_type]}\nExecuation Type : {row[F.exit_order_execuation_type]}\nCount : {row[F.exit_order_count]}\nStratagy : {row[F.stratagy]}', stratagy = row[F.stratagy])
-                    elif count < 5:
+                    elif count < 3:
                         ltp = get_ltp(row[F.token],self.broker_name)
                         # ltp = 40
                         price = row[F.exit_price] 
@@ -368,7 +368,7 @@ class Order_management :
             total_modifications = df_stratagy_cal['total_count'].sum()
             total_orders = len(df)
 
-            message  = f'Instrument : {env.index}\nTotal PL : {pl}\nTotal Drift-Points : {total_drift_points}\nTotal Drift in RS : {total_drift_rs}\nTotal Orders : {total_orders}\nTotal Modifications : {total_modifications}\n{25 * "-"}\nStratagy Wise Report :\n{25 * "-"}\n'
+            message  = f'Instrument : {env.index}\nTotal PL : {total_pl}\nTotal Drift-Points : {total_drift_points}\nTotal Drift in RS : {total_drift_rs}\nTotal Orders : {total_orders}\nTotal Modifications : {total_modifications}\n{25 * "-"}\nStratagy Wise Report :\n{25 * "-"}\n'
             for index,row in df_stratagy_cal.iterrows():
                 message += (f'Strtatagy : {row[F.stratagy]}\nPL : {row["pl"]}\nDrift in Points : {round(row[F.drift_points],2)}\nDrift in RS : {row[F.drift_rs]}\nOrders : {row[F.index]}\nModifications  : {(row["total_count"])}\n{25 * "-"}\n')
 

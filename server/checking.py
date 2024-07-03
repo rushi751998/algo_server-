@@ -273,7 +273,7 @@ class Checking:
                     is_order_rejected, is_mis_blocked = is_order_rejected_func(order_number, self.broker_session, self.broker_name)
                     if is_modified and not is_order_rejected :
                         self.database[str(self.date)].update_one({F.entry_orderid : {'$eq' : i[F.entry_orderid]}},{"$set" : {F.exit_price : new_sl, F.exit_price_initial : new_sl, "ltp" : new_ltp}})
-                        send_message(message = f"SL trailed from {i[F.exit_price]} to {new_sl} of {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nSide : {i[F.option_type]}\nStratagy : {i[F.stratagy]}", stratagy = i[F.stratagy])
+                        send_message(message = f"SL trailed from {i[F.exit_price]} to {new_sl}\nOrder Id : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nSide : {i[F.option_type]}\nStratagy : {i[F.stratagy]}", stratagy = i[F.stratagy])
 
             if (i[F.exit_orderid_status]== F.open) and (i[F.exit_orderid] not in pending_order_list):
                 #--------------- Update sl hit ----------------------------
