@@ -286,7 +286,7 @@ class Order_management :
             if len(pending_orders_db) != 0:
                 for index,row in pending_orders_db.iterrows():
                     count = row[F.exit_order_count]
-                    if (row[F.exit_orderid]  not in pending_order[F.order_id].tolist()) and (row[F.exit_orderid_status] == F.open) :
+                    if (row[F.exit_orderid]  not in pending_order[F.order_id].tolist()) and (row[F.exit_orderid_status] in [F.open,F.re_entry_open]) :
                         exit_price = filled_order[filled_order[F.order_id] == row[F.exit_orderid]].iloc[0][F.price]
                         if row[F.exit_order_execuation_type] == None : 
                             self.database[str(self.date)].update_one({F.exit_orderid : row[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.day_end, F.exit_price : float(exit_price) , F.exit_price_initial : float(exit_price), F.exit_time : self.time, F.exit_order_execuation_type : F.limit_order} } )
