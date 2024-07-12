@@ -181,6 +181,7 @@ def get_qty_option_price(broker_name):
             re_entry_price = (re_entry_risk / lot_size) + hedge_cost
             wait_trade_qty  = lot_size * selling_lots  
             wait_trade_price = (wait_trade_risk / lot_size) + hedge_cost
+            hedge_qty =  lot_size * hedge_lots 
             
         elif env_variables.index == 'NIFTY' : 
             fifty_per_qty = lot_size * selling_lots
@@ -189,6 +190,7 @@ def get_qty_option_price(broker_name):
             re_entry_price = (re_entry_risk / lot_size) + hedge_cost
             wait_trade_qty  = lot_size * selling_lots  
             wait_trade_price = (wait_trade_risk / lot_size) + hedge_cost
+            hedge_qty =  lot_size * hedge_lots 
             
         elif env_variables.index == 'FINNIFTY' : 
             fifty_per_qty = lot_size * selling_lots
@@ -197,16 +199,18 @@ def get_qty_option_price(broker_name):
             re_entry_price = (re_entry_risk / lot_size) + hedge_cost
             wait_trade_qty  = lot_size * selling_lots  
             wait_trade_price = (wait_trade_risk / lot_size) + hedge_cost
+            hedge_qty =  lot_size * hedge_lots 
         
         elif env_variables.index == 'MIDCPNIFTY' : 
-            fifty_per_qty = lot_size * selling_lots
+            fifty_per_qty = lot_size * (round(selling_lots / 2))
             fifty_per_price = (fifty_per_risk / lot_size) + hedge_cost
-            re_entry_qty = lot_size * selling_lots
+            re_entry_qty = lot_size * (round(selling_lots / 2))
             re_entry_price = (re_entry_risk / lot_size) + hedge_cost
-            wait_trade_qty  = lot_size * selling_lots  
+            wait_trade_qty  = lot_size * (round(selling_lots / 2))  
             wait_trade_price = (wait_trade_risk / lot_size) + hedge_cost
+            hedge_qty =  lot_size * (round(hedge_lots / 5)) 
             
-    return fifty_per_qty, fifty_per_price, re_entry_qty, re_entry_price, wait_trade_qty, wait_trade_price, hedge_lots * lot_size
+    return fifty_per_qty, fifty_per_price, re_entry_qty, re_entry_price, wait_trade_qty, wait_trade_price, hedge_qty
             
 class env_variables:
     env_variable_initilised = False
