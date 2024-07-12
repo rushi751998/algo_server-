@@ -18,61 +18,58 @@ class Checking:
         self.current_time = dt.now()
         self.date = dt.today().date()
         self.database = database()
-    
+        
     def check(self):
         is_not_empty = False
+        self.db_df = pd.DataFrame()
         try : 
             order_details = Order_details(self.broker_session,self.broker_name)
             is_not_empty, all_orders, filled_order, pending_order = order_details.order_book()
-            all_positions, open_position, closed_position = order_details.position_book()
+            # all_positions, open_position, closed_position = order_details.position_book()
+            self.db_df = pd.DataFrame(self.database[str(self.date)].find())
+            
         except : 
             pass
 
-        if is_not_empty :
+        if len(self.db_df) > 0:
             try:
-                self.day_tracker()
-                # print(f'\n{self.current_time}---------------- data updated ------------------')
-            except Exception as e:
-                send_message(message = f'problem in day_tracker \nReason :{e}', emergency = True)
-
-            try:
-                self.fifty_per_management(pending_order,filled_order,F.FS_First)
+                self.fifty_per_management(self.db_df,pending_order,filled_order,F.FS_First)
                 # print(f'{self.current_time}---------------- fifty_per_management -  {F.FS_First} ------------------')
             except Exception as e:
                 send_message(message = f'problem in fifty_per_management for : {F.FS_First} \nReason :{e}', emergency = True)
 
             try:
-                self.re_entry_management(pending_order,filled_order,F.RE_First)
+                self.re_entry_management(self.db_df,pending_order,filled_order,F.RE_First)
                 # print(f'{self.current_time}---------------- re_entry_management -  {F.RE_First} ------------------')
             except Exception as e:
                 send_message(message = f'problem in re_entry_management for : {F.RE_First} \nReason :{e}', emergency = True)
 
             try:
-                self.wait_n_trade(pending_order,filled_order,F.WNT_First)
+                self.wait_n_trade(self.db_df,pending_order,filled_order,F.WNT_First)
                 # print(f'{self.current_time}---------------- wait_n_trade -  {F.WNT_First} ------------------')
             except Exception as e:
                 send_message(message = f'problem in wait_n_trade for : {F.WNT_First} \nReason :{e}', emergency = True)
                 
             try:
-                self.re_entry_management(pending_order,filled_order,F.RE_Second)
+                self.re_entry_management(self.db_df,pending_order,filled_order,F.RE_Second)
                 # print(f'{self.current_time}---------------- re_entry_management -  {F.RE_Second} ------------------')
             except Exception as e:
                 send_message(message = f'problem in re_entry_management for : {F.RE_First} \nReason :{e}', emergency = True)
             
             try:
-                self.re_entry_management(pending_order,filled_order,F.RE_Third)
+                self.re_entry_management(self.db_df,pending_order,filled_order,F.RE_Third)
                 # print(f'{self.current_time}---------------- re_entry_management -  {F.RE_Third} ------------------')
             except Exception as e:
                 send_message(message = f'problem in re_entry_management for : {F.RE_First} \nReason :{e}', emergency = True)
 
             try:
-                self.check_ltp_above_sl(pending_order,filled_order)
+                self.check_ltp_above_sl(self.db_df,pending_order,filled_order)
                 # print(f'{self.current_time}---------------- check_ltp_above_sl ------------------')
             except Exception as e:
                 send_message(message = f'problem in check_ltp_above_sl\nReason :{e}', emergency = True)
                 
             try:
-                self.rejected_order_management(pending_order,filled_order)
+                self.rejected_order_management(self.db_df,pending_order,filled_order)
                 # print(f'{self.current_time}---------------- rejected_order_management ------------------')
             except Exception as e:
                 send_message(message = f'problem in rejected_order_management\nReason :{e}', emergency = True)
@@ -85,27 +82,27 @@ class Checking:
         # except Exception as e:
         #     print('problem in check_ltp_above_sl',e)
         
-    def day_tracker(self):
+    def record_pl(self):
         # -------------------------------- Upload each leg wise pl to order db ---------------------------------------------
         if env.day_tracker : 
             myquery = {'$or': [{F.exit_orderid_status : F.open},{F.exit_orderid_status : F.re_entry_open}]}
             db_data = self.database[str(self.date)].find(myquery)
-            # print(pd.DataFrame(db_data))
-            for i in db_data:
-                ltp = get_ltp(i[F.token], self.broker_name)
-                pl =  round((i[F.entry_price] - ltp) * i[F.qty])
-                # print('order_id: ',i[F.exit_orderid] )
-                self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]},{'$push' : {F.recording: {'Time': self.current_time, 'pl' : pl}}}) #procuction
             time.sleep(1)
-            
-                # entry_id[str(date)].update_one({F.ticker :i[F.ticker]},{'$push': {F.recording: {'Time':current_time , 'pl': pl,'datetime':dt.now()}}})
+            try : 
+                for i in db_data:
+                        ltp = get_ltp(i[F.token], self.broker_name)
+                        pl =  round((i[F.entry_price] - ltp) * i[F.qty])
+                        # print('order_id: ',i[F.exit_orderid] )
+                        self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]},{'$push' : {F.recording: {'Time': self.current_time, 'pl' : pl}}}) #procuction
+                        # entry_id[str(date)].update_one({F.ticker :i[F.ticker]},{'$push': {F.recording: {'Time':current_time , 'pl': pl,'datetime':dt.now()}}})
+                        time.sleep(0.5)
 
-
+            except Exception as e:
+                send_message(message = f'problem in record_pl \nReason :{e}', emergency = True)    
         # # -------------------------------- Upload Stratagy wise pl to pl db ---------------------------------------------
     
-    def Update_commmon_pl(self):
-
-        db_data = self.database[str(self.date)].find()
+    def Update_commmon_pl(self,db_df):
+        db_data = db_df
         # stratagy=F.WNT_First
         FS_First = []
         RE_First = []
@@ -132,21 +129,23 @@ class Checking:
         a = pd.DataFrame(combine_pl).groupby('Time').sum().reset_index()
         self.database[str(self.date)].update_one({F.stratagy : {'$eq"': 'combine_pl'}},{F.recording : combine_pl })
 
-    def fifty_per_management(self,pending_order,filled_order,stratagy):
-        NineTwenty_db = self.database[str(self.date)].find({F.stratagy : {'$eq':stratagy}})
+    def fifty_per_management(self,db_df,pending_order,filled_order,stratagy):
+        # NineTwenty_db = self.database[str(self.date)].find({F.stratagy : {'$eq':stratagy}})
+        NineTwenty_db = db_df[db_df[F.stratagy] == stratagy]
         pending_order_list = pending_order[F.order_id].to_list()
-        for i in NineTwenty_db:
+        for index,i in NineTwenty_db.iterrows():
             if i[F.exit_orderid] not in pending_order_list and (i[F.exit_orderid_status] == F.open) :
                 sl_price = filled_order[filled_order[F.order_id] == i[F.exit_orderid]].iloc[0][F.price]
                 exit_time = self.current_time
                 self.database[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_order_execuation_type : F.limit_order, F.exit_price : float(sl_price), F.exit_time : str(exit_time)}} )
                 send_message(message = f'Sl hit...\nMessage : {i[F.exit_orderid]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nPrice : {sl_price}', stratagy = i[F.stratagy])
-            time.sleep(1)
+            # time.sleep(1)
         
-    def re_entry_management(self,pending_order,filled_order,stratagy):
-        NineThirty_db = self.database[str(self.date)].find({F.stratagy : {'$eq': stratagy}})
+    def re_entry_management(self,db_df,pending_order,filled_order,stratagy):
+        # NineThirty_db = self.database[str(self.date)].find({F.stratagy : {'$eq': stratagy}})
+        NineThirty_db = db_df[db_df[F.stratagy] == stratagy]
         pending_order_list = pending_order[F.order_id].to_list()
-        for i in NineThirty_db:
+        for index,i in NineThirty_db.iterrows():
             count = i[F.exit_order_count]
             if (i[F.exit_orderid] not in pending_order_list) and (i[F.exit_orderid_status] == F.open) and (i[F.exit_reason] == None): # re-entry pending order place
                 #----------------------------------- Upadate 1st order details ---------------------------------------------------------
@@ -156,20 +155,21 @@ class Checking:
                     send_message(message = f'Sl hit...\nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nPrice : {sl_price}\nExecuation Type : {F.limit_order}', stratagy = i[F.stratagy])
                 else : 
                     self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_price : float(sl_price), F.exit_time : str(self.current_time)} } )
-                    send_message(message = f'Sl hit...\nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nPrice : {sl_price}\nExecuation Type : {i[F.entry_order_execuation_type]}', stratagy = i[F.stratagy])
+                    send_message(message = f'Sl hit...\nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nPrice : {sl_price}\nExecuation Type : {i[F.exit_order_execuation_type]}', stratagy = i[F.stratagy])
                     
                 #----------------------------------- Place re-entry order ---------------------------------------------------------
                 tag = f'{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}_re_entry'
                 trigger_price = i[F.entry_price] + 0.05
                 # print('trigger_price : ',trigger_price)
                 # print(f"price = {i[F.entry_price]},trigger_price = {trigger_price},qty = {i[F.qty]},ticker ={ i[F.ticker]},transaction_type = {[F.transaction_type]},tag = tag")
-                is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = i[F.entry_price], trigger_price = trigger_price, qty = i[F.qty], ticker = i[F.ticker], transaction_type = i[F.transaction_type], tag = tag)
+                is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = i[F.entry_price], trigger_price = trigger_price, qty = i[F.qty], ticker = i[F.ticker], transaction_type = i[F.transaction_type], product_type = i[F.product_type], tag = tag)
                 if is_order_placed : 
                     order = { 
                             F.entry_time : None,
                             F.ticker : i[F.ticker],
                             F.token : i[F.token],
                             F.transaction_type : i[F.transaction_type],
+                            F.product_type : i[F.product_type],
                             F.option_type : i[F.option_type],
                             F.qty : i[F.qty],
                             #-------------- Entry order details -------------
@@ -206,9 +206,9 @@ class Checking:
                             }
 
                     self.database[str(self.date)].insert_one(order)
-                    send_message(message = f"re-entry order palced Sucessfully... \nMessage : {order_number}\nTicker : {i[F.ticker]}\nPrice : {i[F.entry_price]}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}", stratagy = i[F.stratagy]) 
+                    send_message(message = f"re-entry limit order placed... \nMessage : {order_number}\nTicker : {i[F.ticker]}\nPrice : {i[F.entry_price]}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}", stratagy = i[F.stratagy]) 
                 elif not is_order_placed :
-                    send_message(message = f'Not able to place {stratagy} re-entry order \nmessage :{order_number}', emergency = True)
+                    send_message(message = f'Not able to place {stratagy} re-entry limit order order \nmessage :{order_number}', emergency = True)
 
             if (i[F.entry_orderid] not in pending_order_list) and (i[F.entry_orderid_status] == F.re_entry_open) and  (i[F.exit_reason] == None): 
                 # Check is re-entry pending order is threre if not place sl for re-entry 
@@ -227,10 +227,10 @@ class Checking:
                 stoploos = round(i[F.entry_price] + (i[F.entry_price] * (i[F.exit_percent] / 100)),1)
                 qty = i[F.qty]
                 trigger_price = stoploos - 0.1
-                is_order_placed, order_number, product_type, new_tag = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price, qty = qty, ticker = ticker , transaction_type = transaction_type, tag = tag + '_sl')
+                is_order_placed, order_number, product_type, new_tag = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price, qty = qty, ticker = ticker , transaction_type = transaction_type, product_type = i[F.product_type], tag = tag + '_sl')
                 if is_order_placed : 
                     self.database[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.exit_orderid : order_number, F.exit_orderid_status : F.re_entry_open, F.entry_order_execuation_type : F.limit_order, F.exit_price : stoploos, F.exit_price_initial : stoploos , F.exit_tag : tag + '_sl'} } )
-                    send_message(message = f"re-entry Sl order palced...\nMessage : {order_number}\nTicker : {i[F.ticker]}\nPrice : {stoploos}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}",stratagy = i[F.stratagy])
+                    send_message(message = f"re-entry Sl order placed...\nMessage : {order_number}\nTicker : {i[F.ticker]}\nPrice : {stoploos}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}",stratagy = i[F.stratagy])
                 elif not is_order_placed:
                     self.database[str(self.date)].update_one({"entry_tag": tag}, {"$set": {F.exit_orderid_status : F.rejected }})
                     send_message(message =f'Problem in palcing re-entry limit_sl\nStratagy : {i[F.entry_orderid]}\Side : {i[F.option_type]}\nMessage : {message}', emergency = True)
@@ -246,18 +246,19 @@ class Checking:
                     send_message(message = f"re-entry Sl hit...\nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nPrice : {sl_price}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nExecuation Type : {i[F.entry_order_execuation_type]}", stratagy = i[F.stratagy])
                     
                 
-            time.sleep(1)
+            # time.sleep(1)
                                      
-    def wait_n_trade(self,pending_order,filled_order,stratagy):
-        query = {F.stratagy : {'$eq': stratagy}}
-        NineFourtyFive_db = self.database[str(self.date)].find(query)
+    def wait_n_trade(self,db_df,pending_order,filled_order,stratagy):
+        # query = {F.stratagy : {'$eq': stratagy}}
+        # NineFourtyFive_db = self.database[str(self.date)].find(query)
+        NineFourtyFive_db = db_df[db_df[F.stratagy] == stratagy]
         pending_order_list = pending_order[F.order_id].to_list()
 
-        for i in NineFourtyFive_db:
+        for index,i in NineFourtyFive_db.iterrows():
             count = i[F.exit_order_count]
             if (i[F.entry_orderid_status] == F.open) and (i[F.entry_orderid] not in pending_order_list) and (i[F.exit_reason] == None):
                 ltp = get_ltp(i[F.token],self.broker_name)
-                send_message(message = f'Placed at broker-end  :  {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}', stratagy = i[F.stratagy])
+                send_message(message = f'Placed at broker-end  :  {i[F.entry_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}', stratagy = i[F.stratagy])
                 self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.entry_orderid_status : F.closed ,F.entry_time : self.current_time, F.entry_order_execuation_type : F.limit_order, "ltp" : ltp, F.entry_order_count : count + 1}})
                 #--------------- Place limit sl ----------------------------
                 Order_management(self.broker_name, self.broker_session).place_limit_sl(ticker = i[F.ticker], qty = i[F.qty], transaction_type_ = i[F.transaction_type], avg_price = (i[F.entry_price]), exit_percent = i[F.exit_percent], option_type = i[F.option_type], stratagy= i[F.stratagy],tag = i[F.entry_tag])
@@ -284,13 +285,13 @@ class Checking:
                 else : 
                     self.database[str(self.date)].update_one({F.entry_orderid :{'$eq' : i[F.entry_orderid]}},{"$set" : {F.exit_orderid_status : F.closed, F.exit_price : float(sl_price), F.exit_reason : F.sl_hit, F.exit_order_count : count + 1 , F.exit_time : self.current_time}})
                     send_message(message = f"Sl hit... \nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nPrice : {sl_price}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}Price : {sl_price}\nExecuation Type : {i[F.entry_order_execuation_type]}", stratagy = i[F.stratagy])
-            time.sleep(1)                
+            # time.sleep(1)                
         
-    def check_ltp_above_sl(self,pending_order,filled_order):
-        myquery = {'$or': [{F.exit_orderid_status : F.open},{F.exit_orderid_status : F.re_entry_open}]}
-        db_data = self.database[str(self.date)].find(myquery)
-        
-        for i in db_data:
+    def check_ltp_above_sl(self,db_df,pending_order,filled_order):
+        # myquery = {'$or': [{F.exit_orderid_status : F.open},{F.exit_orderid_status : F.re_entry_open}]}
+        # db_data = self.database[str(self.date)].find(myquery)
+        db_data = db_df[(db_df[F.exit_orderid_status ] == F.open) | (db_df[F.exit_orderid_status] == F.re_entry_open)]
+        for index,i in db_data.iterrows():
             ltp = get_ltp(i[F.token],self.broker_name)
             sl_price = i[F.exit_price]
             if ltp > sl_price:
@@ -304,15 +305,19 @@ class Checking:
                 if is_modified and not is_order_rejected :
                     self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]}, { "$set": {F.exit_order_execuation_type : F.market_order, F.exit_order_count : count + 1 } }) # it will update updated price to database
                     send_message(message = f"ltp is above stoploss \nMessage :{order_number} \norder modified to market order\nTicker: {i[F.ticker]}", stratagy = i[F.stratagy])
+                    send_message(message = f"ltp is above stoploss \nMessage :{order_number} \norder modified to market order\nTicker: {i[F.ticker]}", emergency= True)
                 else : 
                     send_message(message = f'Not able to modify sl in check_ltp_above_sl\nMessage : {message}\nOrder Id : {order_number}\nTicker: {i[F.ticker]}', emergency = True)
-                time.sleep(2)
+                # time.sleep(2)
  
-    def rejected_order_management(self,pending_order,filled_order):
-        myquery = {'$or': [{F.exit_orderid_status : F.rejected},{F.entry_orderid_status : F.rejected}]}
-        db_data = self.database[str(self.date)].find(myquery)
+    def rejected_order_management(self,db_df,pending_order,filled_order):
+        # myquery = {'$or': [{F.exit_orderid_status : F.rejected},{F.entry_orderid_status : F.rejected}]}
+        # db_data = self.database[str(self.date)].find(myquery)
+        
+        db_data = db_df[(db_df[F.exit_orderid_status] == F.rejected) | (db_df[F.entry_orderid_status] == F.rejected)]
+        
         all_filled_orders = pending_order[F.order_id].to_list() + filled_order[F.order_id].to_list()
-        for i in db_data :
+        for index,i in db_data.iterrows():
             if i[F.entry_orderid] in all_filled_orders : 
                 self.database[str(self.date)].update_one({F.entry_orderid: i[F.entry_orderid]}, {"$set": {F.exit_orderid_status : F.open }})
             elif i[F.exit_orderid] in all_filled_orders : 

@@ -101,9 +101,10 @@ def wait_until_next_minute():
     now = dt.now()
     next_minute = (now + timedelta(minutes = 1)).replace(second = 0, microsecond = 0)
     sleep_time = (next_minute - now).total_seconds()
-    time.sleep(sleep_time)
+    return sleep_time
 
 def trailing_points():
+    points = 0
     if env_variables.index == 'BANKNIFTY' : 
         points = 5
             
@@ -167,43 +168,45 @@ def get_qty_option_price(broker_name):
     re_entry_risk = env_variables.re_entry_risk
     wait_trade_risk = env_variables.wait_trade_risk 
     lot_size = env_variables.lot_size
-    hedge_cost = 0
+    hedge_cost = env_variables.hedge_cost
+    selling_lots = env_variables.selling_lots
+    hedge_lots = env_variables.hedge_lots
     
 
     if  broker_name == 'kotak_neo' : 
         if env_variables.index == 'BANKNIFTY' : 
-            fifty_per_qty = lot_size
+            fifty_per_qty = lot_size * selling_lots
             fifty_per_price = (fifty_per_risk / lot_size) + hedge_cost
-            re_entry_qty = lot_size
+            re_entry_qty = lot_size * selling_lots
             re_entry_price = (re_entry_risk / lot_size) + hedge_cost
-            wait_trade_qty  = lot_size  
+            wait_trade_qty  = lot_size * selling_lots  
             wait_trade_price = (wait_trade_risk / lot_size) + hedge_cost
             
         elif env_variables.index == 'NIFTY' : 
-            fifty_per_qty = lot_size
+            fifty_per_qty = lot_size * selling_lots
             fifty_per_price = (fifty_per_risk / lot_size) + hedge_cost
-            re_entry_qty = lot_size
+            re_entry_qty = lot_size * selling_lots
             re_entry_price = (re_entry_risk / lot_size) + hedge_cost
-            wait_trade_qty  = lot_size  
+            wait_trade_qty  = lot_size * selling_lots  
             wait_trade_price = (wait_trade_risk / lot_size) + hedge_cost
             
         elif env_variables.index == 'FINNIFTY' : 
-            fifty_per_qty = lot_size
+            fifty_per_qty = lot_size * selling_lots
             fifty_per_price = (fifty_per_risk / lot_size) + hedge_cost
-            re_entry_qty = lot_size
+            re_entry_qty = lot_size * selling_lots
             re_entry_price = (re_entry_risk / lot_size) + hedge_cost
-            wait_trade_qty  = lot_size  
+            wait_trade_qty  = lot_size * selling_lots  
             wait_trade_price = (wait_trade_risk / lot_size) + hedge_cost
         
         elif env_variables.index == 'MIDCPNIFTY' : 
-            fifty_per_qty = lot_size
+            fifty_per_qty = lot_size * selling_lots
             fifty_per_price = (fifty_per_risk / lot_size) + hedge_cost
-            re_entry_qty = lot_size
+            re_entry_qty = lot_size * selling_lots
             re_entry_price = (re_entry_risk / lot_size) + hedge_cost
-            wait_trade_qty  = lot_size  
+            wait_trade_qty  = lot_size * selling_lots  
             wait_trade_price = (wait_trade_risk / lot_size) + hedge_cost
             
-    return fifty_per_qty, fifty_per_price, re_entry_qty, re_entry_price, wait_trade_qty, wait_trade_price
+    return fifty_per_qty, fifty_per_price, re_entry_qty, re_entry_price, wait_trade_qty, wait_trade_price, hedge_lots * lot_size
             
 class env_variables:
     env_variable_initilised = False
@@ -213,6 +216,9 @@ class env_variables:
     socket_open = False
     logger = None #setup_daily_logger(True)
     lot_size : int
+    selling_lots : int
+    hedge_lots : int
+    hedge_cost : float
     index : str 
     expiry_base_instrument : bool
     product_type : str
@@ -243,6 +249,7 @@ class env_variables:
     RE_Third : str
     exit_orders : str
     logout_session : str
+    Buy_Hedges : str 
     
     capital : str
     qty_partation_loop : int
@@ -256,9 +263,12 @@ class env_variables:
         self.env_variable_initilised= True
         self.option_chain_set = False
         self.thread_list = []
+        self.index = None
         self.today = dt.today().date()
         self.lot_size = 1
-        self.index = None
+        self.selling_lots = int(os.environ['selling_lots']) 
+        self.hedge_lots = int(os.environ['hedge_lots']) 
+        self.hedge_cost = 0
         
         self.expiry_base_instrument = bool(os.environ['expiry_base_instrument'])
         self.day_tracker = bool(os.environ['day_tracker'])
@@ -273,8 +283,8 @@ class env_variables:
         self.broker_name = os.environ['broker_name']    
         self.session_validation_key = os.environ['session_validation_key'] 
         self.two_factor_code = os.environ['two_factor_code'] 
-        if self.broker_name == Fields.kotak_neo : 
-            self.product_type = 'MIS'
+        # if self.broker_name == Fields.kotak_neo : 
+        self.product_type = 'MIS'
             
         self.allowed_loss_percent = float(os.environ['allowed_loss_percent'] )
         # self.hoilydays =os.environ['hoilydays'] 
@@ -291,6 +301,7 @@ class env_variables:
         self.login = os.environ['login']
         self.FS_First = os.environ['FS_First']
         self.RE_First = os.environ['RE_First']
+        self.Buy_Hedges = os.environ['Buy_Hedges']
         self.WNT_First = os.environ['WNT_First']
         self.RE_Second = os.environ['RE_Second']
         self.RE_Third = os.environ['RE_Third']
@@ -306,8 +317,10 @@ class env_variables:
                                 Fields.WNT_First : os.environ['nine_fourty_five_bot_token'],
                                 Fields.RE_Second : os.environ['ten_thirty_bot_token'],
                                 Fields.RE_Third : os.environ['eleven_bot_token'],
-                                'emergency' : os.environ['emergency_bot_token'],
+                                Fields.Hedges : os.environ['nine_twenty_bot_token'],   #passing hedges updates to Nine Twenty
+                                
                                 'common_logger' : os.environ['common_loggger'],
+                                'emergency' : os.environ['emergency_bot_token'],
                                 'chat_id' : os.environ['chatId']
                                 }
         
@@ -379,6 +392,7 @@ class Fields :
     WNT_First = 'WNT_First'
     RE_Second = 'RE_Second'
     RE_Third = 'RE_Third'
+    Hedges = 'Hedges'
     
     # Other
     kotak_neo = 'kotak_neo'

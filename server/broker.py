@@ -61,8 +61,8 @@ class Order_details :
             all_orders,filled_order,pending_order = pd.DataFrame(),pd.DataFrame(),pd.DataFrame()
             responce = self.broker_session.order_report()
             # print(responce[F.data][0])
-            if responce[F.stCode] == 200 : 
-                try :
+            try :
+                if responce[F.stCode] == 200 : 
                     all_orders = pd.DataFrame(responce[F.data])[[F.nOrdNo,'ordDtTm','trdSym','tok',F.qty,'fldQty','avgPrc','trnsTp','prod' ,'exSeg','ordSt','stkPrc','optTp','brdLtQty','expDt','GuiOrdId','rejRsn']]
                     all_orders = set_coloumn_name(all_orders,self.broker_name)
                     all_orders = all_orders[all_orders['exchange_segement']=='nse_fo']
@@ -70,19 +70,19 @@ class Order_details :
                     # pending_order = all_orders[all_orders['order_status'] == 'open']
                     pending_order = all_orders[all_orders['order_status'].isin(['trigger pending','open'])]
                     return True,all_orders,filled_order,pending_order
-                except KeyError:
-                    env.logger.warning(f"Func : Order_details.order_book Input:  Output: {False} Error : KeyError \n{responce}")
-                    return False,all_orders,filled_order,pending_order
+            except KeyError:
+                env.logger.warning(f"Func : Order_details.order_book Input:  Output: {False} Error : KeyError \n{responce}")
+                return False,all_orders,filled_order,pending_order
 
-                except Exception as e:
-                    send_message(message = f'Not able to get orderbook\nMessage : {e},{responce}', emergency = True)
-                    return False,all_orders,filled_order,pending_order
-            
+            except Exception as e:
+                send_message(message = f'Not able to get orderbook\nMessage : {e}\nresponce : {responce}', emergency = True)
+                return False,all_orders,filled_order,pending_order
+                
     def position_book(self):
         if self.broker_name == F.kotak_neo :
             responce = self.broker_session.positions()
-            if responce[F.stCode] == 200 : 
-                try :
+            try :
+                if responce[F.stCode] == 200 : 
                     responce_code = None if responce[F.stCode] == 200 else send_message(message = f"Not able to get position_book due to : {order_staus_dict[responce[F.stCode]]}", emergency = True)
                     all_positions = pd.DataFrame(responce[F.data]) [['trdSym','type','optTp','buyAmt' ,'prod','exSeg','tok','flBuyQty','flSellQty','sellAmt','stkPrc','expDt',]]
                     all_positions = set_coloumn_name(all_positions, self.broker_name)
@@ -90,13 +90,13 @@ class Order_details :
                     open_position = option_positions[option_positions['filed_buy_qty'] != option_positions['filed_sell_qty']]
                     closed_position = option_positions[option_positions['filed_buy_qty'] == option_positions['filed_sell_qty']]
                     return all_positions,open_position,closed_position
-                except KeyError:
-                    env.logger.warning(f"Func : Order_details.position_book Input:  Output: {False} Error : KeyError\n{responce}")
-                    return None,None,None
+            except KeyError:
+                env.logger.warning(f"Func : Order_details.position_book Input:  Output: {False} Error : KeyError\n{responce}")
+                return None,None,None
 
-                except Exception as e:
-                    send_message(message = f'Not able to get position_book\nMessage : {e}\n{responce}')
-                    return None,None,None
+            except Exception as e:
+                send_message(message = f'Not able to get position_book\nMessage : {e}\nresponce : {responce}')
+                return None,None,None
 
 class Socket_handling:
     future_token : str
@@ -234,13 +234,20 @@ class Socket_handling:
 def get_option_chain():
     return option_chain
 
-def get_symbol(option_type,option_price,broker_name):
+def get_symbol(option_type,broker_name,option_price = None, is_hedge = False):
     if broker_name == F.kotak_neo :
         chain = pd.DataFrame(get_option_chain()).T
         chain = chain[(chain['v'] > 100000) & (chain['oi'] > 100000)]
-        ce = chain[chain[F.option_type]==option_type]
-        strike = ce[ce['ltp']<=option_price].sort_values('ltp',ascending=False).iloc[0]
-        env.logger.info(f"Func : get_symbol Input: {option_type},{option_price},{broker_name} Output: {strike['ticker']}, {strike['ltp']}")
+        chain = chain[chain[F.option_type]==option_type]
+        
+        if not is_hedge :
+            strike = chain[chain['ltp']<=option_price].sort_values('ltp',ascending=False).iloc[0]
+            env.logger.info(f"Func : get_symbol Input: {option_type},{option_price},{broker_name} Output: {strike['ticker']}, {strike['ltp']}")
+        
+        else : 
+            strike = chain[chain['ltp'] >= 1].sort_values('ltp',ascending=True).iloc[0]
+            env.logger.info(f"Func : get_symbol Input:  Output: {strike['ticker']}, {strike['ltp']}")
+            env.hedge_cost = 0
         return strike['ticker'], strike['ltp']
 
 def get_ltp(instrument_token,broker_name):
@@ -252,7 +259,22 @@ def get_ltp(instrument_token,broker_name):
         except Exception as e : 
             send_message(message = f"not able to get lpt", emergency = True)
         
-        
+def set_hedge_cost(broker_name):
+    """Setup hedge cost at max from both CE and PE"""
+    if broker_name == F.kotak_neo :
+        if env.hedge_cost == 0 : 
+            hedge_cost = 0
+            for i in [F.CE,F.PE]:
+                chain = pd.DataFrame(get_option_chain()).T
+                chain = chain[chain[F.option_type] == i]
+                chain = chain[(chain['v'] > 100000) & (chain['oi'] > 100000)]
+                chain = chain[chain['ltp'] >= 1].sort_values('ltp')
+                cost = chain.iloc[0]['ltp']
+                if cost > hedge_cost :
+                    hedge_cost = cost
+            env.hedge_cost = hedge_cost
+            send_message(message = f"Func : set_hedge_cost Output: {hedge_cost}")
+            return True  
     
 def get_token(ticker):
     return ticker_to_token[ticker]
