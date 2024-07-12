@@ -258,7 +258,7 @@ class Checking:
             count = i[F.exit_order_count]
             if (i[F.entry_orderid_status] == F.open) and (i[F.entry_orderid] not in pending_order_list) and (i[F.exit_reason] == None):
                 ltp = get_ltp(i[F.token],self.broker_name)
-                send_message(message = f'Placed at broker-end  :  {i[F.entry_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}', stratagy = i[F.stratagy])
+                send_message(message = f'Placed at broker end  :  {i[F.entry_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}', stratagy = i[F.stratagy])
                 self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.entry_orderid_status : F.closed ,F.entry_time : self.current_time, F.entry_order_execuation_type : F.limit_order, "ltp" : ltp, F.entry_order_count : count + 1}})
                 #--------------- Place limit sl ----------------------------
                 Order_management(self.broker_name, self.broker_session).place_limit_sl(ticker = i[F.ticker], qty = i[F.qty], transaction_type_ = i[F.transaction_type], avg_price = (i[F.entry_price]), exit_percent = i[F.exit_percent], option_type = i[F.option_type], stratagy= i[F.stratagy],tag = i[F.entry_tag])
