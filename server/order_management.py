@@ -429,19 +429,19 @@ class Order_management :
     def calculate_pl(self):         
         # Update calculation to database
         try : 
-            for i in self.database[str(date)].find() : 
+            for i in self.database[str(self.date)].find() : 
                 if i['entry_orderid_status'] == 'closed' and i['exit_orderid_status'] == 'closed':
                     if i[F.stratagy] != F.Hedges : 
                         pl = round((i[F.entry_price] * i[F.qty]) - (i['exit_price'] * i[F.qty]), 2)
                         drift_points = round(abs(i[F.entry_price_initial] - i[F.entry_price]) + (i[F.exit_price_initial] - i[F.exit_price]), 2)
                         drift_rs = round((abs(i[F.entry_price_initial] - i[F.entry_price]) + (i[F.exit_price_initial] - i[F.exit_price])) * i[F.qty], 2)
-                        self.database[str(date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.pl : pl, F.drift_points: drift_points, F.drift_rs : drift_rs}})
+                        self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.pl : pl, F.drift_points: drift_points, F.drift_rs : drift_rs}})
                         # print(f'{i[F.entry_orderid]} pl : {pl} Slippage points : {drift_points} Slippage-rs : {drift_rs}')
                     else : 
                         pl = round((i['exit_price'] * i[F.qty]) - (i[F.entry_price] * i[F.qty]) , 2)
                         drift_points = round(abs(i[F.entry_price_initial] - i[F.entry_price]) + (i[F.exit_price_initial] - i[F.exit_price]), 2)
                         drift_rs = round((abs(i[F.entry_price_initial] - i[F.entry_price]) + (i[F.exit_price_initial] - i[F.exit_price])) * i[F.qty], 2)
-                        self.database[str(date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.pl : pl, F.drift_points: drift_points, F.drift_rs : drift_rs}})
+                        self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.pl : pl, F.drift_points: drift_points, F.drift_rs : drift_rs}})
                     
             # Calculate stratagy wise pl and drift
             stratagy_df = pd.DataFrame({F.stratagy: [F.FS_First, F.RE_First, F.WNT_First, F.RE_Second, F.RE_Third, F.Hedges]})
