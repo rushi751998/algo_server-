@@ -208,7 +208,7 @@ def get_qty_option_price(broker_name):
             re_entry_price = (re_entry_risk / lot_size) + hedge_cost
             wait_trade_qty  = lot_size * (round(selling_lots / 2))  
             wait_trade_price = (wait_trade_risk / lot_size) + hedge_cost
-            hedge_qty =  lot_size * (round(hedge_lots / 5)) 
+            hedge_qty =  lot_size * (round(hedge_lots / 10)) 
             
     return fifty_per_qty, fifty_per_price, re_entry_qty, re_entry_price, wait_trade_qty, wait_trade_price, hedge_qty
             

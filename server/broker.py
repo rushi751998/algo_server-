@@ -176,8 +176,8 @@ class Socket_handling:
             script_master =   [i for i in  self.broker_session.scrip_master()['filesPaths'] if 'nse_fo' in i]
             df = pd.read_csv(script_master[0],low_memory=False)
             df.columns=[i.strip() for i in df.columns]
-            # df = df[df['pSymbolName'].isin(['NIFTY', 'FINNIFTY','BANKNIFTY' , 'MIDCPNIFTY'])][['pSymbol','pSymbolName','pTrdSymbol','pOptionType','pScripRefKey','lLotSize','lExpiryDate','dStrikePrice;', 'iMaxOrderSize', 'iLotSize', 'dOpenInterest']]
-            df = df[df['pSymbolName'].isin(['NIFTY','BANKNIFTY'])][['pSymbol','pSymbolName','pTrdSymbol','pOptionType','pScripRefKey','lLotSize','lExpiryDate','dStrikePrice;', 'iMaxOrderSize', 'iLotSize', 'dOpenInterest']]
+            df = df[df['pSymbolName'].isin(['NIFTY', 'FINNIFTY','BANKNIFTY' , 'MIDCPNIFTY'])][['pSymbol','pSymbolName','pTrdSymbol','pOptionType','pScripRefKey','lLotSize','lExpiryDate','dStrikePrice;', 'iMaxOrderSize', 'iLotSize', 'dOpenInterest']]
+            # df = df[df['pSymbolName'].isin(['NIFTY','BANKNIFTY'])][['pSymbol','pSymbolName','pTrdSymbol','pOptionType','pScripRefKey','lLotSize','lExpiryDate','dStrikePrice;', 'iMaxOrderSize', 'iLotSize', 'dOpenInterest']]
             df['lExpiryDate'] = df['lExpiryDate'].apply(lambda x:dt.fromtimestamp(x).date()+ relativedelta(years=10))
             df = df[['pSymbol','pScripRefKey','pSymbolName','lExpiryDate','dStrikePrice;','pOptionType','lLotSize']]
             df.columns = ['token','ticker','index','expiry','strike','optionType','lotSize']

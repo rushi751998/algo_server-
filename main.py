@@ -184,12 +184,12 @@ if __name__ == '__main__':
                 env.thread_list.append(start_socket_thread)
                 start_socket_thread.start()
                 
-            while wait_until_next_minute() > 6 :
+            while wait_until_next_minute() > 4 :
                 t_one = time.time() 
                 Checking(broker_session,broker_name).check()
                 t_two = time.time() 
                 # print(f'wait_until_next_minute : {wait_until_next_minute()} Checking Time : {t_two - t_one}')
-                time.sleep(5)
+                time.sleep(3)
             else:
                 time.sleep(wait_until_next_minute())
                 
