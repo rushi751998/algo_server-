@@ -30,7 +30,7 @@ order_staus_dict = {
 
 def setup_daily_logger(empty:bool = False):
     log_directory = 'log'
-    today = dt.now().strftime('%Y-%m-%d')
+    today = str(dt.today().date())
     log_filename = os.path.join(log_directory, f'{today}.log')
     logging.basicConfig(
         level=logging.INFO,
@@ -109,13 +109,13 @@ def trailing_points():
         points = 5
             
     elif env_variables.index == 'NIFTY' : 
-        points = 3
+        points = 2
         
     elif env_variables.index == 'FINNIFTY' : 
-        points = 3
+        points = 2
         
     elif env_variables.index == 'MIDCPNIFTY' : 
-        points = 3
+        points = 1.5
         
     return points
             

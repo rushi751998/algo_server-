@@ -174,9 +174,9 @@ if __name__ == '__main__':
             if is_socket_open and (current_time in event_list ):
                 placing(current_time = current_time, broker_name = broker_name, broker_session = broker_session)
 
-            if is_socket_open:
-                Checking(broker_session,broker_name).record_pl()
-                # print('option_chain : ',option_chain)
+            # if is_socket_open:
+            #     Checking(broker_session,broker_name).record_pl()
+            #     # print('option_chain : ',option_chain)
                 
             if not is_socket_open : 
                 start_socket_thread = Thread(name = 'socket_thread_restart', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : env.expiry_base_instrument,'broker_session': broker_session,'broker_name' : broker_name})
@@ -184,12 +184,13 @@ if __name__ == '__main__':
                 env.thread_list.append(start_socket_thread)
                 start_socket_thread.start()
                 
-            while wait_until_next_minute() > 4 :
+            while wait_until_next_minute() > 10 :
                 t_one = time.time() 
                 Checking(broker_session,broker_name).check()
                 t_two = time.time() 
                 # print(f'wait_until_next_minute : {wait_until_next_minute()} Checking Time : {t_two - t_one}')
-                time.sleep(3)
+                
+                time.sleep(2)
             else:
                 time.sleep(wait_until_next_minute())
                 
