@@ -179,7 +179,7 @@ class Socket_handling:
             df = df[df['pSymbolName'].isin(['NIFTY', 'FINNIFTY','BANKNIFTY' , 'MIDCPNIFTY'])][['pSymbol','pSymbolName','pTrdSymbol','pOptionType','pScripRefKey','lLotSize','lExpiryDate','dStrikePrice;', 'iMaxOrderSize', 'iLotSize', 'dOpenInterest']]
             # df = df[df['pSymbolName'].isin(['NIFTY','BANKNIFTY'])][['pSymbol','pSymbolName','pTrdSymbol','pOptionType','pScripRefKey','lLotSize','lExpiryDate','dStrikePrice;', 'iMaxOrderSize', 'iLotSize', 'dOpenInterest']]
             df['lExpiryDate'] = df['lExpiryDate'].apply(lambda x:dt.fromtimestamp(x).date()+ relativedelta(years=10))
-            df = df[['pSymbol','pScripRefKey','pSymbolName','lExpiryDate','dStrikePrice;','pOptionType','lLotSize']]
+            df = df[['pSymbol','pTrdSymbol','pSymbolName','lExpiryDate','dStrikePrice;','pOptionType','lLotSize']]
             df.columns = ['token','ticker','index','expiry','strike','optionType','lotSize']
             df.dropna(inplace=True)
             df['days_to_expire'] = df['expiry'].apply(lambda x:(dt.strptime(str(x),'%Y-%m-%d').date()-dt.today().date()).days)
