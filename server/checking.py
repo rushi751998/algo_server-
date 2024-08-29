@@ -65,6 +65,9 @@ class Checking:
             try:
                 self.check_ltp_above_sl(self.db_df,pending_order,filled_order)
                 # print(f'{self.current_time}---------------- check_ltp_above_sl ------------------')
+            except IndexError : 
+                pass
+            
             except Exception as e:
                 send_message(message = f'problem in check_ltp_above_sl\nReason :{e}', emergency = True)
                 
@@ -73,6 +76,11 @@ class Checking:
                 # print(f'{self.current_time}---------------- rejected_order_management ------------------')
             except Exception as e:
                 send_message(message = f'problem in rejected_order_management\nReason :{e}', emergency = True)
+            
+            try :     
+                self.check_sl_order_exist(self.db_df,pending_order,filled_order)
+            except Exception as e:
+                send_message(message = f'problem in check_sl_order_exist\nReason :{e}', emergency = True)
                 
                 
         else :
@@ -308,8 +316,7 @@ class Checking:
                     send_message(message = f"ltp is above stoploss \nMessage :{order_number} \norder modified to market order\nTicker: {i[F.ticker]}", emergency= True)
                 else : 
                     send_message(message = f'Not able to modify sl in check_ltp_above_sl\nMessage : {message}\nOrder Id : {order_number}\nTicker: {i[F.ticker]}', emergency = True)
-                # time.sleep(2)
- 
+                
     def rejected_order_management(self,db_df,pending_order,filled_order):
         # myquery = {'$or': [{F.exit_orderid_status : F.rejected},{F.entry_orderid_status : F.rejected}]}
         # db_data = self.database[str(self.date)].find(myquery)
@@ -324,9 +331,43 @@ class Checking:
                 self.database[str(self.date)].update_one({F.exit_orderid: i[F.exit_orderid]}, {"$set": {F.exit_orderid_status : F.open }})
             else : 
                 send_message(message = f'Rejected order... \nStratagy : {i[F.stratagy]}\nExit order id : {i[F.exit_orderid]}\nOption Type : {i[F.option_type]}', emergency = True)
-            
-
-    # def is_loss_above_limit(self,pl):
-    #     if  pl<(-acoount_balance*(2/100)):
-    #         send_message(message = f'Loss is above the limit Please Check it \nP/l : {pl}', emergency = True)
+                          
+    def check_sl_order_exist(self,db_df,pending_order,filled_order):
+        db_data = db_df[(db_df[F.exit_orderid_status ] == F.open) | (db_df[F.exit_orderid_status] == F.re_entry_open)]
+        for index,i in db_data.iterrows():
+            ltp = get_ltp(i[F.token],self.broker_name)
+            sl_price = i[F.exit_price]
+            if i[F.exit_orderid] not in pending_order[F.order_id].to_list() :
+                new_price = round(abs(sl_price) + abs(ltp - sl_price)/2 ,1)
+                remaning_qty = i[F.qty]
+                count = i[F.exit_order_count]
+                qty = i[F.qty]
+                if (ltp > sl_price) or (count > 2) :
+                    tag = i[F.exit_tag] + "_MOM" #MOM = PlaceMIssing Order at marlet order
+                    is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = 0, trigger_price = 0, qty = i[F.qty], ticker = i[F.ticker], transaction_type = i[F.transaction_type], product_type = i[F.product_type],order_type= "MKT", tag = tag)
+                    if is_order_placed : 
+                        time.sleep(3)
+                        exit_price = filled_order[filled_order[F.order_id] == order_number].iloc[0][F.price]
+                        send_message(message = f'Sl Not Available!\n Market Order Exit \nOld Id: {i[F.exit_orderid]}\nStratagy : {i[F.stratagy]}\n Side : {i[F.option_type]}\nNew Id : {order_number}', emergency = True)
+                        send_message(message = f'Sl Not Available!\n Market Order Exit \nOld Id: {i[F.exit_orderid]}\nStratagy : {i[F.stratagy]}\n Side : {i[F.option_type]}\nNew Id : {order_number}',stratagy = i[F.stratagy])
+                        self.database[str(self.date)].update_one({F.exit_orderid: i[F.exit_orderid]}, {"$set": {F.F.exit_orderid: order_number, F.exit_orderid_status : F.closed, F.exit_price : exit_price, F.exit_order_execuation_type : F.market_order, F.exit_order_count : count + 1 }})
+                        
+                    else : 
+                        send_message(message = f'Alert!!!\nSl Not Available!\nNot ablet to exit at Market Order\nOld Id: {i[F.exit_orderid]}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nMessage : {order_number}', emergency = True)
+                    
+                elif count < 2 : 
+                    tag = i[F.exit_tag] + f"_MOL_{count}2" #MOL = Place Missing order at limit order
+                    sl_price = round(i[F.exit_price],1)
+                    is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = sl_price, trigger_price = sl_price + 0.05, qty = i[F.qty], ticker = i[F.ticker], transaction_type = i[F.transaction_type], product_type = i[F.product_type],order_type= "SL", tag = tag)
+                    
+                    if is_order_placed : 
+                        self.database[str(self.date)].update_one({F.exit_orderid: i[F.exit_orderid]}, {"$set": {F.exit_orderid: order_number, F.exit_orderid_status : F.open, F.exit_order_count : count + 1}})
+                        send_message(message = f'Sl Not Available!\n Placed again Limit Order\nOld Id: {i[F.exit_orderid]}\nStratagy : {i[F.stratagy]}\n Side : {i[F.option_type]}\nNew Id : {order_number}', emergency = True)
+                        send_message(message = f'Sl Not Available!\n Placed again Limit Order\nOld Id: {i[F.exit_orderid]}\nStratagy : {i[F.stratagy]}\n Side : {i[F.option_type]}\nNew Id : {order_number}', stratagy = i[F.stratagy])
+                        
+                    else : 
+                        send_message(message = f'Alert!!!\nSl Not Available!\nNot ablet to exit at limit Order\nOld Id: {i[F.exit_orderid]}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nMessage : {order_number}', emergency = True)
+                        
+                        
+                    
 
