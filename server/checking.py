@@ -337,7 +337,7 @@ class Checking:
         for index,i in db_data.iterrows():
             ltp = get_ltp(i[F.token],self.broker_name)
             sl_price = i[F.exit_price]
-            if i[F.exit_orderid] not in pending_order[F.order_id].to_list() :
+            if (i[F.exit_orderid] not in pending_order[F.order_id].to_list()) and (i[F.exit_orderid] not in filled_order[F.order_id].to_list()):
                 new_price = round(abs(sl_price) + abs(ltp - sl_price)/2 ,1)
                 remaning_qty = i[F.qty]
                 count = i[F.exit_order_count]
