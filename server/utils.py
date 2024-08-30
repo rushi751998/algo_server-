@@ -89,7 +89,7 @@ def is_market_time():
  
 def sleep_till_next_day():
     now= dt.now()
-    tomorow_9am = (now + timedelta(days=1)).replace(hour=9,minute=16,second=15)
+    tomorow_9am = (now + timedelta(days=1)).replace(hour = 9, minute = 16, second = 0)
     # tomorow_9am = (now + timedelta(days=0)).replace(hour=9,minute=43,second=0)
     total_seconds = (tomorow_9am-now).total_seconds()
     time.sleep(total_seconds)
@@ -290,7 +290,7 @@ class env_variables:
         # if self.broker_name == Fields.kotak_neo : 
         self.product_type = 'MIS'
             
-        self.allowed_loss_percent = float(os.environ['allowed_loss_percent'] )
+        self.allowed_loss_percent = float(os.environ['allowed_loss_percent'])
         # self.hoilydays =os.environ['hoilydays'] 
         self.exceptational_tradingdays =  ast.literal_eval(os.environ['exceptational_tradingdays'] )
         self.exceptational_hoilydays = ast.literal_eval(os.environ['exceptational_hoilydays'] )

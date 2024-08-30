@@ -32,11 +32,11 @@ class Checking:
             pass
 
         if len(self.db_df) > 0:
-            try:
-                self.fifty_per_management(self.db_df,pending_order,filled_order,F.FS_First)
-                # print(f'{self.current_time}---------------- fifty_per_management -  {F.FS_First} ------------------')
-            except Exception as e:
-                send_message(message = f'problem in fifty_per_management for : {F.FS_First} \nReason :{e}', emergency = True)
+            # try:
+            #     self.fifty_per_management(self.db_df,pending_order,filled_order,F.FS_First)
+            #     # print(f'{self.current_time}---------------- fifty_per_management -  {F.FS_First} ------------------')
+            # except Exception as e:
+            #     send_message(message = f'problem in fifty_per_management for : {F.FS_First} \nReason :{e}', emergency = True)
 
             try:
                 self.re_entry_management(self.db_df,pending_order,filled_order,F.RE_First)
@@ -81,32 +81,65 @@ class Checking:
                 self.check_sl_order_exist(self.db_df,pending_order,filled_order)
             except Exception as e:
                 send_message(message = f'problem in check_sl_order_exist\nReason :{e}', emergency = True)
+            
+            try:
+                self.calculate_pl(self.db_df) 
+            except Exception as e : 
+                send_message(message = f'Problem in calculate_pl\nMessage : {e}', emergency = True)
+            
                 
-                
-        else :
-            pass
-        # try:
-        #     self.is_loss_above_limit(pl)
-        # except Exception as e:
-        #     print('problem in check_ltp_above_sl',e)
+    def is_loss_above_limit(self) :
+        df = pd.DataFrame(self.database[str(self.date)].find())
+        closed_trades_pl = df[(df[F.exit_orderid_status] == F.closed) & (df[F.pl] != 0)]
         
-    def record_pl(self):
-        # -------------------------------- Upload each leg wise pl to order db ---------------------------------------------
-        if env.day_tracker : 
-            myquery = {'$or': [{F.exit_orderid_status : F.open},{F.exit_orderid_status : F.re_entry_open}]}
-            db_data = self.database[str(self.date)].find(myquery)
-            time.sleep(1)
-            try : 
-                for i in db_data:
-                        ltp = get_ltp(i[F.token], self.broker_name)
-                        pl =  round((i[F.entry_price] - ltp) * i[F.qty])
-                        # print('order_id: ',i[F.exit_orderid] )
-                        self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]},{'$push' : {F.recording: {'Time': self.current_time, 'pl' : pl}}}) #procuction
-                        # entry_id[str(date)].update_one({F.ticker :i[F.ticker]},{'$push': {F.recording: {'Time':current_time , 'pl': pl,'datetime':dt.now()}}})
-                        time.sleep(0.5)
+        if len(closed_trades_pl) > 0 :   
+            closed_trades_pl =  closed_trades_pl[F.pl].sum()   
+            total_pl =  closed_trades_pl    
+            open_trades = df[(df[F.exit_orderid_status] == F.open) & (df[F.pl] == 0) & (df[F.stratagy] != F.Hedges)]
+            loss_limit = -(env.capital * env.allowed_loss_percent)/100
+            for index, i in open_trades.iterrows():  
+                ltp = get_ltp(i[F.token], self.broker_name)
+                pl = round((i[F.entry_price] * i[F.qty]) - ltp * i[F.qty],2) #if ltp is greater then entry price then position is in loos coz selling options          
+                total_pl += pl
+            if total_pl < loss_limit:
+                send_message(f"Loss above limit!!!\nPL : {total_pl}\nLimit : {loss_limit}", emergency = True)
+                
+            # else : 
+            #     print(total_pl)
 
-            except Exception as e:
-                send_message(message = f'problem in record_pl \nReason :{e}', emergency = True)    
+    def calculate_pl(self,db_df):         
+        # Update calculation to database
+        for index, i in db_df.iterrows(): 
+            if (i[F.exit_orderid_status] == F.closed) and (i[F.pl] == 0): # Finding trades whose pl not calculated
+                if i[F.stratagy] != F.Hedges :
+                    pl = round((i[F.entry_price] * i[F.qty]) - (i[F.exit_price] * i[F.qty]), 2)
+                    drift_points = round(abs(i[F.entry_price_initial] - i[F.entry_price]) + (i[F.exit_price_initial] - i[F.exit_price]), 2)
+                    drift_rs = round(drift_points * i[F.qty], 2)
+                    self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.pl : pl, F.drift_points: drift_points, F.drift_rs : drift_rs}})
+                    # print(f'{i[F.entry_orderid]} pl : {pl} Slippage points : {drift_points} Slippage-rs : {drift_rs}')
+                else : 
+                    pl = round((i[F.exit_price] * i[F.qty]) - (i[F.entry_price] * i[F.qty]) , 2)
+                    drift_points = round(abs(i[F.entry_price_initial] - i[F.entry_price]) + (i[F.exit_price_initial] - i[F.exit_price]), 2)
+                    drift_rs = round(drift_points * i[F.qty], 2)
+                    self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.pl : pl, F.drift_points: drift_points, F.drift_rs : drift_rs}})
+        
+    # def record_pl(self):
+    #     # -------------------------------- Upload each leg wise pl to order db ---------------------------------------------
+    #     if env.day_tracker : 
+    #         myquery = {'$or': [{F.exit_orderid_status : F.open},{F.exit_orderid_status : F.re_entry_open}]}
+    #         db_data = self.database[str(self.date)].find(myquery)
+    #         time.sleep(1)
+    #         try : 
+    #             for i in db_data:
+    #                     ltp = get_ltp(i[F.token], self.broker_name)
+    #                     pl =  round((i[F.entry_price] - ltp) * i[F.qty])
+    #                     # print('order_id: ',i[F.exit_orderid] )
+    #                     self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]},{'$push' : {F.recording: {'Time': self.current_time, 'pl' : pl}}}) #procuction
+    #                     # entry_id[str(date)].update_one({F.ticker :i[F.ticker]},{'$push': {F.recording: {'Time':current_time , 'pl': pl,'datetime':dt.now()}}})
+    #                     time.sleep(0.5)
+
+    #         except Exception as e:
+    #             send_message(message = f'problem in record_pl \nReason :{e}', emergency = True)    
         # # -------------------------------- Upload Stratagy wise pl to pl db ---------------------------------------------
     
     def Update_commmon_pl(self,db_df):
@@ -337,20 +370,27 @@ class Checking:
         for index,i in db_data.iterrows():
             ltp = get_ltp(i[F.token],self.broker_name)
             sl_price = i[F.exit_price]
-            if (i[F.exit_orderid] not in pending_order[F.order_id].to_list()) and (i[F.exit_orderid] not in filled_order[F.order_id].to_list()):
-                new_price = round(abs(sl_price) + abs(ltp - sl_price)/2 ,1)
-                remaning_qty = i[F.qty]
-                count = i[F.exit_order_count]
-                qty = i[F.qty]
-                if (ltp > sl_price) or (count > 2) :
+            all_filled_orders = pending_order[F.order_id].to_list() + filled_order[F.order_id].to_list()
+            if i[F.exit_orderid] not in all_filled_orders :
+                count = i[F.exit_order_count] 
+                if (ltp > sl_price) or (count >= 2) :
+                    if i[F.transaction_type] == F.Buy:
+                        transaction_type = F.Sell
+
+                    if i[F.transaction_type] == F.Sell:
+                        transaction_type = F.Buy
+                    
+                    
                     tag = i[F.exit_tag] + "_MOM" #MOM = PlaceMIssing Order at marlet order
-                    is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = 0, trigger_price = 0, qty = i[F.qty], ticker = i[F.ticker], transaction_type = i[F.transaction_type], product_type = i[F.product_type],order_type= "MKT", tag = tag)
+                    is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = 0, trigger_price = 0, qty = i[F.qty], ticker = i[F.ticker], transaction_type = transaction_type, product_type = i[F.product_type],order_type= "MKT", tag = tag)
                     if is_order_placed : 
-                        time.sleep(3)
+                        time.sleep(2)
+                        order_details = Order_details(self.broker_session,self.broker_name)
+                        is_not_empty, all_orders, filled_order, pending_order = order_details.order_book()
                         exit_price = filled_order[filled_order[F.order_id] == order_number].iloc[0][F.price]
-                        send_message(message = f'Sl Not Available!\n Market Order Exit \nOld Id: {i[F.exit_orderid]}\nStratagy : {i[F.stratagy]}\n Side : {i[F.option_type]}\nNew Id : {order_number}', emergency = True)
-                        send_message(message = f'Sl Not Available!\n Market Order Exit \nOld Id: {i[F.exit_orderid]}\nStratagy : {i[F.stratagy]}\n Side : {i[F.option_type]}\nNew Id : {order_number}',stratagy = i[F.stratagy])
-                        self.database[str(self.date)].update_one({F.exit_orderid: i[F.exit_orderid]}, {"$set": {F.F.exit_orderid: order_number, F.exit_orderid_status : F.closed, F.exit_price : exit_price, F.exit_order_execuation_type : F.market_order, F.exit_order_count : count + 1 }})
+                        send_message(message = f'Sl Not Available!\n Market Order Exit \nOld Id: {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nNew Id : {order_number}', emergency = True)
+                        send_message(message = f'Sl Not Available!\n Market Order Exit \nOld Id: {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nNew Id : {order_number}',stratagy = i[F.stratagy])
+                        self.database[str(self.date)].update_one({F.exit_orderid: i[F.exit_orderid]}, {"$set": {F.exit_orderid: order_number, F.exit_orderid_status : F.closed, F.exit_price : float(exit_price), F.exit_order_execuation_type : F.market_order, F.exit_order_count : count + 1 ,F.exit_time : self.current_time}})
                         
                     else : 
                         send_message(message = f'Alert!!!\nSl Not Available!\nNot ablet to exit at Market Order\nOld Id: {i[F.exit_orderid]}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nMessage : {order_number}', emergency = True)
@@ -358,16 +398,14 @@ class Checking:
                 elif count < 2 : 
                     tag = i[F.exit_tag] + f"_MOL_{count}2" #MOL = Place Missing order at limit order
                     sl_price = round(i[F.exit_price],1)
-                    is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = sl_price, trigger_price = sl_price + 0.05, qty = i[F.qty], ticker = i[F.ticker], transaction_type = i[F.transaction_type], product_type = i[F.product_type],order_type= "SL", tag = tag)
+                    is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = sl_price, trigger_price = sl_price + 0.05, qty = i[F.qty], ticker = i[F.ticker], transaction_type = transaction_type, product_type = i[F.product_type],order_type= "SL", tag = tag)
                     
                     if is_order_placed : 
-                        self.database[str(self.date)].update_one({F.exit_orderid: i[F.exit_orderid]}, {"$set": {F.exit_orderid: order_number, F.exit_orderid_status : F.open, F.exit_order_count : count + 1}})
-                        send_message(message = f'Sl Not Available!\n Placed again Limit Order\nOld Id: {i[F.exit_orderid]}\nStratagy : {i[F.stratagy]}\n Side : {i[F.option_type]}\nNew Id : {order_number}', emergency = True)
-                        send_message(message = f'Sl Not Available!\n Placed again Limit Order\nOld Id: {i[F.exit_orderid]}\nStratagy : {i[F.stratagy]}\n Side : {i[F.option_type]}\nNew Id : {order_number}', stratagy = i[F.stratagy])
+                        self.database[str(self.date)].update_one({F.exit_orderid: i[F.exit_orderid]}, {"$set": {F.exit_orderid: order_number, F.exit_order_count : count + 1}})
+                        send_message(message = f'Sl Not Available!\nPlaced again Limit Order\nOld Id: {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nNew Id : {order_number}', emergency = True)
+                        send_message(message = f'Sl Not Available!\nPlaced again Limit Order\nOld Id: {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nNew Id : {order_number}', stratagy = i[F.stratagy])
                         
                     else : 
                         send_message(message = f'Alert!!!\nSl Not Available!\nNot ablet to exit at limit Order\nOld Id: {i[F.exit_orderid]}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nMessage : {order_number}', emergency = True)
-                        
-                        
-                    
+
 
