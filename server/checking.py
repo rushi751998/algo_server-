@@ -32,11 +32,11 @@ class Checking:
             pass
 
         if len(self.db_df) > 0:
-            # try:
-            #     self.fifty_per_management(self.db_df,pending_order,filled_order,F.FS_First)
-            #     # print(f'{self.current_time}---------------- fifty_per_management -  {F.FS_First} ------------------')
-            # except Exception as e:
-            #     send_message(message = f'problem in fifty_per_management for : {F.FS_First} \nReason :{e}', emergency = True)
+            try:
+                self.fifty_per_management(self.db_df,pending_order,filled_order,F.FS_First)
+                # print(f'{self.current_time}---------------- fifty_per_management -  {F.FS_First} ------------------')
+            except Exception as e:
+                send_message(message = f'problem in fifty_per_management for : {F.FS_First} \nReason :{e}', emergency = True)
 
             try:
                 self.re_entry_management(self.db_df,pending_order,filled_order,F.RE_First)
@@ -86,6 +86,15 @@ class Checking:
                 self.calculate_pl(self.db_df) 
             except Exception as e : 
                 send_message(message = f'Problem in calculate_pl\nMessage : {e}', emergency = True)
+                
+            try:
+                self.is_loss_above_limit()
+            
+            except IndexError : 
+                pass 
+            
+            except Exception as e : 
+                send_message(message = f'Problem in is_loss_above_limit PL\nMessage : {e}', emergency = True)
             
                 
     def is_loss_above_limit(self) :
@@ -103,6 +112,7 @@ class Checking:
                 total_pl += pl
             if total_pl < loss_limit:
                 send_message(f"Loss above limit!!!\nPL : {total_pl}\nLimit : {loss_limit}", emergency = True)
+                
                 
             # else : 
             #     print(total_pl)

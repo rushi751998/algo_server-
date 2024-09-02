@@ -172,15 +172,8 @@ if __name__ == '__main__':
             if is_socket_open and (current_time in event_list ):
                 placing(current_time = current_time, broker_name = broker_name, broker_session = broker_session)
 
-            if is_socket_open:
-                try:
-                    Checking(broker_session,broker_name).is_loss_above_limit()
-            
-                except IndexError : 
-                    pass 
+            # if is_socket_open:
                 
-                except Exception as e : 
-                    send_message(message = f'Problem in is_loss_above_limit PL\nMessage : {e}', emergency = True)
                     
             if not is_socket_open : 
                 start_socket_thread = Thread(name = 'socket_thread_restart', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : env.expiry_base_instrument,'broker_session': broker_session,'broker_name' : broker_name})
