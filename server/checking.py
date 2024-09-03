@@ -18,8 +18,42 @@ class Checking:
         self.current_time = dt.now()
         self.date = dt.today().date()
         self.database = database()
+    
+    def interval_check(self):
+        is_not_empty = False
+        self.db_df = pd.DataFrame()
+        try : 
+            order_details = Order_details(self.broker_session,self.broker_name)
+            is_not_empty, all_orders, filled_order, pending_order = order_details.order_book()
+            # all_positions, open_position, closed_position = order_details.position_book()
+            self.db_df = pd.DataFrame(self.database[str(self.date)].find())
+            
+        except : 
+            pass
         
-    def check(self):
+        if len(self.db_df) > 0:
+            db_df = self.db_df
+            
+            db_data = db_df[(db_df[F.exit_orderid_status ] == F.open) | (db_df[F.exit_orderid_status] == F.re_entry_open)]
+            if len(db_data) > 0 :
+            
+                try:
+                    self.is_loss_above_limit()
+                
+                except IndexError :
+                    pass 
+                
+                except Exception as e : 
+                    send_message(message = f'Problem in is_loss_above_limit PL\nMessage : {e}', emergency = True)
+                    
+                try:
+                    self.record_pl()
+                
+                except Exception as e : 
+                    send_message(message = f'Problem in record_pl PL\nMessage : {e}', emergency = True)
+    
+        
+    def continue_check(self):
         is_not_empty = False
         self.db_df = pd.DataFrame()
         try : 
@@ -87,15 +121,6 @@ class Checking:
             except Exception as e : 
                 send_message(message = f'Problem in calculate_pl\nMessage : {e}', emergency = True)
                 
-            try:
-                self.is_loss_above_limit()
-            
-            except IndexError : 
-                pass 
-            
-            except Exception as e : 
-                send_message(message = f'Problem in is_loss_above_limit PL\nMessage : {e}', emergency = True)
-            
                 
     def is_loss_above_limit(self) :
         df = pd.DataFrame(self.database[str(self.date)].find())
@@ -133,24 +158,24 @@ class Checking:
                     drift_rs = round(drift_points * i[F.qty], 2)
                     self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.pl : pl, F.drift_points: drift_points, F.drift_rs : drift_rs}})
         
-    # def record_pl(self):
-    #     # -------------------------------- Upload each leg wise pl to order db ---------------------------------------------
-    #     if env.day_tracker : 
-    #         myquery = {'$or': [{F.exit_orderid_status : F.open},{F.exit_orderid_status : F.re_entry_open}]}
-    #         db_data = self.database[str(self.date)].find(myquery)
-    #         time.sleep(1)
-    #         try : 
-    #             for i in db_data:
-    #                     ltp = get_ltp(i[F.token], self.broker_name)
-    #                     pl =  round((i[F.entry_price] - ltp) * i[F.qty])
-    #                     # print('order_id: ',i[F.exit_orderid] )
-    #                     self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]},{'$push' : {F.recording: {'Time': self.current_time, 'pl' : pl}}}) #procuction
-    #                     # entry_id[str(date)].update_one({F.ticker :i[F.ticker]},{'$push': {F.recording: {'Time':current_time , 'pl': pl,'datetime':dt.now()}}})
-    #                     time.sleep(0.5)
+    def record_pl(self):
+        # -------------------------------- Upload each leg wise pl to order db ---------------------------------------------
+        if env.day_tracker : 
+            myquery = {'$or': [{F.exit_orderid_status : F.open},{F.exit_orderid_status : F.re_entry_open}]}
+            db_data = self.database[str(self.date)].find(myquery)
+            time.sleep(1)
+            try : 
+                for i in db_data:
+                        ltp = get_ltp(i[F.token], self.broker_name)
+                        pl =  round((i[F.entry_price] - ltp) * i[F.qty])
+                        # print('order_id: ',i[F.exit_orderid] )
+                        self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]},{'$push' : {F.recording: {'Time': self.current_time, 'pl' : pl}}}) #procuction
+                        # entry_id[str(date)].update_one({F.ticker :i[F.ticker]},{'$push': {F.recording: {'Time':current_time , 'pl': pl,'datetime':dt.now()}}})
+                        time.sleep(0.5)
 
-    #         except Exception as e:
-    #             send_message(message = f'problem in record_pl \nReason :{e}', emergency = True)    
-        # # -------------------------------- Upload Stratagy wise pl to pl db ---------------------------------------------
+            except Exception as e:
+                send_message(message = f'problem in record_pl \nReason :{e}', emergency = True)    
+        # -------------------------------- Upload Stratagy wise pl to pl db ---------------------------------------------
     
     def Update_commmon_pl(self,db_df):
         db_data = db_df

@@ -108,7 +108,7 @@ def placing(current_time, broker_name, broker_session):
             
     elif current_time == env.RE_Second:
         for i in range(env.qty_partation_loop):
-            # i = 2
+            i = 2
             ce_thread = Thread(name = f'CE_{F.RE_Second}_{i}_Thread', target=order_placer, kwargs = {F.option_type: F.CE, 'option_price' : re_entry_price, F.loop_no : i, F.stratagy : F.RE_Second, F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
             pe_thread = Thread(name = f'PE_{F.RE_Second}_{i}_Thread', target=order_placer, kwargs = {F.option_type: F.PE, 'option_price' : re_entry_price, F.loop_no : i, F.stratagy : F.RE_Second, F.exit_percent : 20, F.qty : re_entry_qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
             env.thread_list.append(ce_thread)
@@ -172,10 +172,11 @@ if __name__ == '__main__':
             if is_socket_open and (current_time in event_list ):
                 placing(current_time = current_time, broker_name = broker_name, broker_session = broker_session)
 
-            # if is_socket_open:
+            if is_socket_open:
+                Checking(broker_session,broker_name).interval_check()
                 
                     
-            if not is_socket_open : 
+            if not is_socket_open :
                 start_socket_thread = Thread(name = 'socket_thread_restart', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : env.expiry_base_instrument,'broker_session': broker_session,'broker_name' : broker_name})
                 send_message(message = 'Socket thread Re-started', emergency = True)
                 env.thread_list.append(start_socket_thread)
@@ -183,7 +184,7 @@ if __name__ == '__main__':
                 
             while wait_until_next_minute() > 10 :
                 t_one = time.time() 
-                Checking(broker_session,broker_name).check()
+                Checking(broker_session,broker_name).continue_check()
                 t_two = time.time() 
                 # print(f'wait_until_next_minute : {wait_until_next_minute()} Checking Time : {t_two - t_one}')
                 
