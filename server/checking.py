@@ -33,7 +33,6 @@ class Checking:
         
         if len(self.db_df) > 0:
             db_df = self.db_df
-            
             db_data = db_df[(db_df[F.exit_orderid_status ] == F.open) | (db_df[F.exit_orderid_status] == F.re_entry_open)]
             if len(db_data) > 0 :
             
@@ -46,11 +45,11 @@ class Checking:
                 except Exception as e : 
                     send_message(message = f'Problem in is_loss_above_limit PL\nMessage : {e}', emergency = True)
                     
-                try:
-                    self.record_pl()
+                # try:
+                #     self.record_pl()
                 
-                except Exception as e : 
-                    send_message(message = f'Problem in record_pl PL\nMessage : {e}', emergency = True)
+                # except Exception as e : 
+                #     send_message(message = f'Problem in record_pl PL\nMessage : {e}', emergency = True)
     
         
     def continue_check(self):
