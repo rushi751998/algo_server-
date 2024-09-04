@@ -407,14 +407,15 @@ class Checking:
             all_filled_orders = pending_order[F.order_id].to_list() + filled_order[F.order_id].to_list()
             if i[F.exit_orderid] not in all_filled_orders :
                 count = i[F.exit_order_count] 
-                if (ltp > sl_price) or (count >= 2) :
-                    if i[F.transaction_type] == F.Buy:
+                
+                if i[F.transaction_type] == F.Buy:
                         transaction_type = F.Sell
 
-                    if i[F.transaction_type] == F.Sell:
-                        transaction_type = F.Buy
-                    
-                    
+                if i[F.transaction_type] == F.Sell:
+                    transaction_type = F.Buy
+                
+                
+                if (ltp > sl_price) or (count >= 2) :
                     tag = i[F.exit_tag] + "_MOM" #MOM = PlaceMIssing Order at marlet order
                     is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = 0, trigger_price = 0, qty = i[F.qty], ticker = i[F.ticker], transaction_type = transaction_type, product_type = i[F.product_type],order_type= "MKT", tag = tag)
                     if is_order_placed : 
