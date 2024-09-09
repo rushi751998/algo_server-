@@ -459,7 +459,7 @@ class Order_management :
             database(day_tracker = True)[dt.now().strftime('%b')].insert_many(data)
             send_message(message = message)
         except Exception as e : 
-            send_message(message = f'Problem in palcing Calculate PL\nMessage : {e}', emergency = True)
+            send_message(message = f'Problem in Update_Performance PL\nMessage : {e}', emergency = True)
             
     def genrate_plot(self):
         db = database(recording=True)[str(self.date)].find()
