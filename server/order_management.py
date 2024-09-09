@@ -6,7 +6,7 @@ import time
 import json
 from server.broker import Order_details, get_ltp, get_token, is_order_rejected_func
 from server.utils import env_variables as env ,database , Fields as F
-
+import plotly.express as px
 pd.options.mode.chained_assignment = None # it is mandatory
 
 
@@ -16,6 +16,7 @@ class Order_management :
         self.broker_session = broker_session
         self.time = str(dt.now())
         self.date = dt.today().date()
+        self.database = database()
         self.database = database()
 
     def order_place(self,ticker,qty, transaction_type, stratagy, exit_percent, loop_no, price, option_type,):
@@ -426,8 +427,8 @@ class Order_management :
      
     def Update_Performance(self):         
         # Update calculation to database
-        try :                
-            # Calculate stratagy wise pl and drift
+        try :
+            self.genrate_plot()
             stratagy_df = pd.DataFrame({F.stratagy: [F.FS_First, F.RE_First, F.WNT_First, F.RE_Second, F.RE_Third, F.Hedges]})
             df = pd.DataFrame(self.database[str(self.date)].find())
             df_stratagy_cal = df[[F.stratagy,F.pl,F.drift_points,F.drift_rs,F.entry_order_count,F.exit_order_count,F.index]]
@@ -459,4 +460,27 @@ class Order_management :
             send_message(message = message)
         except Exception as e : 
             send_message(message = f'Problem in palcing Calculate PL\nMessage : {e}', emergency = True)
+            
+    def genrate_plot(self):
+        db = database(recording=True)[str(self.date)].find()
+        df = pd.DataFrame(db)[['Time',F.pl,F.free_margin]]
+        df['Time'] = pd.to_datetime(df['Time'],format='%Y-%m-%d %H:%M:%S')
+        df.set_index('Time',inplace=True)
+        heading_dict = {F.pl : "PL Recording",F.free_margin : "Margin Utlization"}
+        color_dict = {F.pl : '#ace385',F.free_margin : "#85d0e3"}
+        for col in df.columns : 
+            fig = px.area(df, x = df.index, y= col,title=f"<b>{heading_dict[col]} ({self.date})</b>",width = 1500,height = 720,labels = {"Time": "Time","value": col})
+            fig.update_layout(
+                            title_font_size=35,
+                            title_font_family="Times New Roman",
+                            title_x=0.5,
+                            font=dict(
+                                    family="Arial",
+                                    size=15
+                                ) )
+            
+            fig.update_traces(fillcolor = color_dict[col],line=dict(color='black', width=2))
+            # fig.show()
+            fig.write_image('plot.png')
+            send_message(message="",send_image=True)
             

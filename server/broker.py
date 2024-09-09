@@ -21,20 +21,24 @@ class Login(login_Engine):
         pass
 
     def setup(self):
+        is_login = False
+        broker_session = None
+        while not is_login :
+            try : 
+                self.broker_name = env.broker_name
+                session_validation_key, broker_session = self.login()
+                check_validation_key = env.session_validation_key
+                if session_validation_key == check_validation_key:
+                    is_login = True
+                    
+                else : 
+                    time.sleep(5) 
+                    self.setup()
+            except Exception as e :
+                send_message(message = f'Not able to Login\nissue :{e}', emergency = True)
+                time.sleep(5) 
+        return is_login, broker_session
         
-        try : 
-            self.broker_name = env.broker_name
-            session_validation_key,broker_session = self.login()
-        except Exception as e :
-            send_message(message = f'Facing Issue in def login \nissue :{e}', emergency = True)
-        
-        check_validation_key = env.session_validation_key
-        if session_validation_key == check_validation_key:
-            return True,broker_session
-
-        else:
-            send_message(message = 'Not able to Login issue in session_validation_key', emergency = True)
-            return False, None
             
 
     def login(self):

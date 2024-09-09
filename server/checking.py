@@ -7,7 +7,7 @@ from  datetime import datetime as dt
 import pymongo
 import time
 from server.order_management import Order_management
-from server.utils import database , Fields as F, trailing_points,env_variables as env
+from server.utils import database , Fields as F, trailing_points,env_variables as env, get_available_margin
 from server.utils import send_message
 
 class Checking:
@@ -51,7 +51,6 @@ class Checking:
                 # except Exception as e : 
                 #     send_message(message = f'Problem in record_pl PL\nMessage : {e}', emergency = True)
     
-        
     def continue_check(self):
         is_not_empty = False
         self.db_df = pd.DataFrame()
@@ -95,12 +94,6 @@ class Checking:
             except Exception as e:
                 send_message(message = f'problem in re_entry_management for : {F.RE_First} \nReason :{e}', emergency = True)
 
-            try:
-                self.check_ltp_above_sl(self.db_df,pending_order,filled_order)
-                # print(f'{self.current_time}---------------- check_ltp_above_sl ------------------')
-            except IndexError : 
-                pass
-            
             except Exception as e:
                 send_message(message = f'problem in check_ltp_above_sl\nReason :{e}', emergency = True)
                 
@@ -116,11 +109,16 @@ class Checking:
                 send_message(message = f'problem in check_sl_order_exist\nReason :{e}', emergency = True)
             
             try:
+                self.check_ltp_above_sl(self.db_df,pending_order,filled_order)
+                # print(f'{self.current_time}---------------- check_ltp_above_sl ------------------')
+            except IndexError : 
+                pass
+            
+            try:
                 self.calculate_pl(self.db_df) 
             except Exception as e : 
                 send_message(message = f'Problem in calculate_pl\nMessage : {e}', emergency = True)
-                
-                
+                        
     def is_loss_above_limit(self) :
         df = pd.DataFrame(self.database[str(self.date)].find())
         closed_trades_pl = df[(df[F.exit_orderid_status] == F.closed) & (df[F.pl] != 0)]
@@ -136,10 +134,10 @@ class Checking:
                 total_pl += pl
             if total_pl < loss_limit:
                 send_message(f"Loss above limit!!!\nPL : {total_pl}\nLimit : {loss_limit}", emergency = True)
-                
-                
-            # else : 
-            #     print(total_pl)
+            
+            margin = get_available_margin(self.broker_session,self.broker_name) 
+            self.day_tracker(total_pl,margin)   
+            
 
     def calculate_pl(self,db_df):         
         # Update calculation to database
@@ -175,6 +173,12 @@ class Checking:
             except Exception as e:
                 send_message(message = f'problem in record_pl \nReason :{e}', emergency = True)    
         # -------------------------------- Upload Stratagy wise pl to pl db ---------------------------------------------
+        
+    def day_tracker(self,pl,margin):
+        try:
+            database(recording=True)[str(self.date)].insert_one({"Time": dt.now().strftime('%Y-%m-%d %H:%M:%S'), F.pl : round(pl,2),F.free_margin : margin})
+        except Exception as e :
+            print(f"Problem in : day_tracker\nMessage : {e}" )
     
     def Update_commmon_pl(self,db_df):
         db_data = db_df

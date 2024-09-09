@@ -103,6 +103,10 @@ def wait_until_next_minute():
     sleep_time = (next_minute - now).total_seconds()
     return sleep_time
 
+def get_available_margin(broker_session,broker_name):
+    if broker_name == 'kotak_neo':
+        return float(broker_session.limits()['Net'])
+
 def trailing_points():
     points = 0
     if env_variables.index == 'BANKNIFTY' : 
@@ -119,12 +123,14 @@ def trailing_points():
         
     return points
             
-def database(day_tracker = False):
+def database(day_tracker = False, recording = False):
     mongo_db = pymongo.MongoClient(env_variables.mongodb_link)
-    if not day_tracker : 
-        data = mongo_db[env_variables.database_name]
+    if day_tracker :
+        data = mongo_db[f'Performance_{dt.now().year}']
+    elif recording : 
+        data = mongo_db[Fields.recording]
     else : 
-        data = mongo_db[f'Performance_{dt.now().year}'] 
+         data = mongo_db[env_variables.database_name]
     return data
         
 def set_coloumn_name(df,broker_name):
@@ -327,8 +333,7 @@ class env_variables:
                                 'emergency' : os.environ['emergency_bot_token'],
                                 'chat_id' : os.environ['chatId']
                                 }
-        
-        send_message(message = 'env variable initilised')    
+            
         return True
     
 class Fields : 
@@ -367,6 +372,7 @@ class Fields :
     index = 'index'
     charges = 'charges'
     pl = 'pl'
+    free_margin = 'free_margin'
     drift_points = 'drift_points'
     drift_rs = 'drift_rs'
     transaction_type = 'transaction_type'
@@ -440,7 +446,7 @@ def send_message(message,stratagy = None, emergency = False, send_image = False)
             
     if send_image : 
         with open('plot.png', 'rb') as file:
-            bot_token = telegram_api_dict[F.FS_First]
+            bot_token = telegram_api_dict['common_logger']
             url = url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
             response = requests.post(url, data={'chat_id': bot_chatId}, files={'photo': file})
             if response.status_code != 200:
