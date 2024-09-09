@@ -142,8 +142,6 @@ def placing(current_time, broker_name, broker_session):
     elif current_time == env.logout_session:
         Order_management(broker_name,broker_session).Update_Performance()
 
-def checking_thread(broker_session,broker_name):
-    Checking(broker_session,broker_name).continue_check()
 
 
 
@@ -180,18 +178,12 @@ if __name__ == '__main__':
                 env.thread_list.append(start_socket_thread)
                 start_socket_thread.start()
                 
-            while wait_until_next_minute() > 2 :
+            while wait_until_next_minute() > 4 :
                 t_one = time.time() 
-                for i in threads_ls :
-                    i.join()
-                time.sleep(2)
-                checking_th = Thread(checking_thread(broker_session,broker_name))
-                threads_ls.append(checking_th)
-                checking_th.start()
+                Checking(broker_session,broker_name).continue_check()
                 t_two = time.time() 
                 # print(f'wait_until_next_minute : {wait_until_next_minute()} Checking Time : {t_two - t_one}')
-                
-                
+                time.sleep(2)
             else:
                 time.sleep(wait_until_next_minute())
                 
