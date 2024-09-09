@@ -40,7 +40,7 @@ def setup_daily_logger(empty:bool = False):
             logging.StreamHandler()  # Also print to console
         ]
     )
-    logging.info('Logger setup complete')
+    # logging.info('Logger setup complete')
     return logging
 
 def is_hoilyday() :

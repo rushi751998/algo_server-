@@ -482,9 +482,9 @@ class Order_management :
             fig.update_traces(fillcolor = color_dict[col],line=dict(color='black', width=2))
             # fig.show()
             if col == F.pl : 
-                folder_path = "server/plots/PL Recording"
+                folder_path = "server/plots/PL_Recording"
             elif col == F.free_margin : 
-                folder_path = "server/plots/Available Margin"
+                folder_path = "server/plots/Available_Margin"
             
             image_full_path = f'{folder_path}/{self.date} {heading_dict[col]}.png'
             fig.write_image(image_full_path)
