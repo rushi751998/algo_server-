@@ -466,7 +466,7 @@ class Order_management :
         df = pd.DataFrame(db)[['Time',F.pl,F.free_margin]]
         df['Time'] = pd.to_datetime(df['Time'],format='%Y-%m-%d %H:%M:%S')
         df.set_index('Time',inplace=True)
-        heading_dict = {F.pl : "PL Recording",F.free_margin : "Margin Utlization"}
+        heading_dict = {F.pl : "PL Recording",F.free_margin : "Available Margin"}
         color_dict = {F.pl : '#ace385',F.free_margin : "#85d0e3"}
         for col in df.columns : 
             fig = px.area(df, x = df.index, y= col,title=f"<b>{heading_dict[col]} ({self.date})</b>",width = 1500,height = 720,labels = {"Time": "Time","value": col})
