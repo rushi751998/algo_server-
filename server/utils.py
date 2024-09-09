@@ -445,7 +445,7 @@ def send_message(message,stratagy = None, emergency = False, send_image = False)
             
             
     if send_image : 
-        with open('plot.png', 'rb') as file:
+        with open(message, 'rb') as file:
             bot_token = telegram_api_dict['common_logger']
             url = url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
             response = requests.post(url, data={'chat_id': bot_chatId}, files={'photo': file})
