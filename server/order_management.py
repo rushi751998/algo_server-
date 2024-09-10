@@ -8,6 +8,7 @@ from server.broker import Order_details, get_ltp, get_token, is_order_rejected_f
 from server.utils import env_variables as env ,database , Fields as F
 import plotly.express as px
 pd.options.mode.chained_assignment = None # it is mandatory
+import os
 
 
 class Order_management : 
@@ -485,7 +486,8 @@ class Order_management :
                 folder_path = "server/plots/PL_Recording"
             elif col == F.free_margin : 
                 folder_path = "server/plots/Available_Margin"
-            
+                
+            os.makedirs(folder_path, exist_ok=True)
             image_full_path = f'{folder_path}/{self.date} {heading_dict[col]}.png'
             fig.write_image(image_full_path)
             send_message(message = image_full_path,send_image=True)
