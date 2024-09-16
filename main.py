@@ -178,7 +178,7 @@ if __name__ == '__main__':
                 env.thread_list.append(start_socket_thread)
                 start_socket_thread.start()
                 
-            while wait_until_next_minute() > 4 :
+            while wait_until_next_minute() > 8 :
                 t_one = time.time() 
                 Checking(broker_session,broker_name).continue_check()
                 t_two = time.time() 
