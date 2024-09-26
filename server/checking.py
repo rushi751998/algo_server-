@@ -7,7 +7,7 @@ from  datetime import datetime as dt
 import pymongo
 import time
 from server.order_management import Order_management
-from server.utils import database , Fields as F, trailing_points,env_variables as env, get_available_margin
+from server.utils import database , F as F, trailing_points,env_variables as env, get_available_margin
 from server.utils import send_message
 
 class Checking:
@@ -138,7 +138,6 @@ class Checking:
             margin = get_available_margin(self.broker_session,self.broker_name) 
             self.day_tracker(total_pl,margin)   
             
-
     def calculate_pl(self,db_df):         
         # Update calculation to database
         for index, i in db_df.iterrows(): 
@@ -448,3 +447,21 @@ class Checking:
                         send_message(message = f'Alert!!!\nSl Not Available!\nNot ablet to exit at limit Order\nOld Id: {i[F.exit_orderid]}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nMessage : {order_number}', emergency = True)
 
 
+class option_buying_checking():
+    
+    def __init__(self) : 
+        pass
+    
+    def update_high_low(self,df):
+        for i, row in df[df[F.entry_orderid_status] == F.recording].iterrows() :
+            pass
+    
+    def place_order(self) :
+        pass
+    
+    def place_limit_sl(self):
+        pass
+    
+    def check_sl(self):
+        pass
+    

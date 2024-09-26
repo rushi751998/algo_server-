@@ -5,7 +5,7 @@ import pandas as pd
 import time
 import json
 from server.broker import Order_details, get_ltp, get_token, is_order_rejected_func
-from server.utils import env_variables as env ,database , Fields as F
+from server.utils import env_variables as env ,database , F as F
 import plotly.express as px
 pd.options.mode.chained_assignment = None # it is mandatory
 import os
@@ -207,7 +207,7 @@ class Order_management :
             if is_order_placed :  
                 time.sleep(3)
                 is_not_empty,all_orders,filled_order,pending_order = Order_details(self.broker_session,self.broker_name).order_book()
-                all_filled_orders = pending_order[F.order_id].to_list()+filled_order[F.order_id].to_list()
+                all_filled_orders = pending_order[F.order_id].to_list() + filled_order[F.order_id].to_list()
                 if order_number in all_filled_orders:
                     order = { 
                             F.entry_time : self.time,
@@ -256,6 +256,58 @@ class Order_management :
 
             elif not is_order_placed :
                 send_message(message = f'Not able to place {stratagy} order \nmessage :{order_number}', emergency = True)
+                
+        if stratagy in [F.RB_Buy_first, F.RB_Buy_second, F.RB_Buy_third, F.RB_Buy_fourth]:
+            ticker = 123
+            
+            order = { 
+                    F.entry_time : None,
+                    F.ticker : ticker,
+                    F.token : get_token(ticker),
+                    F.high : 0,
+                    F.low : 0,
+                    F.transaction_type : transaction_type,
+                    F.option_type : option_type,
+                    F.product_type : None,
+                    F.qty : qty,
+                    #-------------- Entry order details -------------
+                    F.entry_orderid : 0,
+                    F.entry_orderid_status  : F.recording,    #To check order is complete
+                    F.entry_price : 0,
+                    F.entry_price_initial : None,
+                    F.entry_tag : tag,  #tag_contains stratagy_name+option_type+loop no
+                    F.entry_order_count : 0,
+                    F.entry_order_execuation_type : None,
+                    #-------------- sl order details -------------
+                    F.exit_orderid : None,
+                    F.exit_orderid_status : None,
+                    F.exit_price : 0,
+                    F.exit_price_initial : 0,
+                    F.exit_tag : None,  #tag_contains stratagy_name+option_type+loop no
+                    F.exit_price : 0,
+                    F.exit_order_count : 0,
+                    F.exit_order_execuation_type : None,
+                    #-------- Other parameter --------------
+                    F.exit_time : None,
+                    F.exit_reason : None,              # sl_hit/day_end
+                    F.stratagy : stratagy,
+                    F.index : env.index,
+                    F.loop_no : loop_no,
+                    F.exit_percent : exit_percent,
+                    F.Range_start_time : 0,
+                    F.Range_end_time : 0,
+                    
+                    F.charges : 0,
+                    F.drift_points : 0,
+                    F.drift_rs : 0,
+                    F.pl : 0,
+                    # F.recording : [
+                    #     # {'Time':'10:15:00','pl':100},
+                    #     ]
+                    }
+
+            self.database[str(self.date)].insert_one(order)
+            send_message(message = f"limit order placed... \nStratagy : {stratagy}\nPrice : {price}\nOption Type : {option_type}\nMessage : {order_number}", stratagy= stratagy)
 
     def smart_executer(self, stratagy, exit_percent, option_type, entry_orderid) :
         while True:

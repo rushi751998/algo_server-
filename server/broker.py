@@ -7,7 +7,7 @@ from dateutil.relativedelta import relativedelta
 import time
 import pandas as pd
 import threading
-from server.utils import set_coloumn_name, order_staus_dict, env_variables as env, Fields as F
+from server.utils import set_coloumn_name, order_staus_dict, env_variables as env, F as F
 nan = 'nan'
 
 option_chain = {}
@@ -239,7 +239,7 @@ class Socket_handling:
 def get_option_chain():
     return option_chain
 
-def get_symbol(option_type,broker_name,option_price = None, is_hedge = False):
+def get_symbol(option_type,broker_name,option_price = None, is_hedge = False, is_straddle = False, index:str = None):
     if broker_name == F.kotak_neo :
         chain = pd.DataFrame(get_option_chain()).T
         chain = chain[(chain['v'] > 100000) & (chain['oi'] > 100000)]
@@ -248,21 +248,27 @@ def get_symbol(option_type,broker_name,option_price = None, is_hedge = False):
         if not is_hedge :
             strike = chain[chain['ltp']<=option_price].sort_values('ltp',ascending=False).iloc[0]
             env.logger.info(f"Func : get_symbol Input: {option_type},{option_price},{broker_name} Output: {strike['ticker']}, {strike['ltp']}")
+            return strike['ticker'], strike['ltp']
+        
+        if is_straddle :
+            ltp = get_ltp(123,broker_name)
+            ticker = None
+            return ticker,ltp
+            
         
         else : 
             strike = chain[chain['ltp'] >= 1].sort_values('ltp',ascending=True).iloc[0]
             env.logger.info(f"Func : get_symbol Input:  Output: {strike['ticker']}, {strike['ltp']}")
             env.hedge_cost = 0
-        return strike['ticker'], strike['ltp']
+            return strike['ticker'], strike['ltp']
 
-def get_ltp(instrument_token,broker_name):
-    if broker_name == F.kotak_neo :
-        try:
-            ltp = option_chain[instrument_token]['ltp']
-            # env.logger.info(f"Token: {instrument_token} LTP: {ltp}")
-            return ltp
-        except Exception as e : 
-            send_message(message = f"not able to get lpt", emergency = True)
+def get_ltp(instrument_token):
+    try:
+        ltp = option_chain[instrument_token]['ltp']
+        # env.logger.info(f"Token: {instrument_token} LTP: {ltp}")
+        return ltp
+    except Exception as e : 
+        send_message(message = f"not able to get lpt", emergency = True)
         
 def set_hedge_cost(broker_name):
     """Setup hedge cost at max from both CE and PE"""
@@ -282,7 +288,7 @@ def set_hedge_cost(broker_name):
             return True  
     
 def get_token(ticker):
-    return ticker_to_token[ticker]
+    return env.option_chain[F.Ticker_to_token][ticker]
 
 def is_order_rejected_func(order_id,broker_session,broker_name):
     time.sleep(5)

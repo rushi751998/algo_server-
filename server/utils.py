@@ -128,37 +128,47 @@ def database(day_tracker = False, recording = False):
     if day_tracker :
         data = mongo_db[f'Performance_{dt.now().year}']
     elif recording : 
-        data = mongo_db[Fields.recording]
+        data = mongo_db[F.recording]
     else : 
          data = mongo_db[env_variables.database_name]
     return data
         
 def set_coloumn_name(df,broker_name):
-    if  broker_name == 'kotak_neo' :
+    if  broker_name == F.kotak_neo :
         column_name_dict = {
-            'nOrdNo':'order_id',
-            'ordDtTm':'order_time',
-            'trdSym':'order_symbol',
-            'tok':'symbol_token',
-            'qty':'qty',
-            'fldQty':'filled_qty',
-            'avgPrc':'price',
-            'trnsTp':'transaction_type',
-            'prod' :'product',
-            'exSeg':'exchange_segement',
-            'ordSt':'order_status',
-            'stkPrc':'strike_price',
-            'optTp':'option_type',
+            # Order Related
+            'nOrdNo': F.order_id,
+            'ordDtTm': F.order_time,
+            'trdSym': F.ticker,
+            'tok': F.token,
+            'qty': F.qty,
+            'fldQty': F.filled_qty,
+            'avgPrc': F.price,
+            'trnsTp': F.transaction_type,
+            'prod' : F.product_type,
+            'exSeg': 'exchange_segement',
+            'ordSt': F.order_status,
+            'stkPrc': F.strike_price,
+            'strike': F.strike_price,
+            'optTp': F.option_type,
             'brdLtQty':'brdLtQty',
-            'expDt':'expiry_date',
-            'GuiOrdId':'tag',
+            'expDt': F.expiry_date,
+            'GuiOrdId': F.tag,
             'type' : 'type',
-            'buyAmt'  : 'buy_amount',
-            'flBuyQty' : 'filed_buy_qty',
-            'flSellQty' : 'filed_sell_qty',
-            'sellAmt' : 'sell_amount',
-            'rejRsn' : 'message',
+            'buyAmt' : F.buy_amount,
+            'flBuyQty' : F.filed_buy_qty,
+            'flSellQty' : F.filed_sell_qty,
+            'sellAmt' : F.sell_amount,
+            'rejRsn' : F.message,
             
+            # Script Master
+            'pSymbol' : F.token ,
+            'pTrdSymbol' : F.ticker ,
+            'pSymbolName' : F.index ,
+            'lExpiryDate' : F.expiry_date ,
+            'dStrikePrice;' : F.strike_price ,
+            'pOptionType' : F.option_type ,
+            'lLotSize' : F.lot_size ,
             
         }
     if   broker_name =='fyers':
@@ -166,7 +176,6 @@ def set_coloumn_name(df,broker_name):
 
         
     df.rename(columns = column_name_dict,inplace = True)
-    df.to_csv('order.csv')
     return df
 
 def get_qty_option_price(broker_name):
@@ -219,11 +228,15 @@ def get_qty_option_price(broker_name):
     return fifty_per_qty, fifty_per_price, re_entry_qty, re_entry_price, wait_trade_qty, wait_trade_price, hedge_qty
             
 class env_variables:
+    # other_task = [exit_orders, logout_session, Buy_Hedges]
+    # sell_systems = [F.FS_First, F.RE_First, F.WNT_First, F.RE_Second, F.RE_Third]
+    # buy_systems = [F.RB_Buy_first, F.RB_Buy_second, F.RB_Buy_third, F.RB_Buy_fourth]
     env_variable_initilised = False
     option_chain_set = False
     today = None
     thread_list = []
     socket_open = False
+    option_chain : dict
     logger = None #setup_daily_logger(True)
     lot_size : int
     selling_lots : int
@@ -261,6 +274,11 @@ class env_variables:
     logout_session : str
     Buy_Hedges : str 
     
+    RB_Buy_first : str
+    RB_Buy_second : str
+    RB_Buy_third : str
+    RB_Buy_fourth : str
+    
     capital : str
     qty_partation_loop : int
     telegram_api_dict : dict
@@ -272,6 +290,7 @@ class env_variables:
         
         self.env_variable_initilised= True
         self.option_chain_set = False
+        self.expiry_base_index = None
         self.thread_list = []
         self.index = None
         self.today = dt.today().date()
@@ -293,7 +312,7 @@ class env_variables:
         self.broker_name = os.environ['broker_name']    
         self.session_validation_key = os.environ['session_validation_key'] 
         self.two_factor_code = os.environ['two_factor_code'] 
-        # if self.broker_name == Fields.kotak_neo : 
+        # if self.broker_name == F.kotak_neo : 
         self.product_type = 'MIS'
             
         self.allowed_loss_percent = float(os.environ['allowed_loss_percent'])
@@ -316,29 +335,53 @@ class env_variables:
         self.RE_Second = os.environ['RE_Second']
         self.RE_Third = os.environ['RE_Third']
         self.exit_orders = os.environ['exit_orders']
+        
+        self.RB_Buy_first = os.environ['RB_Buy_first']
+        self.RB_Buy_second = os.environ['RB_Buy_second']
+        self.RB_Buy_third = os.environ['RB_Buy_third']
+        self.RB_Buy_fourth = os.environ['RB_Buy_fourth']
+        
+        
         self.logout_session = os.environ['logout_session']  
         self.capital = float(os.environ['capital'])
         self.qty_partation_loop = int(os.environ['qty_partation_loop'])
         self.logger = setup_daily_logger()
         
         self.telegram_api_dict = {
-                                Fields.FS_First : os.environ['nine_twenty_bot_token'],
-                                Fields.RE_First  : os.environ['nine_thirty_bot_token'],
-                                Fields.WNT_First : os.environ['nine_fourty_five_bot_token'],
-                                Fields.RE_Second : os.environ['ten_thirty_bot_token'],
-                                Fields.RE_Third : os.environ['eleven_bot_token'],
-                                Fields.Hedges : os.environ['nine_twenty_bot_token'],   #passing hedges updates to Nine Twenty
+                                F.FS_First : os.environ['nine_twenty_bot_token'],
+                                F.RE_First  : os.environ['nine_thirty_bot_token'],
+                                F.WNT_First : os.environ['nine_fourty_five_bot_token'],
+                                F.RE_Second : os.environ['ten_thirty_bot_token'],
+                                F.RE_Third : os.environ['eleven_bot_token'],
+                                F.Hedges : os.environ['nine_twenty_bot_token'],   #passing hedges updates to Nine Twenty
                                 
                                 'common_logger' : os.environ['common_loggger'],
                                 'emergency' : os.environ['emergency_bot_token'],
                                 'chat_id' : os.environ['chatId']
                                 }
+        
+        
+        self.option_chain = {
+                            F.MIDCPNIFTY :{},
+                            F.NIFTY : {},
+                            F.FINNIFTY : {},
+                            F.BANKNIFTY : {},
+                            F.Futures : {},
+                            F.Subscribed : {},
+                            F.Ticker_to_token : {},
+                            F.days_to_expire : {
+                                                F.MIDCPNIFTY : None,
+                                                F.NIFTY : None,
+                                                F.FINNIFTY : None,
+                                                F.BANKNIFTY : None
+                                                },
+                            }
             
         return True
     
-class Fields : 
+class F : 
     
-    # Entry Fields
+    # Entry F
     entry_orderid = 'entry_orderid'
     entry_price_initial = 'entry_price_initial'
     entry_order_count = 'entry_order_count'
@@ -379,6 +422,7 @@ class Fields :
     stCode = 'stCode'
     CE = 'CE'
     PE = 'PE'
+    XX = 'XX'
     
     # Order Status with reason
     limit_order = 'limit_order'
@@ -395,6 +439,22 @@ class Fields :
     sl_hit = 'sl_hit'
     day_end = 'day_end'
     
+    open = 'open'
+    high = 'high'
+    low = 'low'
+    close = 'close'
+    ltp = 'ltp'
+    v = 'v'
+    oi = 'oi'
+    
+    buy_amount = 'buy_amount',
+    sell_amount = 'sell_amount',
+    filed_buy_qty = 'filed_buy_qty',
+    filed_sell_qty = 'filed_sell_qty',
+    
+    Range_start_time = "Range_start_time"
+    Range_end_time = "Range_end_time"
+    
     # Staratgy Names
     stratagy = 'stratagy'
     FS_First = 'FS_First'
@@ -404,17 +464,53 @@ class Fields :
     RE_Third = 'RE_Third'
     Hedges = 'Hedges'
     
+    RB_Buy_first = 'RB_Buy_first'
+    RB_Buy_second = 'RB_Buy_second'
+    RB_Buy_third = 'RB_Buy_third'
+    RB_Buy_fourth = 'RB_Buy_fourth'
+    
+    # index
+    index = 'index'
+    BANKNIFTY = 'BANKNIFTY'
+    NIFTY = 'NIFTY'
+    FINNIFTY = 'FINNIFTY'
+    MIDCPNIFTY = 'MIDCPNIFTY'
+    Futures = 'Futures'
+    Subscribed = 'Subscribed'
+    Ticker_to_token = 'Ticker_to_token'
+    ticker_to_token = 'subscribed'
+    expiry_date = 'expiry_date'
+    strike_price = 'strike_price'
+    lot_size = 'lot_size'
+    strike = 'strike'
+    filled_qty = 'filled_qty'
+    days_to_expire = 'days_to_expire'
+    
+    Name = "Name"
+    Email_id = "Email_id"
+    User_ID = "User_ID"
+    Consumer_key = 'Consumer_key'
+    Secret_key = 'Secret_key'
+    Mobile_number = 'Mobile_number'
+    Login_password = 'Login_password'
+    Session_validation_key = 'Session_validation_key'
+    Two_factor_code = 'Two_factor_code'
+    
+    
     # Other
     kotak_neo = 'kotak_neo'
     broker_name ='broker_name'
     broker_session = 'broker_session'
     nOrdNo = 'nOrdNo'
+    order_status = 'order_status'
     order_id = 'order_id'
     ticker = 'ticker'
     data = 'data'
     token = 'token'
     tag = 'tag'
     option_type = 'option_type'
+    message = 'message'
+    order_time = 'order_time'
     
 def send_message(message,stratagy = None, emergency = False, send_image = False):
     telegram_api_dict = env_variables.telegram_api_dict
