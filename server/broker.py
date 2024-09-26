@@ -272,7 +272,7 @@ def set_hedge_cost(broker_name):
                 chain = pd.DataFrame(get_option_chain()).T
                 chain = chain[chain[F.option_type] == i]
                 chain = chain[(chain['v'] > 100000) & (chain['oi'] > 100000)]
-                chain = chain[chain['ltp'] >= 1].sort_values('ltp')
+                chain = chain[chain['ltp'] >= env.hedge_price].sort_values('ltp')
                 cost = chain.iloc[0]['ltp']
                 if cost > hedge_cost :
                     hedge_cost = cost
