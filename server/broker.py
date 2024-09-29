@@ -111,10 +111,10 @@ class Socket_handling:
         self.broker_session = broker_session
         self.is_prepared = False
     
-    def start_socket(self,expiry_base_instrument):
+    def start_socket(self):
         if not self.is_prepared : 
             try : 
-                df,future_token,is_prepared = self.prepare_option_chain_Future_token(expiry_base_instrument)
+                df,future_token,is_prepared = self.prepare_option_chain_Future_token()
                 with self._lock:
                             self.future_token = future_token
                             self.is_prepared = is_prepared
@@ -175,7 +175,7 @@ class Socket_handling:
                 pass
         # print(option_chain,'\n\n')
 
-    def prepare_option_chain_Future_token(self,expiry_base_instrument): 
+    def prepare_option_chain_Future_token(self): 
         if self.broker_name == F.kotak_neo : 
             script_master =   [i for i in  self.broker_session.scrip_master()['filesPaths'] if 'nse_fo' in i]
             df = pd.read_csv(script_master[0],low_memory=False)
@@ -191,8 +191,7 @@ class Socket_handling:
 
             option_tickers = df[df['optionType'] != 'XX']
             future_tickers = df[df['optionType'] == 'XX']
-
-            if expiry_base_instrument:
+            if env.expiry_base_instrument:
                 future_tickers = future_tickers[(future_tickers['days_to_expire'] == future_tickers['days_to_expire'].min())]
                 future_token = future_tickers[future_tickers['days_to_expire'] == future_tickers['days_to_expire'].min()].iloc[0]['token']
                 
@@ -257,7 +256,7 @@ def get_symbol(option_type,broker_name,option_price = None, is_hedge = False, is
             
         
         else : 
-            strike = chain[chain['ltp'] >= 1].sort_values('ltp',ascending=True).iloc[0]
+            strike = chain[chain['ltp'] >= env.hedge_price].sort_values('ltp',ascending=True).iloc[0]
             env.logger.info(f"Func : get_symbol Input:  Output: {strike['ticker']}, {strike['ltp']}")
             env.hedge_cost = 0
             return strike['ticker'], strike['ltp']
@@ -279,7 +278,7 @@ def set_hedge_cost(broker_name):
                 chain = pd.DataFrame(get_option_chain()).T
                 chain = chain[chain[F.option_type] == i]
                 chain = chain[(chain['v'] > 100000) & (chain['oi'] > 100000)]
-                chain = chain[chain['ltp'] >= 1].sort_values('ltp')
+                chain = chain[chain['ltp'] >= env.hedge_price].sort_values('ltp')
                 cost = chain.iloc[0]['ltp']
                 if cost > hedge_cost :
                     hedge_cost = cost

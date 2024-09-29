@@ -287,6 +287,7 @@ class env_variables:
     def load_env_variable (self):
         import os
         load_dotenv() 
+        str_to_bool = {'False' : False,'True':True }
         
         self.env_variable_initilised= True
         self.option_chain_set = False
@@ -299,8 +300,9 @@ class env_variables:
         self.hedge_lots = int(os.environ['hedge_lots']) 
         self.hedge_cost = 0
         
-        self.expiry_base_instrument = bool(os.environ['expiry_base_instrument'])
-        self.day_tracker = bool(os.environ['day_tracker'])
+        self.expiry_base_instrument = str_to_bool[os.environ['expiry_base_instrument']]
+        self.hedge_price = float(os.environ['hedge_price'])
+        self.day_tracker = str_to_bool[os.environ['day_tracker']]
         
         self.mongodb_link = os.environ['mongodb_link'] 
         self.database_name = os.environ['database_name'] 

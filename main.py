@@ -24,7 +24,7 @@ from random import randint
 threads_ls = []
 
 def socket_thread_fun(**kwargs):
-    Socket_handling(broker_name,broker_session).start_socket(kwargs['expiry_base_instrument'])
+    Socket_handling(broker_name,broker_session).start_socket()
 
 def order_placer(option_type,option_price,loop_no,stratagy,exit_percent,qty,transaction_type,broker_name,broker_session,wait_percent = None):
     # try :
@@ -154,7 +154,7 @@ if __name__ == '__main__':
             hoilyday, holiday_reason = is_hoilyday()
             if not hoilyday:
                 is_login, broker_session = Login().setup()
-                start_socket_thread = Thread(name = 'socket_thread', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : env.expiry_base_instrument,'broker_session': broker_session,'broker_name' : broker_name})
+                start_socket_thread = Thread(name = 'socket_thread', target = socket_thread_fun, kwargs = {'broker_session': broker_session,'broker_name' : broker_name})
                 env.thread_list.append(start_socket_thread)
                 start_socket_thread.start()
                 # send_message(message = "Buddy... I'm here :)",emergency= True)
@@ -171,12 +171,12 @@ if __name__ == '__main__':
                 
                     
             if not is_socket_open :
-                start_socket_thread = Thread(name = 'socket_thread_restart', target = socket_thread_fun, kwargs = {'expiry_base_instrument' : env.expiry_base_instrument,'broker_session': broker_session,'broker_name' : broker_name})
+                start_socket_thread = Thread(name = 'socket_thread_restart', target = socket_thread_fun, kwargs = {'broker_session': broker_session,'broker_name' : broker_name})
                 send_message(message = 'Socket Re-started', emergency = True)
                 env.thread_list.append(start_socket_thread)
                 start_socket_thread.start()
                 
-            while wait_until_next_minute() > 4 :
+            while wait_until_next_minute() > 8 :
                 t_one = time.time() 
                 Checking(broker_session,broker_name).continue_check()
                 t_two = time.time() 
