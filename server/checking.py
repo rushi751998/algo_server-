@@ -121,10 +121,12 @@ class Checking:
                         
     def is_loss_above_limit(self) :
         df = pd.DataFrame(self.database[str(self.date)].find())
-        closed_trades_pl = df[(df[F.exit_orderid_status] == F.closed) & (df[F.pl] != 0)]
+        try:
+            closed_trades_pl = df[(df[F.exit_orderid_status] == F.closed) & (df[F.pl] != 0)][F.pl].sum()
+        except : 
+            closed_trades_pl = 0
         
-        if len(closed_trades_pl) > 0 :   
-            closed_trades_pl =  closed_trades_pl[F.pl].sum()   
+        if len(df) > 0 :
             total_pl =  closed_trades_pl    
             open_trades = df[(df[F.exit_orderid_status] == F.open) & (df[F.pl] == 0) & (df[F.stratagy] != F.Hedges)]
             loss_limit = -(env.capital * env.allowed_loss_percent)/100
@@ -136,8 +138,7 @@ class Checking:
                 send_message(f"Loss above limit!!!\nPL : {total_pl}\nLimit : {loss_limit}", emergency = True)
             
             margin = get_available_margin(self.broker_session,self.broker_name) 
-            self.day_tracker(total_pl,margin)   
-            
+            self.day_tracker(total_pl,margin)
 
     def calculate_pl(self,db_df):         
         # Update calculation to database
