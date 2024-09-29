@@ -5,7 +5,7 @@ import pandas as pd
 import time
 import json
 from server.broker import Order_details, get_ltp, get_token, is_order_rejected_func
-from server.utils import env_variables as env ,database , Fields as F
+from server.utils import env_variables as env , F, database 
 import plotly.express as px
 pd.options.mode.chained_assignment = None # it is mandatory
 import os
@@ -18,7 +18,7 @@ class Order_management :
         self.time = str(dt.now())
         self.date = dt.today().date()
         self.database = database()
-        self.database = database()
+        self.performane_db = database(day_tracker = True)
 
     def order_place(self,ticker,qty, transaction_type, stratagy, exit_percent, loop_no, price, option_type,):
         tag = f'{stratagy}_{option_type}_{loop_no}'
@@ -453,15 +453,68 @@ class Order_management :
             df_stratagy_cal.loc[len(df_stratagy_cal)] = column_sums
             df_stratagy_cal.rename(columns = {'index' : 'no_orders'},inplace=True)
             df_stratagy_cal = df_stratagy_cal.replace({df_stratagy_cal.iloc[-1].stratagy : 'Total'})
-            df_stratagy_cal['date'] = str(dt.today().date())
+            df_stratagy_cal['date'] = str(self.date)
             df_stratagy_cal['index'] = env.index
+            df_stratagy_cal['capital'] = env.capital
             df_stratagy_cal = df_stratagy_cal[['date','index','stratagy', 'pl', 'drift_points', 'drift_rs', 'entry_order_count','exit_order_count', 'no_orders', 'total_count']]
             data = json.loads(df_stratagy_cal.to_json(orient='records'))
-            database(day_tracker = True)[dt.now().strftime('%b')].insert_many(data)
+            self.performane_db[dt.now().strftime('%b')].insert_many(data)
             send_message(message = message)
+            self.Send_performance_report()
         except Exception as e : 
             send_message(message = f'Problem in Update_Performance PL\nMessage : {e}', emergency = True)
             
+    def Send_performance_report(self):
+        ls= []
+        for i in pd.DataFrame(self.performane_db.list_collections()).name.to_list():
+            data= self.performane_db[i].find()
+            df = pd.DataFrame(data)
+            df.fillna(value=0,inplace= True)
+            ls.append(df)
+            
+        df = pd.concat(ls,axis=0).sort_values(by = 'date')
+        
+        a = df.reset_index()
+        a['date'] = pd.to_datetime(df['date'].to_list())
+        a['month'] = a['date'].dt.month_name()
+        a['year'] = a['date'].dt.year
+        a = a[a['stratagy']!='Total'][['month','year','pl']]
+        a = a.groupby(by= ['year','month']).sum().reset_index()
+        a = a.pivot_table(columns= 'month',index= 'year',values='pl')
+        a.columns = a.columns.to_list()
+        a['(Total)'] = a.sum(axis = 1)
+
+        """Send Ruppes Gain month wise"""
+        message = str()
+        for index, row in a.round().iterrows():
+            message+=str(row)
+        send_message(message)
+
+        """Send % Gain month wise"""
+        message = str()
+        for index, row in round(a*(100/env.capital),2).iterrows():
+            message+=str(row)
+        send_message(message)
+        
+        df = df.pivot(columns='stratagy',index=['date'],values='pl')[['FS_First', 'RE_First', 'WNT_First', 'RE_Second','RE_Third','Hedges','Total']]
+        df = df.cumsum().round()
+
+        """Send ATH DD Report"""
+        ath = 0
+        dd = []
+        for index,row in df.iterrows() :
+            if row['Total'] > ath :
+                dd.append(0)
+                ath = row['Total']
+            else :
+                pl = row['Total'] - ath
+                dd.append(pl)
+                
+        df['drawdown'] = dd
+
+        message = f'ATH : {ath}\n'+f'MAX DD : {(df["drawdown"].min())}\n'+f'Current DD : {dd[-1]}'
+        send_message(message)
+
     def genrate_plot(self):
         db = database(recording=True)[str(self.date)].find()
         df = pd.DataFrame(db)[['Time',F.pl,F.free_margin]]

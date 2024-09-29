@@ -7,7 +7,7 @@ from  datetime import datetime as dt
 import pymongo
 import time
 from server.order_management import Order_management
-from server.utils import database , Fields as F, trailing_points,env_variables as env, get_available_margin
+from server.utils import database , F, trailing_points,env_variables as env, get_available_margin
 from server.utils import send_message
 
 class Checking:

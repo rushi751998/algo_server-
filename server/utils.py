@@ -128,7 +128,7 @@ def database(day_tracker = False, recording = False):
     if day_tracker :
         data = mongo_db[f'Performance_{dt.now().year}']
     elif recording : 
-        data = mongo_db[Fields.recording]
+        data = mongo_db[F.recording]
     else : 
          data = mongo_db[env_variables.database_name]
     return data
@@ -295,7 +295,7 @@ class env_variables:
         self.broker_name = os.environ['broker_name']    
         self.session_validation_key = os.environ['session_validation_key'] 
         self.two_factor_code = os.environ['two_factor_code'] 
-        # if self.broker_name == Fields.kotak_neo : 
+        # if self.broker_name == F.kotak_neo : 
         self.product_type = 'MIS'
             
         self.allowed_loss_percent = float(os.environ['allowed_loss_percent'])
@@ -324,12 +324,12 @@ class env_variables:
         self.logger = setup_daily_logger()
         
         self.telegram_api_dict = {
-                                Fields.FS_First : os.environ['nine_twenty_bot_token'],
-                                Fields.RE_First  : os.environ['nine_thirty_bot_token'],
-                                Fields.WNT_First : os.environ['nine_fourty_five_bot_token'],
-                                Fields.RE_Second : os.environ['ten_thirty_bot_token'],
-                                Fields.RE_Third : os.environ['eleven_bot_token'],
-                                Fields.Hedges : os.environ['nine_twenty_bot_token'],   #passing hedges updates to Nine Twenty
+                                F.FS_First : os.environ['nine_twenty_bot_token'],
+                                F.RE_First  : os.environ['nine_thirty_bot_token'],
+                                F.WNT_First : os.environ['nine_fourty_five_bot_token'],
+                                F.RE_Second : os.environ['ten_thirty_bot_token'],
+                                F.RE_Third : os.environ['eleven_bot_token'],
+                                F.Hedges : os.environ['nine_twenty_bot_token'],   #passing hedges updates to Nine Twenty
                                 
                                 'common_logger' : os.environ['common_loggger'],
                                 'emergency' : os.environ['emergency_bot_token'],
@@ -338,9 +338,9 @@ class env_variables:
             
         return True
     
-class Fields : 
+class F : 
     
-    # Entry Fields
+    # Entry F
     entry_orderid = 'entry_orderid'
     entry_price_initial = 'entry_price_initial'
     entry_order_count = 'entry_order_count'

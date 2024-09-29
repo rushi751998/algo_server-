@@ -1,4 +1,4 @@
-from server.utils import kotak_transaction_type_dict,order_staus_dict, Fields as F
+from server.utils import kotak_transaction_type_dict,order_staus_dict, F
 from server.broker import is_order_rejected_func
 from server.utils import env_variables as env
 
