@@ -124,8 +124,8 @@ class Checking:
         df = pd.DataFrame(self.database[str(self.date)].find())
         try:
             closed_trades_df = df[(df[F.exit_orderid_status] == F.closed)]
-            closed_trades_pl = closed_trades_pl[F.pl].sum()  
-        except : 
+            closed_trades_pl = closed_trades_df[F.pl].sum()  
+        except :
             closed_trades_pl = 0
             closed_trades_df = []
         
@@ -138,7 +138,7 @@ class Checking:
                 pl = round((i[F.entry_price] * i[F.qty]) - ltp * i[F.qty],2) #if ltp is greater then entry price then position is in loos coz selling options          
                 total_pl += pl
             
-            margin = get_available_margin(self.broker_session,self.broker_name) 
+            margin = get_available_margin(self.broker_session,self.broker_name)
             self.day_tracker(total_pl,margin)
         
         if len(closed_trades_df) > 0 :

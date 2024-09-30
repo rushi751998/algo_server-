@@ -6,7 +6,7 @@ from server.utils import (get_ist_now,
                    is_market_time,
                    sleep_till_next_day,
                    env_variables as env ,
-                   database , Fields as F,
+                   database ,F,
                    get_qty_option_price,
                    wait_until_next_minute
                    )
