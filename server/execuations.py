@@ -1,4 +1,4 @@
-from server.utils import kotak_transaction_type_dict,order_staus_dict, F as F
+from server.utils import kotak_transaction_type_dict,order_staus_dict, F
 from server.broker import is_order_rejected_func
 from server.utils import env_variables as env
 
@@ -17,8 +17,8 @@ class OrderExecuation :
                                 transaction_type = kotak_transaction_type_dict[transaction_type], amo = "NO", disclosed_quantity = "0", market_protection = "0", pf = "N", validity = "DAY",exchange_segment = "nse_fo",tag = new_tag) #production
             env.logger.info(f'place_order 1 : {responce}\n')
             if responce[F.stCode] == 200 :
-                is_order_rejected, is_mis_blocked = is_order_rejected_func(responce[F.nOrdNo], self.broker_session, self.broker_name)
-                if is_order_rejected and is_mis_blocked :
+                is_mis_order_rejected, is_mis_blocked = is_order_rejected_func(responce[F.nOrdNo], self.broker_session, self.broker_name)
+                if is_mis_order_rejected and is_mis_blocked :
                     # Try With NRML order 
                     env.product_type = 'NRML'
                     product_type = 'NRML'
@@ -27,17 +27,21 @@ class OrderExecuation :
                                 transaction_type = kotak_transaction_type_dict[transaction_type], amo = "NO", disclosed_quantity = "0", market_protection = "0", pf="N", validity = "DAY",exchange_segment = "nse_fo",tag = new_tag) #production
                     env.logger.info(f'place_order 2 : {responce}\n')
                     if responce[F.stCode] == 200 :
-                        is_order_rejected, is_mis_blocked = is_order_rejected_func(responce[F.nOrdNo], self.broker_session, self.broker_name)
-                        if not is_order_rejected:
-                            # return NRML order
+                        is_nrml_order_rejected, _ = is_order_rejected_func(responce[F.nOrdNo], self.broker_session, self.broker_name)
+                        if not is_nrml_order_rejected:
+                            # return NRML order accepted
                             return True, responce[F.nOrdNo], product_type, new_tag
                         else :
-                            # return MIS order
+                            # return NRML order rejected
                             return False, responce, product_type, new_tag
                         
-                else :
-                    # return MIS order
+                elif not is_mis_order_rejected:
+                    # return MIS order accepted
                     return True, responce[F.nOrdNo], product_type, new_tag
+                    
+                else :
+                    # return MIS order rejected
+                    return False, responce, product_type, new_tag
                     
             else :
                 return False, responce, product_type , tag

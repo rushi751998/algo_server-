@@ -7,7 +7,7 @@ from  datetime import datetime as dt
 import pymongo
 import time
 from server.order_management import Order_management
-from server.utils import database , F as F, trailing_points,env_variables as env, get_available_margin
+from server.utils import database , F, trailing_points,env_variables as env, get_available_margin
 from server.utils import send_message
 
 class Checking:
@@ -124,8 +124,8 @@ class Checking:
         df = pd.DataFrame(self.database[str(self.date)].find())
         try:
             closed_trades_df = df[(df[F.exit_orderid_status] == F.closed)]
-            closed_trades_pl = closed_trades_pl[F.pl].sum()  
-        except : 
+            closed_trades_pl = closed_trades_df[F.pl].sum()  
+        except :
             closed_trades_pl = 0
             closed_trades_df = []
         
@@ -138,7 +138,7 @@ class Checking:
                 pl = round((i[F.entry_price] * i[F.qty]) - ltp * i[F.qty],2) #if ltp is greater then entry price then position is in loos coz selling options          
                 total_pl += pl
             
-            margin = get_available_margin(self.broker_session,self.broker_name) 
+            margin = get_available_margin(self.broker_session,self.broker_name)
             self.day_tracker(total_pl,margin)
         
         if len(closed_trades_df) > 0 :
@@ -245,7 +245,8 @@ class Checking:
                     
                 #----------------------------------- Place re-entry order ---------------------------------------------------------
                 tag = f'{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}_re_entry'
-                trigger_price = i[F.entry_price] + 0.05
+                price = round(i[F.entry_price],1)
+                trigger_price = price + 0.05
                 # print('trigger_price : ',trigger_price)
                 # print(f"price = {i[F.entry_price]},trigger_price = {trigger_price},qty = {i[F.qty]},ticker ={ i[F.ticker]},transaction_type = {[F.transaction_type]},tag = tag")
                 is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = i[F.entry_price], trigger_price = trigger_price, qty = i[F.qty], ticker = i[F.ticker], transaction_type = i[F.transaction_type], product_type = i[F.product_type], tag = tag)
@@ -261,8 +262,8 @@ class Checking:
                             #-------------- Entry order details -------------
                             F.entry_orderid : order_number,
                             F.entry_orderid_status : F.re_entry_open,    #To check order is complete
-                            F.entry_price : i[F.entry_price],
-                            F.entry_price_initial : i[F.entry_price],
+                            F.entry_price : price,
+                            F.entry_price_initial : price,
                             F.entry_order_count : 0,
                             F.entry_order_execuation_type : None,
                             F.entry_tag : tag,

@@ -7,7 +7,7 @@ from dateutil.relativedelta import relativedelta
 import time
 import pandas as pd
 import threading
-from server.utils import set_coloumn_name, order_staus_dict, env_variables as env, F as F
+from server.utils import set_coloumn_name, order_staus_dict,F, env_variables as env
 nan = 'nan'
 
 option_chain = {}
