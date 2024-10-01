@@ -246,7 +246,8 @@ class Checking:
                     
                 #----------------------------------- Place re-entry order ---------------------------------------------------------
                 tag = f'{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}_re_entry'
-                trigger_price = i[F.entry_price] + 0.05
+                price = round(i[F.entry_price],1)
+                trigger_price = price + 0.05
                 # print('trigger_price : ',trigger_price)
                 # print(f"price = {i[F.entry_price]},trigger_price = {trigger_price},qty = {i[F.qty]},ticker ={ i[F.ticker]},transaction_type = {[F.transaction_type]},tag = tag")
                 is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = i[F.entry_price], trigger_price = trigger_price, qty = i[F.qty], ticker = i[F.ticker], transaction_type = i[F.transaction_type], product_type = i[F.product_type], tag = tag)
@@ -262,8 +263,8 @@ class Checking:
                             #-------------- Entry order details -------------
                             F.entry_orderid : order_number,
                             F.entry_orderid_status : F.re_entry_open,    #To check order is complete
-                            F.entry_price : i[F.entry_price],
-                            F.entry_price_initial : i[F.entry_price],
+                            F.entry_price : price,
+                            F.entry_price_initial : price,
                             F.entry_order_count : 0,
                             F.entry_order_execuation_type : None,
                             F.entry_tag : tag,
