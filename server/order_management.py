@@ -144,6 +144,7 @@ class Order_management :
 
 
         if stratagy in [F.RE_First, F.RE_Second, F.RE_Third]:
+            price = round(price, 1)  
             trigger_price = price + 0.05
             
             is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price, trigger_price, qty, ticker, transaction_type, tag)
@@ -485,13 +486,13 @@ class Order_management :
         a['(Total)'] = a.sum(axis = 1)
 
         """Send Ruppes Gain month wise"""
-        message = str()
+        message = "Ruppes Gain :\n"
         for index, row in a.round().iterrows():
             message+=str(row)
         send_message(message)
 
         """Send % Gain month wise"""
-        message = str()
+        message = "Percentage Gain :\n"
         for index, row in round(a*(100/env.capital),2).iterrows():
             message+=str(row)
         send_message(message)
