@@ -145,8 +145,6 @@ class Checking:
             if total_pl < loss_limit:
                 send_message(f"Loss above limit!!!\nPL : {total_pl}\nLimit : {loss_limit}", emergency = True)
             
-            
-
     def calculate_pl(self,db_df):         
         # Update calculation to database
         for index, i in db_df.iterrows(): 
@@ -246,8 +244,8 @@ class Checking:
                     
                 #----------------------------------- Place re-entry order ---------------------------------------------------------
                 tag = f'{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}_re_entry'
-                price = round(i[F.entry_price],1)
-                trigger_price = price + 0.05
+                price = round(i[F.entry_price])
+                trigger_price = price + 0.2
                 # print('trigger_price : ',trigger_price)
                 # print(f"price = {i[F.entry_price]},trigger_price = {trigger_price},qty = {i[F.qty]},ticker ={ i[F.ticker]},transaction_type = {[F.transaction_type]},tag = tag")
                 is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = i[F.entry_price], trigger_price = trigger_price, qty = i[F.qty], ticker = i[F.ticker], transaction_type = i[F.transaction_type], product_type = i[F.product_type], tag = tag)
@@ -312,9 +310,9 @@ class Checking:
 
                 tag = i[F.entry_tag]
                 ticker = i[F.ticker]
-                stoploos = round(i[F.entry_price] + (i[F.entry_price] * (i[F.exit_percent] / 100)),1)
+                stoploos = round(i[F.entry_price] + (i[F.entry_price] * (i[F.exit_percent] / 100)))
                 qty = i[F.qty]
-                trigger_price = stoploos - 0.1
+                trigger_price = stoploos - 0.2
                 is_order_placed, order_number, product_type, new_tag = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price, qty = qty, ticker = ticker , transaction_type = transaction_type, product_type = i[F.product_type], tag = tag + '_sl')
                 if is_order_placed : 
                     self.database[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.exit_orderid : order_number, F.exit_orderid_status : F.re_entry_open, F.entry_order_execuation_type : F.limit_order, F.exit_price : stoploos, F.exit_price_initial : stoploos , F.exit_tag : tag + '_sl'} } )
@@ -383,7 +381,7 @@ class Checking:
             ltp = get_ltp(i[F.token],self.broker_name)
             sl_price = i[F.exit_price]
             if ltp > sl_price:
-                new_price = round(abs(sl_price) + abs(ltp - sl_price)/2 ,1)
+                new_price = round(abs(sl_price) + abs(ltp - sl_price)/2)
                 remaning_qty = i[F.qty]
                 count = i[F.exit_order_count]
                 qty = pending_order[pending_order[F.order_id] == i[F.exit_orderid]].iloc[0][F.qty]
@@ -445,8 +443,8 @@ class Checking:
                     
                 elif count < 2 : 
                     tag = i[F.exit_tag] + f"_MOL_{count}2" #MOL = Place Missing order at limit order
-                    sl_price = round(i[F.exit_price],1)
-                    is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = sl_price, trigger_price = sl_price + 0.05, qty = i[F.qty], ticker = i[F.ticker], transaction_type = transaction_type, product_type = i[F.product_type],order_type= "SL", tag = tag)
+                    sl_price = round(i[F.exit_price])
+                    is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = sl_price, trigger_price = sl_price + 0.2, qty = i[F.qty], ticker = i[F.ticker], transaction_type = transaction_type, product_type = i[F.product_type],order_type= "SL", tag = tag)
                     
                     if is_order_placed : 
                         self.database[str(self.date)].update_one({F.exit_orderid: i[F.exit_orderid]}, {"$set": {F.exit_orderid: order_number, F.exit_order_count : count + 1}})
