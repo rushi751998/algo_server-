@@ -86,13 +86,13 @@ class Checking:
                 self.re_entry_management(self.db_df,pending_order,filled_order,F.RE_Second)
                 # print(f'{self.current_time}---------------- re_entry_management -  {F.RE_Second} ------------------')
             except Exception as e:
-                send_message(message = f'problem in re_entry_management for : {F.RE_First} \nReason :{e}', emergency = True)
+                send_message(message = f'problem in re_entry_management for : {F.RE_Second} \nReason :{e}', emergency = True)
             
             try:
                 self.re_entry_management(self.db_df,pending_order,filled_order,F.RE_Third)
                 # print(f'{self.current_time}---------------- re_entry_management -  {F.RE_Third} ------------------')
             except Exception as e:
-                send_message(message = f'problem in re_entry_management for : {F.RE_First} \nReason :{e}', emergency = True)
+                send_message(message = f'problem in re_entry_management for : {F.RE_Third} \nReason :{e}', emergency = True)
 
             except Exception as e:
                 send_message(message = f'problem in check_ltp_above_sl\nReason :{e}', emergency = True)
