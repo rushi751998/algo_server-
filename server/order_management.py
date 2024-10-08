@@ -328,7 +328,7 @@ class Order_management :
                     break
 
     def place_limit_sl(self,ticker,qty,transaction_type_,avg_price,exit_percent,option_type,stratagy,tag):
-        stoploos = round(round(0.05 * round(avg_price / 0.05), 2) * ((100 + exit_percent) / 100), 1)
+        stoploos = round(round(0.05 * round(avg_price / 0.05), 2) * ((100 + exit_percent) / 100))
         if transaction_type_ == F.Buy:
             transaction_type = F.Sell
 
