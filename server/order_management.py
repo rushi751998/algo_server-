@@ -23,8 +23,8 @@ class Order_management :
     def order_place(self,ticker,qty, transaction_type, stratagy, exit_percent, loop_no, price, option_type,):
         tag = f'{stratagy}_{option_type}_{loop_no}'
         if stratagy == F.FS_First:
-            price = round(price, 1)  
-            trigger_price = price + 0.05
+            price = round(price)  
+            trigger_price = price + 0.2
                 
             is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price, trigger_price, qty, ticker, transaction_type, tag)
             if is_order_placed :       
@@ -83,8 +83,8 @@ class Order_management :
 
 
         if stratagy == F.Hedges :
-            price = round(price, 1) # remoe in production 
-            trigger_price = price - 0.05
+            price = round(price) # remoe in production 
+            trigger_price = price - 0.2
                 
             is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price, trigger_price, qty, ticker, transaction_type, tag)
             # print(is_order_placed, order_number, product_type, tag)
@@ -144,8 +144,8 @@ class Order_management :
 
 
         if stratagy in [F.RE_First, F.RE_Second, F.RE_Third]:
-            price = round(price, 1)  
-            trigger_price = price + 0.05
+            price = round(price)  
+            trigger_price = price + 0.2
             
             is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price, trigger_price, qty, ticker, transaction_type, tag)
             if is_order_placed :  
@@ -201,8 +201,8 @@ class Order_management :
                     send_message(message = f'Not able to place {stratagy} order \nmessage : {order_number}', emergency = True)
 
         if stratagy == F.WNT_First:
-            price = round(price * 0.95,1)
-            trigger_price = price + 0.05
+            price = round(price * 0.95)
+            trigger_price = price + 0.2
             
             is_order_placed, order_number, product_type, tag  = OrderExecuation(self.broker_name, self.broker_session).place_order(price, trigger_price, qty,ticker, transaction_type, tag)
             if is_order_placed :  
@@ -336,9 +336,9 @@ class Order_management :
                         price = row[F.entry_price] 
 
                         if ltp>price:
-                            new_price = round(abs(price) + abs(ltp-price)/2,1)
+                            new_price = round(abs(price) + abs(ltp-price)/2)
                         else:
-                            new_price = round(abs(price) - abs(ltp-price)/2,1)
+                            new_price = round(abs(price) - abs(ltp-price)/2)
                         # send_message(message = f" Modification of : {row[F.entry_orderid]}\nltp :{ltp} old_price:{price} new_price :{new_price} count : {count}\n\n")
                         try : 
                             remaning_qty = pending_order[pending_order[F.order_id] == row[F.entry_orderid]].iloc[0][F.qty]
@@ -380,16 +380,16 @@ class Order_management :
                     break
 
     def place_limit_sl(self,ticker,qty,transaction_type_,avg_price,exit_percent,option_type,stratagy,tag):
-        stoploos = round(round(0.05 * round(avg_price / 0.05), 2) * ((100 + exit_percent) / 100), 1)
+        stoploos = round(round(0.05 * round(avg_price / 0.05), 2) * ((100 + exit_percent) / 100))
         if transaction_type_ == F.Buy:
             transaction_type = F.Sell
 
         if transaction_type_ == F.Sell:
             transaction_type = F.Buy
         if stratagy == F.Hedges : 
-            trigger_price = round(stoploos + 0.05,2) # 0.05 is the diffrance betweeen limit price and trigger price
+            trigger_price = round(stoploos + 0.2) # 0.05 is the diffrance betweeen limit price and trigger price
         if stratagy != F.Hedges : 
-            trigger_price = round(stoploos - 0.05,2) # 0.05 is the diffrance betweeen limit price and trigger price
+            trigger_price = round(stoploos - 0.2) # 0.05 is the diffrance betweeen limit price and trigger price
         is_order_placed, order_number, product_type, new_tag = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price , qty = qty, ticker = ticker , transaction_type = transaction_type, tag = tag + '_sl')
         if is_order_placed :
             self.database[str(self.date)].update_one({ "entry_tag" : tag}, { "$set" : {F.exit_orderid : order_number, F.exit_orderid_status : F.open , F.exit_price : stoploos, F.exit_price_initial : stoploos, F.exit_tag : tag + '_sl'}})
