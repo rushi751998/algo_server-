@@ -144,7 +144,6 @@ class Order_management :
 
 
         if stratagy in [F.RE_First, F.RE_Second, F.RE_Third]:
-            price = round(price)  
             trigger_price = price + 0.2
             
             is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price, trigger_price, qty, ticker, transaction_type, tag)
