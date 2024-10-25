@@ -446,7 +446,7 @@ class Order_management :
 
             message  = f'Instrument : {env.index}\nTotal PL : {total_pl}\nTotal Drift-Points : {total_drift_points}\nTotal Drift in RS : {total_drift_rs}\nTotal Orders : {total_orders}\nTotal Modifications : {total_modifications}\n{25 * "-"}\nStratagy Wise Report :\n{25 * "-"}\n'
             for index,row in df_stratagy_cal.iterrows():
-                message += (f'Strtatagy : {row[F.stratagy]}\nPL : {row["pl"]}\nDrift in Points : {round(row[F.drift_points],2)}\nDrift in RS : {row[F.drift_rs]}\nOrders : {row[F.index]}\nModifications  : {(row["total_count"])}\n{25 * "-"}\n')
+                message += (f'Strtatagy : {row[F.stratagy]}\nPL : {round(row["pl"])}\nDrift in Points : {round(row[F.drift_points],2)}\nDrift in RS : {round(row[F.drift_rs])}\nOrders : {row[F.index]}\nModifications  : {(row["total_count"])}\n{25 * "-"}\n')
 
             # Update to Performance Tracker
             column_sums = df_stratagy_cal.sum()
