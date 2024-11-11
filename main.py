@@ -27,9 +27,9 @@ threads_ls = []
 def socket_thread_fun(**kwargs):
     Socket_handling(broker_name,broker_session).start_socket()
 
-def order_placer(option_type,price,loop_no,stratagy,exit_percent,qty,transaction_type,broker_name,broker_session,wait_percent = None):
-
-    if stratagy == F.Hedges : 
+def order_placer(option_type,option_price,loop_no,stratagy,exit_percent,qty,transaction_type,broker_name,broker_session,wait_percent = None):
+    # try :
+    if stratagy == F.HEDGES : 
         ticker, ltp = get_symbol(option_type = option_type, broker_name = broker_name, is_hedge = True)   # Place only hedge orders
         price = ltp
         env.logger.info(f'Placing order  : {ticker}, qty = {qty}, transaction_type = {transaction_type}, stratagy = {stratagy}, exit_percent = {exit_percent}, loop_no = {loop_no} ,price = {price}, option_type = {option_type}')
@@ -53,41 +53,29 @@ def placing(current_time, broker_name, broker_session):
     is_set_hedge_cost = set_hedge_cost(broker_name)    
     # fifty_per_qty, fifty_per_price, re_entry_qty, re_entry_price, wait_trade_qty, wait_trade_price, hedge_qty = get_qty_option_price(broker_name)
     # print(env.index,re_entry_qty, re_entry_price)
+    RISK1 = 50
+    RISK2 = 40
     qty = 25
-    hedge_qty = 150
-    is_expiry = env.days_to_expiry in [0,1]
-    traded_df = pd.DataFrame(database[str(env.today)].find())
     
-    if current_time >= env.FS_First and not is_straragy_traded(F.FS_First,traded_df):
-        if is_expiry :
-            ce_thread = Thread(name = f'CE_{F.Hedges}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.CE, F.price : 0, F.loop_no : 1, F.stratagy : F.FS_First+"_"+F.Hedges, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
-            pe_thread = Thread(name = f'PE_{F.Hedges}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.PE, F.price : 0, F.loop_no : 1, F.stratagy : F.FS_First+"_"+F.Hedges, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
-            ce_thread.start()
-            pe_thread.start()
-            ce_thread.join()
-            pe_thread.join()
+    if current_time == env.FS_FIRST:
         for i in range(env.qty_partation_loop):
             # i = 2
-            ce_thread = Thread(name = f'CE_{F.FS_First}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.CE, F.price : 40, F.loop_no : i, F.stratagy : F.FS_First, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session, 'wait_percent' : 5})
-            pe_thread = Thread(name = f'PE_{F.FS_First}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.PE, F.price : 40, F.loop_no : i, F.stratagy : F.FS_First, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session, 'wait_percent' : 5})
+            ce_thread = Thread(name = f'CE_{F.FS_FIRST}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.CE, 'option_price' : RISK1, F.loop_no : i, F.stratagy : F.FS_FIRST, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
+            pe_thread = Thread(name = f'PE_{F.FS_FIRST}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.PE, 'option_price' : RISK1, F.loop_no : i, F.stratagy : F.FS_FIRST, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
+            # env.thread_list.append(ce_thread)
+            # env.thread_list.append(pe_thread)
             ce_thread.start()
             pe_thread.start()
             ce_thread.join()
             pe_thread.join()
 
-    elif current_time >= env.FS_Second and not is_straragy_traded(F.FS_Second,traded_df):
-        if is_expiry :
-            ce_thread = Thread(name = f'CE_{F.Hedges}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.CE, F.price : 0, F.loop_no : i, F.stratagy : F.FS_Second+"_"+F.Hedges, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
-            pe_thread = Thread(name = f'PE_{F.Hedges}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.PE, F.price : 0, F.loop_no : i, F.stratagy : F.FS_Second+"_"+F.Hedges, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
-            ce_thread.start()
-            pe_thread.start()
-            ce_thread.join()
-            pe_thread.join()
-        
+    elif current_time == env.FS_SECOND:
         for i in range(env.qty_partation_loop):
             # i = 2
-            ce_thread = Thread(name = f'CE_{F.FS_Second}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.CE, F.price : 40, F.loop_no : i, F.stratagy : F.FS_Second, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session, 'wait_percent' : 5})
-            pe_thread = Thread(name = f'PE_{F.FS_Second}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.PE, F.price : 40, F.loop_no : i, F.stratagy : F.FS_Second, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session, 'wait_percent' : 5})
+            ce_thread = Thread(name = f'CE_{F.FS_SECOND}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.CE, 'option_price' : RISK1, F.loop_no : i, F.stratagy : F.FS_SECOND, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
+            pe_thread = Thread(name = f'PE_{F.FS_SECOND}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.PE, 'option_price' : RISK1, F.loop_no : i, F.stratagy : F.FS_SECOND, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
+            # env.thread_list.append(ce_thread)
+            # env.thread_list.append(pe_thread)
             ce_thread.start()
             pe_thread.start()
             ce_thread.join()
@@ -96,68 +84,46 @@ def placing(current_time, broker_name, broker_session):
     elif current_time >= env.Buy_Hedges and not is_straragy_traded(F.Hedges,traded_df)  and (env.days_to_expiry not in expiry_day):
         for i in range(env.qty_partation_loop):
             # i = 15
-            ce_thread = Thread(name = f'CE_{F.Hedges}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.CE, F.price : 0, F.loop_no : 1, F.stratagy : F.Hedges, F.exit_percent : 100, F.qty : hedge_qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
-            pe_thread = Thread(name = f'PE_{F.Hedges}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.PE, F.price : 0, F.loop_no : 1, F.stratagy : F.Hedges, F.exit_percent : 100, F.qty : hedge_qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
+            ce_thread = Thread(name = f'CE_{F.HEDGES}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.CE, 'option_price' : 2, F.loop_no : i, F.stratagy : F.HEDGES, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
+            pe_thread = Thread(name = f'PE_{F.HEDGES}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.PE, 'option_price' : 2, F.loop_no : i, F.stratagy : F.HEDGES, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
+            # env.thread_list.append(ce_thread)
+            # env.thread_list.append(pe_thread)
             ce_thread.start()
             pe_thread.start()
             ce_thread.join()
             pe_thread.join()
             
-    elif current_time >= env.FS_Third and not is_expiry:
-        if is_expiry :
-            ce_thread = Thread(name = f'CE_{F.Hedges}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.CE, F.price : 0, F.loop_no : 1, F.stratagy : F.FS_Third+"_"+F.Hedges, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
-            pe_thread = Thread(name = f'PE_{F.Hedges}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.PE, F.price : 0, F.loop_no : 1, F.stratagy : F.FS_Third+"_"+F.Hedges, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
+    elif current_time == env.FS_THIRD:
+        for i in range(env.qty_partation_loop):
+            i = 5
+            ce_thread = Thread(name = f'CE_{F.FS_THIRD}_{i}_Thread', target = order_placer, kwargs = {F.option_type: F.CE, 'option_price' : RISK2, F.loop_no : i, F.stratagy : F.FS_THIRD, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
+            pe_thread = Thread(name = f'PE_{F.FS_THIRD}_{i}_Thread', target = order_placer, kwargs = {F.option_type: F.PE, 'option_price' : RISK2, F.loop_no : i, F.stratagy : F.FS_THIRD, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
+            # env.thread_list.append(ce_thread)
+            # env.thread_list.append(pe_thread)
             ce_thread.start()
             pe_thread.start()
             ce_thread.join()
             pe_thread.join()
+            
+    elif current_time == env.FS_FOURTH:
+        for i in range(env.qty_partation_loop):
+            i = 2
+            ce_thread = Thread(name = f'CE_{F.FS_FOURTH}_{i}_Thread', target=order_placer, kwargs = {F.option_type: F.CE, 'option_price' : RISK2, F.loop_no : i, F.stratagy : F.FS_FOURTH, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
+            pe_thread = Thread(name = f'PE_{F.FS_FOURTH}_{i}_Thread', target=order_placer, kwargs = {F.option_type: F.PE, 'option_price' : RISK2, F.loop_no : i, F.stratagy : F.FS_FOURTH, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
+            # env.thread_list.append(ce_thread)
+            # env.thread_list.append(pe_thread)
+            ce_thread.start()
+            pe_thread.start()
+            ce_thread.join()
+            pe_thread.join()
+            
+    elif current_time == env.FS_FIFTH:
         for i in range(env.qty_partation_loop):
             # i = 2
-            ce_thread = Thread(name = f'CE_{F.FS_Third}_{i}_Thread', target = order_placer, kwargs = {F.option_type: F.CE, F.price : 30 , F.loop_no : i, F.stratagy : F.FS_Third, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session, 'wait_percent' : 5})
-            pe_thread = Thread(name = f'PE_{F.FS_Third}_{i}_Thread', target = order_placer, kwargs = {F.option_type: F.PE, F.price : 30 , F.loop_no : i, F.stratagy : F.FS_Third, F.exit_percent : 50, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session, 'wait_percent' : 5})
-            ce_thread.start()
-            pe_thread.start()
-            ce_thread.join()
-            pe_thread.join()
-            
-    elif current_time >= env.FS_Fourth and not is_expiry:
-        if is_expiry :
-            ce_thread = Thread(name = f'CE_{F.Hedges}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.CE, F.price : 0, F.loop_no : 1, F.stratagy : F.FS_Fourth+"_"+F.Hedges, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
-            pe_thread = Thread(name = f'PE_{F.Hedges}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.PE, F.price : 0, F.loop_no : 1, F.stratagy : F.FS_Fourth+"_"+F.Hedges, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
-            ce_thread.start()
-            pe_thread.start()
-            ce_thread.join()
-            pe_thread.join()
-        for i in range(env.qty_partation_loop):
-            # i = 2
-            ce_thread = Thread(name = f'CE_{F.FS_Fourth}_{i}_Thread', target=order_placer, kwargs = {F.option_type: F.CE, F.price : 30, F.loop_no : i, F.stratagy : F.FS_Fourth, F.exit_percent : 20, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session, 'wait_percent' : 5})
-            pe_thread = Thread(name = f'PE_{F.FS_Fourth}_{i}_Thread', target=order_placer, kwargs = {F.option_type: F.PE, F.price : 30, F.loop_no : i, F.stratagy : F.FS_Fourth, F.exit_percent : 20, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session, 'wait_percent' : 5})
-            ce_thread.start()
-            pe_thread.start()
-            ce_thread.join()
-            pe_thread.join()
-            
-    elif current_time >= env.FS_Fifth and not is_expiry:
-        if is_expiry :
-            ce_thread = Thread(name = f'CE_{F.Hedges}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.CE, F.price : 0, F.loop_no : 1, F.stratagy : F.FS_Fifth+"_"+F.Hedges, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
-            pe_thread = Thread(name = f'PE_{F.Hedges}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.PE, F.price : 0, F.loop_no : 1, F.stratagy : F.FS_Fifth+"_"+F.Hedges, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
-            ce_thread.start()
-            pe_thread.start()
-            ce_thread.join()
-            pe_thread.join()
-        for i in range(env.qty_partation_loop):
-            ce_thread = Thread(name = f'CE_{F.FS_Fifth}_{i}_Thread',target=order_placer, kwargs = {F.option_type : F.CE, F.price : 30 , F.loop_no : i, F.stratagy : F.FS_Fifth, F.exit_percent : 20, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session, 'wait_percent' : 5})
-            pe_thread = Thread(name = f'PE_{F.FS_Fifth}_{i}_Thread',target=order_placer, kwargs = {F.option_type : F.PE, F.price : 30 , F.loop_no : i, F.stratagy : F.FS_Fifth, F.exit_percent : 20, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session, 'wait_percent' : 5})
-            ce_thread.start()
-            pe_thread.start()
-            ce_thread.join()
-            pe_thread.join()
-            
-    elif current_time >= env.RB_Buy_first and is_expiry:
-        for i in range(env.qty_partation_loop):
-            # i = 2
-            ce_thread = Thread(name = f'CE_{F.RB_Buy_first}_{i}_Thread',target=order_placer, kwargs = {F.option_type : F.CE, F.price : 0, F.loop_no : i, F.stratagy : F.RB_Buy_first, F.exit_percent : 20, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session, 'wait_percent' : 5})
-            pe_thread = Thread(name = f'PE_{F.RB_Buy_first}_{i}_Thread',target=order_placer, kwargs = {F.option_type : F.PE, F.price : 0, F.loop_no : i, F.stratagy : F.RB_Buy_first, F.exit_percent : 20, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session, 'wait_percent' : 5})
+            ce_thread = Thread(name = f'CE_{F.FS_FIFTH}_{i}_Thread',target=order_placer, kwargs = {F.option_type : F.CE, 'option_price' : RISK2, F.loop_no : i, F.stratagy : F.FS_FIFTH, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
+            pe_thread = Thread(name = f'PE_{F.FS_FIFTH}_{i}_Thread',target=order_placer, kwargs = {F.option_type : F.PE, 'option_price' : RISK2, F.loop_no : i, F.stratagy : F.FS_FIFTH, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
+            # env.thread_list.append(ce_thread)
+            # env.thread_list.append(pe_thread)
             ce_thread.start()
             pe_thread.start()
             ce_thread.join()
@@ -183,6 +149,7 @@ if __name__ == '__main__':
         date = dt.today().date()
         if not env.env_variable_initilised or (env.today != date) and is_market_time() :
             is_env = env.load_env_variable()
+            event_list = [env.login, env.FS_FIRST, env.FS_SECOND, env.Buy_Hedges, env.FS_THIRD, env.FS_FOURTH, env.FS_FIFTH, env.exit_orders, env.logout_session]
             broker_name = env.broker_name
             hoilyday, holiday_reason = is_hoilyday()
             if not hoilyday:

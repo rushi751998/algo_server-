@@ -300,11 +300,11 @@ class env_variables:
     exceptational_tradingdays  : list
 
     login : str
-    FS_First : str
-    FS_Second : str
-    FS_Third : str
-    FS_Fourth : str
-    FS_Fifth : str
+    FS_FIRST : str
+    FS_SECOND : str
+    FS_THIRD : str
+    FS_FOURTH : str
+    FS_FIFTH : str
     exit_orders : str
     logout_session : str
     Buy_Hedges : str 
@@ -365,32 +365,25 @@ class env_variables:
         # self.exit_orders = dt.strftime(get_ist_now(),'%H:%M')
         
         self.login = os.environ['login']
-        self.FS_First = dt.strptime(f"{self.today} {os.environ['FS_First']}","%Y-%m-%d %H:%M")
-        self.FS_Second = dt.strptime(f"{self.today} {os.environ['FS_Second']}","%Y-%m-%d %H:%M")
-        self.Buy_Hedges = dt.strptime(f"{self.today} {os.environ['Buy_Hedges']}","%Y-%m-%d %H:%M")
-        self.FS_Third = dt.strptime(f"{self.today} {os.environ['FS_Third']}","%Y-%m-%d %H:%M")
-        self.FS_Fourth = dt.strptime(f"{self.today} {os.environ['FS_Fourth']}","%Y-%m-%d %H:%M")
-        self.FS_Fifth = dt.strptime(f"{self.today} {os.environ['FS_Fifth']}","%Y-%m-%d %H:%M")
-        self.exit_orders = dt.strptime(f"{self.today} {os.environ['exit_orders']}","%Y-%m-%d %H:%M")
-        
-        self.RB_Buy_first = dt.strptime(f"{self.today} {os.environ['RB_Buy_first']}","%Y-%m-%d %H:%M")
-        self.RB_Buy_second = dt.strptime(f"{self.today} {os.environ['RB_Buy_second']}","%Y-%m-%d %H:%M")
-        self.RB_Buy_third = dt.strptime(f"{self.today} {os.environ['RB_Buy_third']}","%Y-%m-%d %H:%M")
-        self.RB_Buy_fourth = dt.strptime(f"{self.today} {os.environ['RB_Buy_fourth']}","%Y-%m-%d %H:%M")
-        
-        
-        self.logout_session = dt.strptime(f"{self.today} {os.environ['logout_session']}","%Y-%m-%d %H:%M")
+        self.FS_FIRST = os.environ['FS_FIRST']
+        self.FS_SECOND = os.environ['FS_SECOND']
+        self.Buy_Hedges = os.environ['Buy_Hedges']
+        self.FS_THIRD = os.environ['FS_THIRD']
+        self.FS_FOURTH = os.environ['FS_FOURTH']
+        self.FS_FIFTH = os.environ['FS_FIFTH']
+        self.exit_orders = os.environ['exit_orders']
+        self.logout_session = os.environ['logout_session']  
         self.capital = float(os.environ['capital'])
         self.qty_partation_loop = int(os.environ['qty_partation_loop'])
         self.logger = setup_daily_logger()
         
         self.telegram_api_dict = {
-                                F.FS_First : os.environ['nine_twenty_bot_token'],
-                                F.FS_Second  : os.environ['nine_thirty_bot_token'],
-                                F.FS_Third : os.environ['nine_fourty_five_bot_token'],
-                                F.FS_Fourth : os.environ['ten_thirty_bot_token'],
-                                F.FS_Fifth : os.environ['eleven_bot_token'],
-                                F.Hedges : os.environ['nine_twenty_bot_token'],   #passing hedges updates to Nine Twenty
+                                F.FS_FIRST : os.environ['nine_twenty_bot_token'],
+                                F.FS_SECOND  : os.environ['nine_thirty_bot_token'],
+                                F.FS_THIRD : os.environ['nine_fourty_five_bot_token'],
+                                F.FS_FOURTH : os.environ['ten_thirty_bot_token'],
+                                F.FS_FIFTH : os.environ['eleven_bot_token'],
+                                F.HEDGES : os.environ['nine_twenty_bot_token'],   #passing hedges updates to Nine Twenty
                                 
                                 'common_logger' : os.environ['common_loggger'],
                                 'emergency' : os.environ['emergency_bot_token'],
@@ -500,45 +493,12 @@ class F :
     
     # Staratgy Names
     stratagy = 'stratagy'
-    FS_First = 'FS_First'
-    FS_Second =  'FS_Second'
-    FS_Third = 'FS_Third'
-    FS_Fourth = 'FS_Fourth'
-    FS_Fifth = 'FS_Fifth'
-    Hedges = 'Hedges'
-    
-    RB_Buy_first = 'RB_Buy_first'
-    RB_Buy_second = 'RB_Buy_second'
-    RB_Buy_third = 'RB_Buy_third'
-    RB_Buy_fourth = 'RB_Buy_fourth'
-    
-    # index
-    index = 'index'
-    BANKNIFTY = 'BANKNIFTY'
-    NIFTY = 'NIFTY'
-    FINNIFTY = 'FINNIFTY'
-    MIDCPNIFTY = 'MIDCPNIFTY'
-    Futures = 'Futures'
-    Subscribed = 'Subscribed'
-    Ticker_to_token = 'Ticker_to_token'
-    ticker_to_token = 'subscribed'
-    expiry_date = 'expiry_date'
-    strike_price = 'strike_price'
-    lot_size = 'lot_size'
-    strike = 'strike'
-    filled_qty = 'filled_qty'
-    days_to_expire = 'days_to_expire'
-    
-    Name = "Name"
-    Email_id = "Email_id"
-    User_ID = "User_ID"
-    Consumer_key = 'Consumer_key'
-    Secret_key = 'Secret_key'
-    Mobile_number = 'Mobile_number'
-    Login_password = 'Login_password'
-    Session_validation_key = 'Session_validation_key'
-    Two_factor_code = 'Two_factor_code'
-    
+    FS_FIRST = 'FS_FIRST'
+    FS_SECOND =  'FS_SECOND'
+    FS_THIRD = 'FS_THIRD'
+    FS_FOURTH = 'FS_FOURTH'
+    FS_FIFTH = 'FS_FIFTH'
+    HEDGES = 'HEDGES'
     
     # Other
     kotak_neo = 'kotak_neo'
