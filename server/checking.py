@@ -248,7 +248,7 @@ class Checking:
                 trigger_price = price + 0.2
                 # print('trigger_price : ',trigger_price)
                 # print(f"price = {i[F.entry_price]},trigger_price = {trigger_price},qty = {i[F.qty]},ticker ={ i[F.ticker]},transaction_type = {[F.transaction_type]},tag = tag")
-                is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = i[F.entry_price], trigger_price = trigger_price, qty = i[F.qty], ticker = i[F.ticker], transaction_type = i[F.transaction_type], product_type = i[F.product_type], tag = tag)
+                is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = price, trigger_price = trigger_price, qty = i[F.qty], ticker = i[F.ticker], transaction_type = i[F.transaction_type], product_type = i[F.product_type], tag = tag)
                 if is_order_placed : 
                     order = { 
                             F.entry_time : None,
@@ -444,7 +444,7 @@ class Checking:
                 elif count < 2 : 
                     tag = i[F.exit_tag] + f"_MOL_{count}2" #MOL = Place Missing order at limit order
                     sl_price = round(i[F.exit_price])
-                    is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = sl_price, trigger_price = sl_price + 0.2, qty = i[F.qty], ticker = i[F.ticker], transaction_type = transaction_type, product_type = i[F.product_type],order_type= "SL", tag = tag)
+                    is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = sl_price, trigger_price = sl_price - 0.2, qty = i[F.qty], ticker = i[F.ticker], transaction_type = transaction_type, product_type = i[F.product_type],order_type= "SL", tag = tag)
                     
                     if is_order_placed : 
                         self.database[str(self.date)].update_one({F.exit_orderid: i[F.exit_orderid]}, {"$set": {F.exit_orderid: order_number, F.exit_order_count : count + 1}})
