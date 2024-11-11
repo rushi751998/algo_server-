@@ -1,0 +1,21 @@
+{
+    "STRATAGY":"RB_First",
+    "ALLOWD":"True",
+    "DIRECTION":"LONG",
+    "RANGE_START":"9:30",
+    "RANGE_END":"12:30",
+    "EXIT_TIME":"15:01",
+    "OTM_PERCENT":1,
+    "SL_POINT":"RANGE",
+    "SL_PERCENT":70,
+    "WAIT_PERCENT":3,
+    "TARGET_PERCENT":"None",
+    "TRAIL_ON_PT":"None",
+    "TRAIL_BY_PT":"None",
+    "STOPLOSS":5000,
+    "0":1,
+    "1":1,
+    "2":0,
+    "3":0,
+    "4":0
+}

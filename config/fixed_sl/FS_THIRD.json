@@ -1,0 +1,16 @@
+{
+    "STRATAGY":"FS_THIRD",
+    "ALLOWD":"True",
+    "DIRECTION":"SHORT",
+    "ENTRY_TIME":"10:15",
+    "EXIT_TIME":"15:01",
+    "PRICE":40,
+    "SL_PERCENT":25,
+    "WAIT_PERCENT":5,
+    "STOPLOSS":3000,
+    "0":3,
+    "1":3,
+    "2":2,
+    "3":2,
+    "4":2
+}

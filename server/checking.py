@@ -65,34 +65,34 @@ class Checking:
 
         if len(self.db_df) > 0:
             try:
-                self.fifty_per_management(self.db_df,pending_order,filled_order,F.FS_First)
-                # print(f'{self.current_time}---------------- fifty_per_management -  {F.FS_First} ------------------')
+                self.fifty_per_management(self.db_df,pending_order,filled_order,F.FS_FIRST)
+                # print(f'{self.current_time}---------------- fifty_per_management -  {F.FS_FIRST} ------------------')
             except Exception as e:
-                send_message(message = f'problem in fifty_per_management for : {F.FS_First} \nReason :{e}', emergency = True)
+                send_message(message = f'problem in fifty_per_management for : {F.FS_FIRST} \nReason :{e}', emergency = True)
 
             try:
-                self.re_entry_management(self.db_df,pending_order,filled_order,F.RE_First)
-                # print(f'{self.current_time}---------------- re_entry_management -  {F.RE_First} ------------------')
+                self.fifty_per_management(self.db_df,pending_order,filled_order,F.FS_SECOND)
+                # print(f'{self.current_time}---------------- re_entry_management -  {F.FS_SECOND} ------------------')
             except Exception as e:
-                send_message(message = f'problem in re_entry_management for : {F.RE_First} \nReason :{e}', emergency = True)
+                send_message(message = f'problem in re_entry_management for : {F.FS_SECOND} \nReason :{e}', emergency = True)
 
             try:
-                self.wait_n_trade(self.db_df,pending_order,filled_order,F.WNT_First)
-                # print(f'{self.current_time}---------------- wait_n_trade -  {F.WNT_First} ------------------')
+                self.fifty_per_management(self.db_df,pending_order,filled_order,F.FS_THIRD)
+                # print(f'{self.current_time}---------------- wait_n_trade -  {F.FS_THIRD} ------------------')
             except Exception as e:
-                send_message(message = f'problem in wait_n_trade for : {F.WNT_First} \nReason :{e}', emergency = True)
+                send_message(message = f'problem in wait_n_trade for : {F.FS_THIRD} \nReason :{e}', emergency = True)
                 
             try:
-                self.re_entry_management(self.db_df,pending_order,filled_order,F.RE_Second)
-                # print(f'{self.current_time}---------------- re_entry_management -  {F.RE_Second} ------------------')
+                self.fifty_per_management(self.db_df,pending_order,filled_order,F.FS_FOURTH)
+                # print(f'{self.current_time}---------------- re_entry_management -  {F.FS_FOURTH} ------------------')
             except Exception as e:
-                send_message(message = f'problem in re_entry_management for : {F.RE_Second} \nReason :{e}', emergency = True)
+                send_message(message = f'problem in re_entry_management for : {F.FS_FOURTH} \nReason :{e}', emergency = True)
             
             try:
-                self.re_entry_management(self.db_df,pending_order,filled_order,F.RE_Third)
-                # print(f'{self.current_time}---------------- re_entry_management -  {F.RE_Third} ------------------')
+                self.fifty_per_management(self.db_df,pending_order,filled_order,F.FS_FIFTH)
+                # print(f'{self.current_time}---------------- re_entry_management -  {F.FS_FIFTH} ------------------')
             except Exception as e:
-                send_message(message = f'problem in re_entry_management for : {F.RE_Third} \nReason :{e}', emergency = True)
+                send_message(message = f'problem in re_entry_management for : {F.FS_FIFTH} \nReason :{e}', emergency = True)
 
             except Exception as e:
                 send_message(message = f'problem in check_ltp_above_sl\nReason :{e}', emergency = True)
@@ -131,7 +131,7 @@ class Checking:
         
         if len(df) > 0 :
             total_pl =  closed_trades_pl  
-            open_trades = df[(df[F.exit_orderid_status] == F.open) & (df[F.pl] == 0) & (df[F.stratagy] != F.Hedges)]
+            open_trades = df[(df[F.exit_orderid_status] == F.open) & (df[F.pl] == 0) & (df[F.stratagy] != F.HEDGES)]
             loss_limit = -(env.capital * env.allowed_loss_percent)/100
             for index, i in open_trades.iterrows():  
                 ltp = get_ltp(i[F.token], self.broker_name)
@@ -149,7 +149,7 @@ class Checking:
         # Update calculation to database
         for index, i in db_df.iterrows(): 
             if (i[F.exit_orderid_status] == F.closed) and (i[F.pl] == 0): # Finding trades whose pl not calculated
-                if i[F.stratagy] != F.Hedges :
+                if i[F.stratagy] != F.HEDGES :
                     pl = round((i[F.entry_price] * i[F.qty]) - (i[F.exit_price] * i[F.qty]), 2)
                     drift_points = round(abs(i[F.entry_price_initial] - i[F.entry_price]) + (i[F.exit_price_initial] - i[F.exit_price]), 2)
                     drift_rs = round(drift_points * i[F.qty], 2)
@@ -188,28 +188,28 @@ class Checking:
     
     def Update_commmon_pl(self,db_df):
         db_data = db_df
-        # stratagy=F.WNT_First
-        FS_First = []
-        RE_First = []
-        WNT_First = []
+        # stratagy=F.FS_THIRD
+        FS_FIRST = []
+        FS_SECOND = []
+        FS_THIRD = []
         for i in db_data:
-            if i[F.stratagyy] == F.FS_First:
+            if i[F.stratagyy] == F.FS_FIRST:
                 for j in (i[F.recording]):
-                    FS_First.append(j)
-                self.database[str(self.date)].update_one({F.stratagyy : {'$eq"': F.FS_First}}, {F.recording : FS_First })
+                    FS_FIRST.append(j)
+                self.database[str(self.date)].update_one({F.stratagyy : {'$eq"': F.FS_FIRST}}, {F.recording : FS_FIRST })
 
-            elif i[F.stratagy] == F.RE_First:
+            elif i[F.stratagy] == F.FS_SECOND:
                 for j in (i[F.recording]):
-                    RE_First.append(j)
-                self.database[str(self.date)].update_one({F.stratagy : {'$eq"': F.RE_First}}, {F.recording : RE_First })
+                    FS_SECOND.append(j)
+                self.database[str(self.date)].update_one({F.stratagy : {'$eq"': F.FS_SECOND}}, {F.recording : FS_SECOND })
 
-            elif i[F.stratagy] == F.WNT_First:
+            elif i[F.stratagy] == F.FS_THIRD:
                 for j in (i[F.recording]):
-                    WNT_First.append(j)
-                self.database[str(self.date)].update_one({F.stratagy : {'$eq"': F.WNT_First}}, {F.recording : WNT_First })
+                    FS_THIRD.append(j)
+                self.database[str(self.date)].update_one({F.stratagy : {'$eq"': F.FS_THIRD}}, {F.recording : FS_THIRD })
 
-        # print( F.FS_First , FS_First)
-        combine_pl = FS_First + RE_First + WNT_First
+        # print( F.FS_FIRST , FS_FIRST)
+        combine_pl = FS_FIRST + FS_SECOND + FS_THIRD
 
         a = pd.DataFrame(combine_pl).groupby('Time').sum().reset_index()
         self.database[str(self.date)].update_one({F.stratagy : {'$eq"': 'combine_pl'}},{F.recording : combine_pl })

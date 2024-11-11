@@ -22,9 +22,11 @@ class Order_management :
 
     def order_place(self,ticker,qty, transaction_type, stratagy, exit_percent, loop_no, price, option_type,):
         tag = f'{stratagy}_{option_type}_{loop_no}'
-        if stratagy == F.FS_First:
+        print(tag, stratagy)
+        if stratagy in [F.FS_FIRST,F.FS_SECOND,F.FS_THIRD,F.FS_FOURTH,F.FS_FIFTH]:
             price = round(price)  
             trigger_price = price + 0.2
+            print(price)
                 
             is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price, trigger_price, qty, ticker, transaction_type, tag)
             if is_order_placed :       
@@ -82,7 +84,7 @@ class Order_management :
                 send_message(message = f'Not able to place {stratagy} order \nmessage : {order_number}',emergency = True)
 
 
-        if stratagy == F.Hedges :
+        if stratagy == F.HEDGES :
             price = round(price) # remoe in production 
             trigger_price = price - 0.2
                 
@@ -143,7 +145,7 @@ class Order_management :
                 send_message(message = f'Not able to place {stratagy} order \nmessage : {order_number}',emergency = True)
 
 
-        if stratagy in [F.RE_First, F.RE_Second, F.RE_Third]:
+        if stratagy in []:
             price = round(price)  
             trigger_price = price + 0.2
             
@@ -200,7 +202,7 @@ class Order_management :
             elif not is_order_placed :
                     send_message(message = f'Not able to place {stratagy} order \nmessage : {order_number}', emergency = True)
 
-        if stratagy == F.WNT_First:
+        if stratagy == 0:
             price = round(price * 0.95)
             trigger_price = price + 0.2
             
@@ -316,7 +318,7 @@ class Order_management :
 
 
             else:
-                if stratagy != F.Hedges :
+                if stratagy != F.HEDGES :
                     myquery = {F.entry_orderid: { "$eq": entry_orderid}}
                     pending_orders_db = self.database[str(self.date)].find(myquery)
                     for i in pending_orders_db:
@@ -334,9 +336,9 @@ class Order_management :
 
         if transaction_type_ == F.Sell:
             transaction_type = F.Buy
-        if stratagy == F.Hedges : 
+        if stratagy == F.HEDGES : 
             trigger_price = round(stoploos + 0.2) # 0.05 is the diffrance betweeen limit price and trigger price
-        if stratagy != F.Hedges : 
+        if stratagy != F.HEDGES : 
             trigger_price = round(stoploos - 0.2) # 0.05 is the diffrance betweeen limit price and trigger price
         is_order_placed, order_number, product_type, new_tag = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price , qty = qty, ticker = ticker , transaction_type = transaction_type, tag = tag + '_sl')
         if is_order_placed :
@@ -405,8 +407,8 @@ class Order_management :
                             send_message(message = f'Not able to modify sl in exit_orders_dayend() Market Order\nMessage : {message}\nOrder Id : {order_number}', emergency = True)
                 time.sleep(3)
             
-            elif not hedges_sl_placed :               # Remove Hedges Here
-                myquery = {F.stratagy : { "$eq" : F.Hedges}, F.option_type : {'$eq' : option_type}}
+            elif not hedges_sl_placed :               # Remove HEDGES Here
+                myquery = {F.stratagy : { "$eq" : F.HEDGES}, F.option_type : {'$eq' : option_type}}
                 pending_orders_db = self.database[str(self.date)].find(myquery)
                 for i in pending_orders_db:
                     # print(f"ticker={i[F.ticker]},qty={i[F.qty]},transaction_type={i[F.transaction_type]},avg_price={(i[F.entry_price])},exit_percent={exit_percent},tag = {tag}")
@@ -431,7 +433,7 @@ class Order_management :
         # Update calculation to database
         try :
             self.genrate_plot()
-            stratagy_df = pd.DataFrame({F.stratagy: [F.FS_First, F.RE_First, F.WNT_First, F.RE_Second, F.RE_Third, F.Hedges]})
+            stratagy_df = pd.DataFrame({F.stratagy: [F.FS_FIRST, F.FS_SECOND, F.FS_THIRD, F.FS_FOURTH, F.FS_FIFTH, F.HEDGES]})
             df = pd.DataFrame(self.database[str(self.date)].find())
             df_stratagy_cal = df[[F.stratagy,F.pl,F.drift_points,F.drift_rs,F.entry_order_count,F.exit_order_count,F.index]]
             df_stratagy_cal = df_stratagy_cal.groupby(F.stratagy).agg({F.pl : 'sum', F.drift_points : 'sum', F.drift_rs : 'sum',F.entry_order_count : 'sum',F.exit_order_count : 'sum' ,F.index : 'count' }).reset_index()
@@ -497,7 +499,7 @@ class Order_management :
             message+=str(row)
         send_message(message)
         
-        df = df.pivot(columns='stratagy',index=['date'],values='pl')[['FS_First', 'RE_First', 'WNT_First', 'RE_Second','RE_Third','Hedges','Total']]
+        df = df.pivot(columns='stratagy',index=['date'],values='pl')[['FS_FIRST', 'FS_SECOND', 'FS_THIRD', 'FS_FOURTH','FS_FIFTH','HEDGES','Total']]
         df = df.cumsum().round()
 
         """Send ATH DD Report"""

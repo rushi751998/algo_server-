@@ -252,11 +252,11 @@ class env_variables:
     exceptational_tradingdays  : list
 
     login : str
-    FS_First : str
-    RE_First : str
-    WNT_First : str
-    RE_Second : str
-    RE_Third : str
+    FS_FIRST : str
+    FS_SECOND : str
+    FS_THIRD : str
+    FS_FOURTH : str
+    FS_FIFTH : str
     exit_orders : str
     logout_session : str
     Buy_Hedges : str 
@@ -311,12 +311,12 @@ class env_variables:
         # self.exit_orders = dt.strftime(get_ist_now(),'%H:%M')
         
         self.login = os.environ['login']
-        self.FS_First = os.environ['FS_First']
-        self.RE_First = os.environ['RE_First']
+        self.FS_FIRST = os.environ['FS_FIRST']
+        self.FS_SECOND = os.environ['FS_SECOND']
         self.Buy_Hedges = os.environ['Buy_Hedges']
-        self.WNT_First = os.environ['WNT_First']
-        self.RE_Second = os.environ['RE_Second']
-        self.RE_Third = os.environ['RE_Third']
+        self.FS_THIRD = os.environ['FS_THIRD']
+        self.FS_FOURTH = os.environ['FS_FOURTH']
+        self.FS_FIFTH = os.environ['FS_FIFTH']
         self.exit_orders = os.environ['exit_orders']
         self.logout_session = os.environ['logout_session']  
         self.capital = float(os.environ['capital'])
@@ -324,12 +324,12 @@ class env_variables:
         self.logger = setup_daily_logger()
         
         self.telegram_api_dict = {
-                                F.FS_First : os.environ['nine_twenty_bot_token'],
-                                F.RE_First  : os.environ['nine_thirty_bot_token'],
-                                F.WNT_First : os.environ['nine_fourty_five_bot_token'],
-                                F.RE_Second : os.environ['ten_thirty_bot_token'],
-                                F.RE_Third : os.environ['eleven_bot_token'],
-                                F.Hedges : os.environ['nine_twenty_bot_token'],   #passing hedges updates to Nine Twenty
+                                F.FS_FIRST : os.environ['nine_twenty_bot_token'],
+                                F.FS_SECOND  : os.environ['nine_thirty_bot_token'],
+                                F.FS_THIRD : os.environ['nine_fourty_five_bot_token'],
+                                F.FS_FOURTH : os.environ['ten_thirty_bot_token'],
+                                F.FS_FIFTH : os.environ['eleven_bot_token'],
+                                F.HEDGES : os.environ['nine_twenty_bot_token'],   #passing hedges updates to Nine Twenty
                                 
                                 'common_logger' : os.environ['common_loggger'],
                                 'emergency' : os.environ['emergency_bot_token'],
@@ -399,12 +399,12 @@ class F :
     
     # Staratgy Names
     stratagy = 'stratagy'
-    FS_First = 'FS_First'
-    RE_First =  'RE_First'
-    WNT_First = 'WNT_First'
-    RE_Second = 'RE_Second'
-    RE_Third = 'RE_Third'
-    Hedges = 'Hedges'
+    FS_FIRST = 'FS_FIRST'
+    FS_SECOND =  'FS_SECOND'
+    FS_THIRD = 'FS_THIRD'
+    FS_FOURTH = 'FS_FOURTH'
+    FS_FIFTH = 'FS_FIFTH'
+    HEDGES = 'HEDGES'
     
     # Other
     kotak_neo = 'kotak_neo'

@@ -1,0 +1,21 @@
+{
+    "STRATAGY":"RB_THIRD",
+    "ALLOWD":"True",
+    "DIRECTION":"LONG",
+    "RANGE_START":"9:30",
+    "RANGE_END":"13:30",
+    "EXIT_TIME":"15:01",
+    "OTM_PERCENT":0.5,
+    "SL_POINT":"RANGE",
+    "SL_PERCENT":50,
+    "WAIT_PERCENT":3,
+    "TARGET_PERCENT":"None",
+    "TRAIL_ON_PT":5,
+    "TRAIL_BY_PT":1,
+    "STOPLOSS":5000,
+    "0":1,
+    "1":1,
+    "2":0,
+    "3":0,
+    "4":0
+}
