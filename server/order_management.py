@@ -22,7 +22,7 @@ class Order_management :
 
     def order_place(self,ticker,qty, transaction_type, stratagy, exit_percent, loop_no, price, option_type,):
         tag = f'{stratagy}_{option_type}_{loop_no}'
-        if stratagy == F.FS_First:
+        if stratagy in [F.FS_First, F.FS_Second, F.FS_Third,F.FS_Fourth, F.FS_Fifth]:
             price = round(price)  
             trigger_price = price + 0.2
                 
@@ -75,7 +75,7 @@ class Order_management :
 
                     self.database[str(self.date)].insert_one(order)
                     send_message(message = f"limit order placed... \nStratagy : {stratagy}\nPrice : {price}\nOption Type : {option_type}\nProduct Type : {product_type}\nMessage : {order_number}",stratagy = stratagy)
-                    self.smart_executer(stratagy = stratagy, exit_percent = exit_percent, option_type = option_type, entry_orderid = order_number )
+                    # self.smart_executer(stratagy = stratagy, exit_percent = exit_percent, option_type = option_type, entry_orderid = order_number )
 
 
             elif not is_order_placed :
@@ -143,120 +143,119 @@ class Order_management :
                 send_message(message = f'Not able to place {stratagy} order \nmessage : {order_number}',emergency = True)
 
 
-        if stratagy in [F.RE_First, F.RE_Second, F.RE_Third]:
-            price = round(price)  
-            trigger_price = price + 0.2
+        # if stratagy in [F.FS_Second, F.FS_Fourth, F.FS_Fifth]:
+        #     price = round(price)  
+        #     trigger_price = price + 0.2
             
-            is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price, trigger_price, qty, ticker, transaction_type, tag)
-            if is_order_placed :  
-                time.sleep(3)
-                is_not_empty,all_orders,filled_order,pending_order = Order_details(self.broker_session,self.broker_name).order_book()
-                all_filled_orders = pending_order[F.order_id].to_list() + filled_order[F.order_id].to_list()
-                if order_number in all_filled_orders:
-                    order = {
-                            F.entry_time : self.time,
-                            F.ticker : ticker,
-                            F.token : get_token(ticker),
-                            F.transaction_type : transaction_type,
-                            F.product_type : product_type,
-                            F.option_type : option_type,
-                            F.qty: qty,
-                            #-------------- Entry order details -------------
-                            F.entry_orderid : order_number,
-                            F.entry_orderid_status  : F.open,    #To check order is complete
-                            F.entry_price : price,
-                            F.entry_price_initial : price,
-                            F.entry_order_count : 0,
-                            F.entry_tag : tag,  #tag_contains stratagy_name+option_type+loop 
-                            F.entry_order_execuation_type: None,
-                            #-------------- sl order details -------------
-                            F.exit_orderid : None,
-                            F.exit_orderid_status : None,
-                            F.exit_price : 0,
-                            F.exit_price_initial : 0,
-                            F.exit_tag : None,  #tag_contains stratagy_name+option_type+loop no
-                            F.exit_order_count : 0,
-                            F.exit_order_execuation_type : None ,
-                            #-------- Other parameter --------------
-                            F.exit_price : 0,
-                            F.exit_time : None,
-                            F.exit_reason : None,              # sl_hit/day_end
-                            F.stratagy : stratagy,
-                            F.index : env.index,
-                            F.loop_no : loop_no,
-                            F.exit_percent : exit_percent,
-                            F.charges : 0,
-                            F.drift_points : 0,
-                            F.drift_rs : 0,
-                            F.pl : 0,
-                            F.recording: [
-                                # {'Time':'10:15:00','pl':100},
-                               ]
-                            }
+        #     is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price, trigger_price, qty, ticker, transaction_type, tag)
+        #     if is_order_placed :  
+        #         time.sleep(3)
+        #         is_not_empty,all_orders,filled_order,pending_order = Order_details(self.broker_session,self.broker_name).order_book()
+        #         all_filled_orders = pending_order[F.order_id].to_list() + filled_order[F.order_id].to_list()
+        #         if order_number in all_filled_orders:
+        #             order = {
+        #                     F.entry_time : self.time,
+        #                     F.ticker : ticker,
+        #                     F.token : get_token(ticker),
+        #                     F.transaction_type : transaction_type,
+        #                     F.product_type : product_type,
+        #                     F.option_type : option_type,
+        #                     F.qty: qty,
+        #                     #-------------- Entry order details -------------
+        #                     F.entry_orderid : order_number,
+        #                     F.entry_orderid_status  : F.open,    #To check order is complete
+        #                     F.entry_price : price,
+        #                     F.entry_price_initial : price,
+        #                     F.entry_order_count : 0,
+        #                     F.entry_tag : tag,  #tag_contains stratagy_name+option_type+loop 
+        #                     F.entry_order_execuation_type: None,
+        #                     #-------------- sl order details -------------
+        #                     F.exit_orderid : None,
+        #                     F.exit_orderid_status : None,
+        #                     F.exit_price : 0,
+        #                     F.exit_price_initial : 0,
+        #                     F.exit_tag : None,  #tag_contains stratagy_name+option_type+loop no
+        #                     F.exit_order_count : 0,
+        #                     F.exit_order_execuation_type : None ,
+        #                     #-------- Other parameter --------------
+        #                     F.exit_price : 0,
+        #                     F.exit_time : None,
+        #                     F.exit_reason : None,              # sl_hit/day_end
+        #                     F.stratagy : stratagy,
+        #                     F.index : env.index,
+        #                     F.loop_no : loop_no,
+        #                     F.exit_percent : exit_percent,
+        #                     F.charges : 0,
+        #                     F.drift_points : 0,
+        #                     F.drift_rs : 0,
+        #                     F.pl : 0,
+        #                     F.recording: [
+        #                         # {'Time':'10:15:00','pl':100},
+        #                        ]
+        #                     }
 
-                    self.database[str(self.date)].insert_one(order)
-                    send_message(message = f"limit order placed... \nStratagy : {stratagy}\nPrice : {price}\nOption Type : {option_type}\nMessage : {order_number}", stratagy = stratagy)
-                    self.smart_executer(stratagy=stratagy, exit_percent=exit_percent, option_type=option_type, entry_orderid = order_number)
-            elif not is_order_placed :
-                    send_message(message = f'Not able to place {stratagy} order \nmessage : {order_number}', emergency = True)
+        #             self.database[str(self.date)].insert_one(order)
+        #             send_message(message = f"limit order placed... \nStratagy : {stratagy}\nPrice : {price}\nOption Type : {option_type}\nMessage : {order_number}", stratagy = stratagy)
+        #             self.smart_executer(stratagy=stratagy, exit_percent=exit_percent, option_type=option_type, entry_orderid = order_number)
+        #     elif not is_order_placed :
+        #             send_message(message = f'Not able to place {stratagy} order \nmessage : {order_number}', emergency = True)
 
-        if stratagy == F.WNT_First:
-            price = round(price * 0.95)
-            trigger_price = price + 0.2
+        # if stratagy == F.FS_Third:
+        #     trigger_price = price + 0.2
             
-            is_order_placed, order_number, product_type, tag  = OrderExecuation(self.broker_name, self.broker_session).place_order(price, trigger_price, qty,ticker, transaction_type, tag)
-            if is_order_placed :  
-                time.sleep(3)
-                is_not_empty,all_orders,filled_order,pending_order = Order_details(self.broker_session,self.broker_name).order_book()
-                all_filled_orders = pending_order[F.order_id].to_list() + filled_order[F.order_id].to_list()
-                if order_number in all_filled_orders:
-                    order = { 
-                            F.entry_time : self.time,
-                            F.ticker : ticker,
-                            F.token : get_token(ticker),
-                            "ltp": 0,
-                            F.transaction_type : transaction_type,
-                            F.option_type : option_type,
-                            F.product_type : product_type,
-                            F.qty : qty,
-                            #-------------- Entry order details -------------
-                            F.entry_orderid : order_number,
-                            F.entry_orderid_status  : F.open,    #To check order is complete
-                            F.entry_price : price,
-                            F.entry_price_initial : price,
-                            F.entry_tag : tag,  #tag_contains stratagy_name+option_type+loop no
-                            F.entry_order_count : 0,
-                            F.entry_order_execuation_type : None,
-                            #-------------- sl order details -------------
-                            F.exit_orderid : None,
-                            F.exit_orderid_status : None,
-                            F.exit_price : 0,
-                            F.exit_price_initial : 0,
-                            F.exit_tag : None,  #tag_contains stratagy_name+option_type+loop no
-                            #-------- Other parameter --------------
-                            F.exit_price : 0,
-                            F.exit_time : None,
-                            F.exit_reason : None,              # sl_hit/day_end
-                            F.exit_order_count : 0,
-                            F.exit_order_execuation_type : None,
-                            F.stratagy : stratagy,
-                            F.index : env.index,
-                            F.loop_no : loop_no,
-                            F.exit_percent : exit_percent,
-                            F.charges : 0,
-                            F.drift_points : 0,
-                            F.drift_rs : 0,
-                            F.pl : 0,
-                            F.recording : [
-                                # {'Time':'10:15:00','pl':100},
-                               ]
-                            }
+        #     is_order_placed, order_number, product_type, tag  = OrderExecuation(self.broker_name, self.broker_session).place_order(price, trigger_price, qty,ticker, transaction_type, tag)
+        #     if is_order_placed :  
+        #         time.sleep(3)
+        #         is_not_empty,all_orders,filled_order,pending_order = Order_details(self.broker_session,self.broker_name).order_book()
+        #         all_filled_orders = pending_order[F.order_id].to_list() + filled_order[F.order_id].to_list()
+        #         if order_number in all_filled_orders:
+        #             order = { 
+        #                     F.entry_time : self.time,
+        #                     F.ticker : ticker,
+        #                     F.token : get_token(ticker),
+        #                     "ltp": 0,
+        #                     F.transaction_type : transaction_type,
+        #                     F.option_type : option_type,
+        #                     F.product_type : product_type,
+        #                     F.qty : qty,
+        #                     #-------------- Entry order details -------------
+        #                     F.entry_orderid : order_number,
+        #                     F.entry_orderid_status  : F.open,    #To check order is complete
+        #                     F.entry_price : price,
+        #                     F.entry_price_initial : price,
+        #                     F.entry_tag : tag,  #tag_contains stratagy_name+option_type+loop no
+        #                     F.entry_order_count : 0,
+        #                     F.entry_order_execuation_type : None,
+        #                     #-------------- sl order details -------------
+        #                     F.exit_orderid : None,
+        #                     F.exit_orderid_status : None,
+        #                     F.exit_price : 0,
+        #                     F.exit_price_initial : 0,
+        #                     F.exit_tag : None,  #tag_contains stratagy_name+option_type+loop no
+        #                     #-------- Other parameter --------------
+        #                     F.exit_price : 0,
+        #                     F.exit_time : None,
+        #                     F.exit_reason : None,              # sl_hit/day_end
+        #                     F.exit_order_count : 0,
+        #                     F.exit_order_execuation_type : None,
+        #                     F.stratagy : stratagy,
+        #                     F.index : env.index,
+        #                     F.loop_no : loop_no,
+        #                     F.exit_percent : exit_percent,
+        #                     F.charges : 0,
+        #                     F.drift_points : 0,
+        #                     F.drift_rs : 0,
+        #                     F.pl : 0,
+        #                     F.recording : [
+        #                         # {'Time':'10:15:00','pl':100},
+        #                        ]
+        #                     }
 
-                    self.database[str(self.date)].insert_one(order)
-                    send_message(message = f"limit order placed... \nStratagy : {stratagy}\nPrice : {price}\nOption Type : {option_type}\nMessage : {order_number}", stratagy= stratagy)
+        #             self.database[str(self.date)].insert_one(order)
+        #             send_message(message = f"limit order placed... \nStratagy : {stratagy}\nPrice : {price}\nOption Type : {option_type}\nMessage : {order_number}", stratagy= stratagy)
 
-            elif not is_order_placed :
-                send_message(message = f'Not able to place {stratagy} order \nmessage :{order_number}', emergency = True)
+        #     elif not is_order_placed :
+        #         send_message(message = f'Not able to place {stratagy} order \nmessage :{order_number}', emergency = True)
                 
         if stratagy in [F.RB_Buy_first, F.RB_Buy_second, F.RB_Buy_third, F.RB_Buy_fourth]:
             ticker = 123
@@ -315,7 +314,7 @@ class Order_management :
             order_details = Order_details(self.broker_session,self.broker_name)
             is_not_empty, all_orders, filled_order, pending_order = order_details.order_book()
             myquery = {F.entry_orderid: { "$eq": entry_orderid }, F.entry_orderid_status: { "$eq": F.open }}
-            db_data = self.database[str(self.date)].find(myquery)
+            db_data = self.database[str(self.date)].find(az)
             pending_orders_db = pd.DataFrame(db_data)
             if len(pending_orders_db) != 0 :
                 for index,row in pending_orders_db.iterrows():
@@ -364,7 +363,7 @@ class Order_management :
                         elif not is_modified :
                             send_message(message = f'Not able to modify sl in Smart Executer SOD Market Order\nMessage : {message}\nStratagy : {row[F.stratagy]}\nSide : {row[F.option_type]}\nOrder Id : {order_number}', emergency = True)
                             
-                    time.sleep(3)
+                    time.sleep(2)
 
 
             else:
@@ -483,7 +482,8 @@ class Order_management :
         # Update calculation to database
         try :
             self.genrate_plot()
-            stratagy_df = pd.DataFrame({F.stratagy: [F.FS_First, F.RE_First, F.WNT_First, F.RE_Second, F.RE_Third, F.Hedges]})
+            self.store_orders()
+            stratagy_df = pd.DataFrame({F.stratagy: [F.FS_First, F.FS_Second, F.FS_Third, F.FS_Fourth, F.FS_Fifth, F.Hedges]})
             df = pd.DataFrame(self.database[str(self.date)].find())
             df_stratagy_cal = df[[F.stratagy,F.pl,F.drift_points,F.drift_rs,F.entry_order_count,F.exit_order_count,F.index]]
             df_stratagy_cal = df_stratagy_cal.groupby(F.stratagy).agg({F.pl : 'sum', F.drift_points : 'sum', F.drift_rs : 'sum',F.entry_order_count : 'sum',F.exit_order_count : 'sum' ,F.index : 'count' }).reset_index()
@@ -549,7 +549,7 @@ class Order_management :
             message+=str(row)
         send_message(message)
         
-        df = df.pivot(columns='stratagy',index=['date'],values='pl')[['FS_First', 'RE_First', 'WNT_First', 'RE_Second','RE_Third','Hedges','Total']]
+        df = df.pivot(columns='stratagy',index=['date'],values='pl')[['FS_First', 'RE_First', 'FS_Third', 'RE_Second','RE_Third','Hedges','Total']]
         df = df.cumsum().round()
 
         """Send ATH DD Report"""
@@ -589,12 +589,28 @@ class Order_management :
             fig.update_traces(fillcolor = color_dict[col],line=dict(color='black', width=2))
             # fig.show()
             if col == F.pl : 
-                folder_path = "server/plots/PL_Recording"
+                folder_path = "plots/PL_Recording"
             elif col == F.free_margin : 
-                folder_path = "server/plots/Available_Margin"
+                folder_path = "plots/Available_Margin"
                 
             os.makedirs(folder_path, exist_ok=True)
             image_full_path = f'{folder_path}/{self.date} {heading_dict[col]}.png'
             fig.write_image(image_full_path)
             send_message(message = image_full_path,send_image=True)
+            
+    def store_orders(self):
+        order_details = Order_details(broker_session,F.kotak_neo)
+        is_not_empty, all_orders, filled_order, pending_order = order_details.order_book()
+        folder_path = "order_book/broker"
+        os.makedirs(folder_path, exist_ok=True)
+        all_orders.to_csv(f"{folder_path}/{str(date)}.csv")
+        env.logger.info(f'broker orderbook stored')
+        
+        db = pd.DataFrame(self.database[str(self.date)].find())
+        folder_path = "order_book/broker"
+        os.makedirs(folder_path, exist_ok=True)
+        db.to_csv(f"{folder_path}/{str(date)}.csv")
+        env.logger.info(f'db orderbook stored')
+        
+        
             

@@ -1,9 +1,8 @@
 import pymongo
-import os
+import os, json, requests
 from  datetime import datetime as dt,timedelta,time as time_
 from dotenv import load_dotenv
 from typing import Dict, List 
-import requests
 from bs4 import BeautifulSoup
 import ast
 import datetime
@@ -34,7 +33,7 @@ def setup_daily_logger(empty:bool = False):
     log_filename = os.path.join(log_directory, f'{today}.log')
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s %(levelname)s %(message)s',
+        format='%(levelname)s %(asctime)s %(message)s',
         handlers=[
             logging.FileHandler(log_filename),
             logging.StreamHandler()  # Also print to console
@@ -43,7 +42,7 @@ def setup_daily_logger(empty:bool = False):
     # logging.info('Logger setup complete')
     return logging
 
-def is_hoilyday() :
+def is_hoilyday() : 
     try : 
         url = "https://zerodha.com/marketintel/holiday-calendar/"
         response = requests.get(url)
@@ -97,6 +96,30 @@ def sleep_till_next_day():
 def get_ist_now():
     return dt.now() + timedelta(0)
 
+def load_cread():
+    folder_path = 'D:/Pythoon/kotak_Server/config/login'
+    login_cred = {}
+    for filename in os.listdir(folder_path):
+        # print(filename)
+        if filename.endswith('.json'):
+            with open(os.path.join(folder_path, filename), 'r') as f:
+                data = json.load(f)
+                if data['switch'] == 'True' :
+                    # print(data)
+                    login_cred[data['id']] = data
+                    
+    return login_cred
+
+def is_straragy_traded(stratagy=None,traded_df=None,all_closed=False):
+    if stratagy != None :
+        traded_list = traded_df[F.stratagy].unique()
+        return stratagy in traded_list
+    if all_closed :
+        if len(traded_df[traded_df[F.exit_orderid_status]==F.open]) > 0:
+            return False
+        else : 
+            return True
+        
 def wait_until_next_minute():
     now = dt.now()
     next_minute = (now + timedelta(minutes = 1)).replace(second = 0, microsecond = 0)
@@ -179,13 +202,24 @@ def set_coloumn_name(df,broker_name):
     return df
 
 def get_qty_option_price(broker_name):
-    fifty_per_risk = env_variables.fifty_per_risk
-    re_entry_risk = env_variables.re_entry_risk
-    wait_trade_risk = env_variables.wait_trade_risk 
-    lot_size = env_variables.lot_size
-    hedge_cost = env_variables.hedge_cost
-    selling_lots = env_variables.selling_lots
-    hedge_lots = env_variables.hedge_lots
+    if env.days_to_expiry in [0,1] :
+        fs1_risk = env_variables.fifty_per_risk
+        fs2_risk = env_variables.re_entry_risk
+        wait_trade_risk = env_variables.wait_trade_risk 
+        fs3_risk = env_variables.lot_size
+        fs4_risk = env_variables.lot_size
+        hedge_cost = env_variables.hedge_cost
+        selling_lots = env_variables.selling_lots
+        hedge_lots = env_variables.hedge_lots
+    
+    if env.days_to_expiry not in [0,1] :
+        fifty_per_risk = env_variables.fifty_per_risk
+        re_entry_risk = env_variables.re_entry_risk
+        wait_trade_risk = env_variables.wait_trade_risk 
+        lot_size = env_variables.lot_size
+        hedge_cost = env_variables.hedge_cost
+        selling_lots = env_variables.selling_lots
+        hedge_lots = env_variables.hedge_lots
     
 
     if  broker_name == 'kotak_neo' : 
@@ -229,10 +263,11 @@ def get_qty_option_price(broker_name):
             
 class env_variables:
     # other_task = [exit_orders, logout_session, Buy_Hedges]
-    # sell_systems = [F.FS_First, F.RE_First, F.WNT_First, F.RE_Second, F.RE_Third]
+    # sell_systems = [F.FS_First, F.FS_Second, F.FS_Third, F.FS_Fourth, F.FS_Fifth]
     # buy_systems = [F.RB_Buy_first, F.RB_Buy_second, F.RB_Buy_third, F.RB_Buy_fourth]
     env_variable_initilised = False
     option_chain_set = False
+    days_to_expiry = None
     today = None
     thread_list = []
     socket_open = False
@@ -266,10 +301,10 @@ class env_variables:
 
     login : str
     FS_First : str
-    RE_First : str
-    WNT_First : str
-    RE_Second : str
-    RE_Third : str
+    FS_Second : str
+    FS_Third : str
+    FS_Fourth : str
+    FS_Fifth : str
     exit_orders : str
     logout_session : str
     Buy_Hedges : str 
@@ -330,31 +365,31 @@ class env_variables:
         # self.exit_orders = dt.strftime(get_ist_now(),'%H:%M')
         
         self.login = os.environ['login']
-        self.FS_First = os.environ['FS_First']
-        self.RE_First = os.environ['RE_First']
-        self.Buy_Hedges = os.environ['Buy_Hedges']
-        self.WNT_First = os.environ['WNT_First']
-        self.RE_Second = os.environ['RE_Second']
-        self.RE_Third = os.environ['RE_Third']
-        self.exit_orders = os.environ['exit_orders']
+        self.FS_First = dt.strptime(f"{self.today} {os.environ['FS_First']}","%Y-%m-%d %H:%M")
+        self.FS_Second = dt.strptime(f"{self.today} {os.environ['FS_Second']}","%Y-%m-%d %H:%M")
+        self.Buy_Hedges = dt.strptime(f"{self.today} {os.environ['Buy_Hedges']}","%Y-%m-%d %H:%M")
+        self.FS_Third = dt.strptime(f"{self.today} {os.environ['FS_Third']}","%Y-%m-%d %H:%M")
+        self.FS_Fourth = dt.strptime(f"{self.today} {os.environ['FS_Fourth']}","%Y-%m-%d %H:%M")
+        self.FS_Fifth = dt.strptime(f"{self.today} {os.environ['FS_Fifth']}","%Y-%m-%d %H:%M")
+        self.exit_orders = dt.strptime(f"{self.today} {os.environ['exit_orders']}","%Y-%m-%d %H:%M")
         
-        self.RB_Buy_first = os.environ['RB_Buy_first']
-        self.RB_Buy_second = os.environ['RB_Buy_second']
-        self.RB_Buy_third = os.environ['RB_Buy_third']
-        self.RB_Buy_fourth = os.environ['RB_Buy_fourth']
+        self.RB_Buy_first = dt.strptime(f"{self.today} {os.environ['RB_Buy_first']}","%Y-%m-%d %H:%M")
+        self.RB_Buy_second = dt.strptime(f"{self.today} {os.environ['RB_Buy_second']}","%Y-%m-%d %H:%M")
+        self.RB_Buy_third = dt.strptime(f"{self.today} {os.environ['RB_Buy_third']}","%Y-%m-%d %H:%M")
+        self.RB_Buy_fourth = dt.strptime(f"{self.today} {os.environ['RB_Buy_fourth']}","%Y-%m-%d %H:%M")
         
         
-        self.logout_session = os.environ['logout_session']  
+        self.logout_session = dt.strptime(f"{self.today} {os.environ['logout_session']}","%Y-%m-%d %H:%M")
         self.capital = float(os.environ['capital'])
         self.qty_partation_loop = int(os.environ['qty_partation_loop'])
         self.logger = setup_daily_logger()
         
         self.telegram_api_dict = {
                                 F.FS_First : os.environ['nine_twenty_bot_token'],
-                                F.RE_First  : os.environ['nine_thirty_bot_token'],
-                                F.WNT_First : os.environ['nine_fourty_five_bot_token'],
-                                F.RE_Second : os.environ['ten_thirty_bot_token'],
-                                F.RE_Third : os.environ['eleven_bot_token'],
+                                F.FS_Second  : os.environ['nine_thirty_bot_token'],
+                                F.FS_Third : os.environ['nine_fourty_five_bot_token'],
+                                F.FS_Fourth : os.environ['ten_thirty_bot_token'],
+                                F.FS_Fifth : os.environ['eleven_bot_token'],
                                 F.Hedges : os.environ['nine_twenty_bot_token'],   #passing hedges updates to Nine Twenty
                                 
                                 'common_logger' : os.environ['common_loggger'],
@@ -389,7 +424,13 @@ class F :
     entry_order_count = 'entry_order_count'
     entry_order_execuation_type = 'entry_order_execuation_type'
     entry_price = 'entry_price'
-    entry_time = 'entry_time'
+    ENTRY_TIME = 'ENTRY_TIME'
+    RANGE_START = 'RANGE_START'
+    RANGE_END = 'RANGE_END'
+    ALLOWD = 'ALLOWD'
+    STRATAGY = 'STRATAGY'
+    SESSION = 'SESSION'
+    BROKER_NAME = 'BROKER_NAME'
     entry_orderid_status = 'entry_orderid_status'
     entry_tag = 'entry_tag'
     
@@ -400,7 +441,7 @@ class F :
     exit_order_execuation_type = 'exit_order_execuation_type'
     exit_reason = 'exit_reason'
     exit_price = 'exit_price'
-    exit_time = 'exit_time'
+    EXIT_TIME = 'EXIT_TIME'
     exit_orderid_status = 'exit_orderid_status'
     exit_tag = 'exit_tag' 
     exit_price = 'exit_price'
@@ -460,10 +501,10 @@ class F :
     # Staratgy Names
     stratagy = 'stratagy'
     FS_First = 'FS_First'
-    RE_First =  'RE_First'
-    WNT_First = 'WNT_First'
-    RE_Second = 'RE_Second'
-    RE_Third = 'RE_Third'
+    FS_Second =  'FS_Second'
+    FS_Third = 'FS_Third'
+    FS_Fourth = 'FS_Fourth'
+    FS_Fifth = 'FS_Fifth'
     Hedges = 'Hedges'
     
     RB_Buy_first = 'RB_Buy_first'

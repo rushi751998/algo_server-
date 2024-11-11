@@ -1,0 +1,13 @@
+class Stratagies:
+    FS_FIRST = 'FS_FIRST'
+    FS_SECOND = 'FS_SECOND'
+    FS_THIRD = 'FS_THIRD'
+    FS_FOURTH = 'FS_FOURTH'
+    FS_FIFTH = 'FS_FIFTH'
+    
+    RB_FIRST = 'RB_FIRST'
+    RB_SECOND = 'RB_SECOND'
+    RB_THIRD = 'RB_THIRD'
+    RB_FOURTH = 'RB_FOURTH'
+    RB_FIFTH = 'RB_FIFTH'
+    RB_SIXTH = 'RB_SIXTH'

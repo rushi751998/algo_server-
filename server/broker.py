@@ -194,7 +194,7 @@ class Socket_handling:
             if env.expiry_base_instrument:
                 future_tickers = future_tickers[(future_tickers['days_to_expire'] == future_tickers['days_to_expire'].min())]
                 future_token = future_tickers[future_tickers['days_to_expire'] == future_tickers['days_to_expire'].min()].iloc[0]['token']
-                
+                env.days_to_expiry= option_tickers['days_to_expire'].min()
                 option_tickers = option_tickers[(option_tickers['days_to_expire'] == option_tickers['days_to_expire'].min())]
                 index_list = option_tickers['index'].unique()
                 
@@ -212,7 +212,7 @@ class Socket_handling:
                     future_tickers = future_tickers[future_tickers['index'] == index]
                 
             else:
-                index = 'BANKNIFTY'
+                index = 'NIFTY'
                 option_tickers = option_tickers[option_tickers['index'] == index]
                 future_tickers = future_tickers[future_tickers['index'] == index]
                 
@@ -276,6 +276,7 @@ def set_hedge_cost(broker_name):
             hedge_cost = 0
             for i in [F.CE,F.PE]:
                 chain = pd.DataFrame(get_option_chain()).T
+                print(chain)
                 chain = chain[chain[F.option_type] == i]
                 chain = chain[(chain['v'] > 100000) & (chain['oi'] > 100000)]
                 chain = chain[chain['ltp'] >= env.hedge_price].sort_values('ltp')

@@ -64,55 +64,30 @@ class Checking:
             pass
 
         if len(self.db_df) > 0:
-            try:
-                self.fifty_per_management(self.db_df,pending_order,filled_order,F.FS_First)
-                # print(f'{self.current_time}---------------- fifty_per_management -  {F.FS_First} ------------------')
-            except Exception as e:
-                send_message(message = f'problem in fifty_per_management for : {F.FS_First} \nReason :{e}', emergency = True)
-
-            try:
-                self.re_entry_management(self.db_df,pending_order,filled_order,F.RE_First)
-                # print(f'{self.current_time}---------------- re_entry_management -  {F.RE_First} ------------------')
-            except Exception as e:
-                send_message(message = f'problem in re_entry_management for : {F.RE_First} \nReason :{e}', emergency = True)
-
-            try:
-                self.wait_n_trade(self.db_df,pending_order,filled_order,F.WNT_First)
-                # print(f'{self.current_time}---------------- wait_n_trade -  {F.WNT_First} ------------------')
-            except Exception as e:
-                send_message(message = f'problem in wait_n_trade for : {F.WNT_First} \nReason :{e}', emergency = True)
-                
-            try:
-                self.re_entry_management(self.db_df,pending_order,filled_order,F.RE_Second)
-                # print(f'{self.current_time}---------------- re_entry_management -  {F.RE_Second} ------------------')
-            except Exception as e:
-                send_message(message = f'problem in re_entry_management for : {F.RE_Second} \nReason :{e}', emergency = True)
-            
-            try:
-                self.re_entry_management(self.db_df,pending_order,filled_order,F.RE_Third)
-                # print(f'{self.current_time}---------------- re_entry_management -  {F.RE_Third} ------------------')
-            except Exception as e:
-                send_message(message = f'problem in re_entry_management for : {F.RE_Third} \nReason :{e}', emergency = True)
-
-            except Exception as e:
-                send_message(message = f'problem in check_ltp_above_sl\nReason :{e}', emergency = True)
-                
-            try:
-                self.rejected_order_management(self.db_df,pending_order,filled_order)
-                # print(f'{self.current_time}---------------- rejected_order_management ------------------')
-            except Exception as e:
-                send_message(message = f'problem in rejected_order_management\nReason :{e}', emergency = True)
-            
             try :     
                 self.check_sl_order_exist(self.db_df,pending_order,filled_order)
             except Exception as e:
                 send_message(message = f'problem in check_sl_order_exist\nReason :{e}', emergency = True)
             
             try:
+                self.track_order(self.db_df,pending_order,filled_order)
+                # print(f'{self.current_time}---------------- wait_n_trade -  {F.FS_Third} ------------------')
+            except Exception as e:
+                send_message(message = f'problem in wait_n_trade for : {F.FS_Third} \nReason :{e}', emergency = True)
+                 
+            try:
+                self.rejected_order_management(self.db_df,pending_order,filled_order)
+                # print(f'{self.current_time}---------------- rejected_order_management ------------------')
+            except Exception as e:
+                send_message(message = f'problem in rejected_order_management\nReason :{e}', emergency = True)
+            
+            try:
                 self.check_ltp_above_sl(self.db_df,pending_order,filled_order)
                 # print(f'{self.current_time}---------------- check_ltp_above_sl ------------------')
             except IndexError : 
                 pass
+            except Exception as e:
+                send_message(message = f'problem in check_ltp_above_sl\nReason :{e}', emergency = True)
             
             try:
                 self.calculate_pl(self.db_df) 
@@ -153,13 +128,13 @@ class Checking:
                     pl = round((i[F.entry_price] * i[F.qty]) - (i[F.exit_price] * i[F.qty]), 2)
                     drift_points = round(abs(i[F.entry_price_initial] - i[F.entry_price]) + (i[F.exit_price_initial] - i[F.exit_price]), 2)
                     drift_rs = round(drift_points * i[F.qty], 2)
-                    self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.pl : pl, F.drift_points: drift_points, F.drift_rs : drift_rs}})
+                    self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.pl : pl, F.drift_points: drift_points, F.drift_rs : drift_rs,F.charges : 20}})
                     # print(f'{i[F.entry_orderid]} pl : {pl} Slippage points : {drift_points} Slippage-rs : {drift_rs}')
                 else : 
                     pl = round((i[F.exit_price] * i[F.qty]) - (i[F.entry_price] * i[F.qty]) , 2)
                     drift_points = round(abs(i[F.entry_price_initial] - i[F.entry_price]) + (i[F.exit_price_initial] - i[F.exit_price]), 2)
                     drift_rs = round(drift_points * i[F.qty], 2)
-                    self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.pl : pl, F.drift_points: drift_points, F.drift_rs : drift_rs}})
+                    self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.pl : pl, F.drift_points: drift_points, F.drift_rs : drift_rs,F.charges : 20}})
         
     def record_pl(self):
         # -------------------------------- Upload each leg wise pl to order db ---------------------------------------------
@@ -188,159 +163,38 @@ class Checking:
     
     def Update_commmon_pl(self,db_df):
         db_data = db_df
-        # stratagy=F.WNT_First
+        # stratagy=F.FS_Third
         FS_First = []
         RE_First = []
-        WNT_First = []
+        FS_Third = []
         for i in db_data:
             if i[F.stratagyy] == F.FS_First:
                 for j in (i[F.recording]):
                     FS_First.append(j)
                 self.database[str(self.date)].update_one({F.stratagyy : {'$eq"': F.FS_First}}, {F.recording : FS_First })
 
-            elif i[F.stratagy] == F.RE_First:
+            elif i[F.stratagy] == F.FS_Second:
                 for j in (i[F.recording]):
                     RE_First.append(j)
-                self.database[str(self.date)].update_one({F.stratagy : {'$eq"': F.RE_First}}, {F.recording : RE_First })
+                self.database[str(self.date)].update_one({F.stratagy : {'$eq"': F.FS_Second}}, {F.recording : RE_First })
 
-            elif i[F.stratagy] == F.WNT_First:
+            elif i[F.stratagy] == F.FS_Third:
                 for j in (i[F.recording]):
-                    WNT_First.append(j)
-                self.database[str(self.date)].update_one({F.stratagy : {'$eq"': F.WNT_First}}, {F.recording : WNT_First })
+                    FS_Third.append(j)
+                self.database[str(self.date)].update_one({F.stratagy : {'$eq"': F.FS_Third}}, {F.recording : FS_Third })
 
         # print( F.FS_First , FS_First)
-        combine_pl = FS_First + RE_First + WNT_First
+        combine_pl = FS_First + RE_First + FS_Third
 
         a = pd.DataFrame(combine_pl).groupby('Time').sum().reset_index()
         self.database[str(self.date)].update_one({F.stratagy : {'$eq"': 'combine_pl'}},{F.recording : combine_pl })
-
-    def fifty_per_management(self,db_df,pending_order,filled_order,stratagy):
-        # NineTwenty_db = self.database[str(self.date)].find({F.stratagy : {'$eq':stratagy}})
-        NineTwenty_db = db_df[db_df[F.stratagy] == stratagy]
+                           
+    def track_order(self,db_df,pending_order,filled_order):
         pending_order_list = pending_order[F.order_id].to_list()
-        for index,i in NineTwenty_db.iterrows():
-            if i[F.exit_orderid] not in pending_order_list and (i[F.exit_orderid_status] == F.open) :
-                sl_price = filled_order[filled_order[F.order_id] == i[F.exit_orderid]].iloc[0][F.price]
-                exit_time = self.current_time
-                self.database[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_order_execuation_type : F.limit_order, F.exit_price : float(sl_price), F.exit_time : str(exit_time)}} )
-                send_message(message = f'Sl hit...\nMessage : {i[F.exit_orderid]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nPrice : {sl_price}', stratagy = i[F.stratagy])
-            # time.sleep(1)
+        db_df = db_df[db_df[F.exit_orderid_status] != F.closed]
         
-    def re_entry_management(self,db_df,pending_order,filled_order,stratagy):
-        # NineThirty_db = self.database[str(self.date)].find({F.stratagy : {'$eq': stratagy}})
-        NineThirty_db = db_df[db_df[F.stratagy] == stratagy]
-        pending_order_list = pending_order[F.order_id].to_list()
-        for index,i in NineThirty_db.iterrows():
-            count = i[F.exit_order_count]
-            if (i[F.exit_orderid] not in pending_order_list) and (i[F.exit_orderid_status] == F.open) and (i[F.exit_reason] == None): # re-entry pending order place
-                #----------------------------------- Upadate 1st order details ---------------------------------------------------------
-                sl_price = filled_order[filled_order[F.order_id] == i[F.exit_orderid]].iloc[0][F.price]
-                if i[F.exit_order_execuation_type] == None : 
-                    self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_price : float(sl_price), F.exit_order_execuation_type : F.limit_order, F.exit_time : str(self.current_time) } } )
-                    send_message(message = f'Sl hit...\nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nPrice : {sl_price}\nExecuation Type : {F.limit_order}', stratagy = i[F.stratagy])
-                else : 
-                    self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_price : float(sl_price), F.exit_time : str(self.current_time)} } )
-                    send_message(message = f'Sl hit...\nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nStatagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nPrice : {sl_price}\nExecuation Type : {i[F.exit_order_execuation_type]}', stratagy = i[F.stratagy])
-                    
-                #----------------------------------- Place re-entry order ---------------------------------------------------------
-                tag = f'{i[F.stratagy]}_{i[F.option_type]}_{i[F.loop_no]}_re_entry'
-                price = round(i[F.entry_price])
-                trigger_price = price + 0.2
-                # print('trigger_price : ',trigger_price)
-                # print(f"price = {i[F.entry_price]},trigger_price = {trigger_price},qty = {i[F.qty]},ticker ={ i[F.ticker]},transaction_type = {[F.transaction_type]},tag = tag")
-                is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = i[F.entry_price], trigger_price = trigger_price, qty = i[F.qty], ticker = i[F.ticker], transaction_type = i[F.transaction_type], product_type = i[F.product_type], tag = tag)
-                if is_order_placed : 
-                    order = { 
-                            F.entry_time : None,
-                            F.ticker : i[F.ticker],
-                            F.token : i[F.token],
-                            F.transaction_type : i[F.transaction_type],
-                            F.product_type : i[F.product_type],
-                            F.option_type : i[F.option_type],
-                            F.qty : i[F.qty],
-                            #-------------- Entry order details -------------
-                            F.entry_orderid : order_number,
-                            F.entry_orderid_status : F.re_entry_open,    #To check order is complete
-                            F.entry_price : price,
-                            F.entry_price_initial : price,
-                            F.entry_order_count : 0,
-                            F.entry_order_execuation_type : None,
-                            F.entry_tag : tag,
-                            #-------------- sl order details -------------
-                            F.exit_orderid : None,
-                            F.exit_orderid_status : None,
-                            F.exit_price : 0,
-                            F.exit_price_initial : 0,
-                            F.exit_tag : None,  #tag_contains stratagy_name+option_type+loop no
-                            #-------- Other parameter --------------
-                            F.exit_price : 0,
-                            F.exit_time : None,
-                            F.exit_reason : None,              # sl_hit/day_end
-                            F.exit_order_count : 0,
-                            F.exit_order_execuation_type : None,
-                            F.stratagy : i[F.stratagy],
-                            F.index : env.index,
-                            F.loop_no : i[F.loop_no],
-                            F.exit_percent : i[F.exit_percent],
-                            F.charges : 0,
-                            F.drift_points : 0,
-                            F.drift_rs : 0,
-                            F.pl : 0,
-                            F.recording : [
-                                # {'Time':'10:15:00','pl':100},
-                           ]
-                            }
 
-                    self.database[str(self.date)].insert_one(order)
-                    send_message(message = f"re-entry limit order placed... \nMessage : {order_number}\nTicker : {i[F.ticker]}\nPrice : {i[F.entry_price]}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}", stratagy = i[F.stratagy]) 
-                elif not is_order_placed :
-                    send_message(message = f'Not able to place {stratagy} re-entry limit order order \nmessage :{order_number}', emergency = True)
-
-            if (i[F.entry_orderid] not in pending_order_list) and (i[F.entry_orderid_status] == F.re_entry_open) and  (i[F.exit_reason] == None): 
-                # Check is re-entry pending order is threre if not place sl for re-entry 
-                self.database[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.entry_orderid_status : F.closed, F.entry_time : self.current_time, F.entry_order_execuation_type : F.limit_order, F.entry_order_count : count + 1 } } )
-                send_message(message = f"re-entry placed broker end...\nOrder id : {i[F.entry_orderid]}\nTicker : {i[F.ticker]}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}", stratagy = i[F.stratagy])
-                #------------- Place new re-entry stoploss --------------
-
-                if i[F.transaction_type] == F.Buy:
-                    transaction_type = F.Sell
-
-                elif i[F.transaction_type] == F.Sell:
-                    transaction_type = F.Buy
-
-                tag = i[F.entry_tag]
-                ticker = i[F.ticker]
-                stoploos = round(i[F.entry_price] + (i[F.entry_price] * (i[F.exit_percent] / 100)))
-                qty = i[F.qty]
-                trigger_price = stoploos - 0.2
-                is_order_placed, order_number, product_type, new_tag = OrderExecuation(self.broker_name,self.broker_session).place_order(price = stoploos, trigger_price = trigger_price, qty = qty, ticker = ticker , transaction_type = transaction_type, product_type = i[F.product_type], tag = tag + '_sl')
-                if is_order_placed : 
-                    self.database[str(self.date)].update_one({F.entry_orderid : i[F.entry_orderid]}, { "$set": {F.exit_orderid : order_number, F.exit_orderid_status : F.re_entry_open, F.entry_order_execuation_type : F.limit_order, F.exit_price : stoploos, F.exit_price_initial : stoploos , F.exit_tag : tag + '_sl'} } )
-                    send_message(message = f"re-entry Sl order placed...\nMessage : {order_number}\nTicker : {i[F.ticker]}\nPrice : {stoploos}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}",stratagy = i[F.stratagy])
-                elif not is_order_placed:
-                    self.database[str(self.date)].update_one({"entry_tag": tag}, {"$set": {F.exit_orderid_status : F.rejected }})
-                    send_message(message =f'Problem in palcing re-entry limit_sl\nStratagy : {i[F.entry_orderid]}\Side : {i[F.option_type]}\nMessage : {message}', emergency = True)
-                
-            if (i[F.exit_orderid] not in pending_order_list) and i[F.exit_orderid_status] == F.re_entry_open :
-                # Track re-entry sl order is sl hit
-                sl_price = filled_order[filled_order[F.order_id] == i[F.exit_orderid]].iloc[0][F.price]
-                if i[F.exit_order_execuation_type] == None : 
-                    self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_order_execuation_type : F.limit_order, F.exit_price : float(sl_price), F.exit_time : str(self.current_time)} } )
-                    send_message(message = f"re-entry Sl hit...\nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nPrice : {sl_price}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nExecuation Type : {F.limit_order}", stratagy = i[F.stratagy])
-                else :
-                    self.database[str(self.date)].update_one({F.exit_orderid : i[F.exit_orderid]}, { "$set": {F.exit_orderid_status : F.closed, F.exit_reason : F.sl_hit, F.exit_price : float(sl_price), F.exit_time : str(self.current_time)} } )
-                    send_message(message = f"re-entry Sl hit...\nMessage : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nPrice : {sl_price}\nStratagy : {i[F.stratagy]}\nSide : {i[F.option_type]}\nExecuation Type : {i[F.entry_order_execuation_type]}", stratagy = i[F.stratagy])
-                    
-                
-            # time.sleep(1)
-                                     
-    def wait_n_trade(self,db_df,pending_order,filled_order,stratagy):
-        # query = {F.stratagy : {'$eq': stratagy}}
-        # NineFourtyFive_db = self.database[str(self.date)].find(query)
-        NineFourtyFive_db = db_df[db_df[F.stratagy] == stratagy]
-        pending_order_list = pending_order[F.order_id].to_list()
-
-        for index,i in NineFourtyFive_db.iterrows():
+        for index,i in db_df.iterrows():
             count = i[F.exit_order_count]
             if (i[F.entry_orderid_status] == F.open) and (i[F.entry_orderid] not in pending_order_list) and (i[F.exit_reason] == None):
                 ltp = get_ltp(i[F.token],self.broker_name)
@@ -348,21 +202,28 @@ class Checking:
                 self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.entry_orderid_status : F.closed ,F.entry_time : self.current_time, F.entry_order_execuation_type : F.limit_order, "ltp" : ltp, F.entry_order_count : count + 1}})
                 #--------------- Place limit sl ----------------------------
                 Order_management(self.broker_name, self.broker_session).place_limit_sl(ticker = i[F.ticker], qty = i[F.qty], transaction_type_ = i[F.transaction_type], avg_price = (i[F.entry_price]), exit_percent = i[F.exit_percent], option_type = i[F.option_type], stratagy= i[F.stratagy],tag = i[F.entry_tag])
-            if (i[F.exit_orderid_status] == F.open):
-                #--------------- Trail sl ----------------------------
-                new_ltp = get_ltp(i[F.token],self.broker_name)
-                points = trailing_points()
-                net_points = (i["ltp"] - new_ltp)//points
-                # print(f'Order id : {i[F.exit_orderid]} New LTP : {new_ltp} old ltp : {i["ltp"]} Points : {points} net_points : {net_points}')
-                if net_points > 0:
-                    new_sl = round(i[F.exit_price] - net_points)
-                    is_modified,order_number,message = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = i[F.exit_orderid], new_price = new_sl, quantity = i[F.qty])
-                    is_order_rejected, is_mis_blocked = is_order_rejected_func(order_number, self.broker_session, self.broker_name)
-                    if is_modified and not is_order_rejected :
-                        self.database[str(self.date)].update_one({F.entry_orderid : {'$eq' : i[F.entry_orderid]}},{"$set" : {F.exit_price : new_sl, F.exit_price_initial : new_sl, "ltp" : new_ltp}})
-                        send_message(message = f"SL trailed from {i[F.exit_price]} to {new_sl}\nOrder Id : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nSide : {i[F.option_type]}\nStratagy : {i[F.stratagy]}", stratagy = i[F.stratagy])
+            # if (i[F.exit_orderid_status] == F.open) and (i[F.stratagy] == F.FS_Third):
+            #     #--------------- Trail sl ----------------------------
+            #     new_ltp = get_ltp(i[F.token],self.broker_name)
+            #     points = trailing_points()
+            #     net_points = (i["ltp"] - new_ltp)//points
+            #     # print(f'Order id : {i[F.exit_orderid]} New LTP : {new_ltp} old ltp : {i["ltp"]} Points : {points} net_points : {net_points}')
+            #     if net_points > 0:
+            #         new_sl = round(i[F.exit_price] - net_points)
+            #         is_modified,order_number,message = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = i[F.exit_orderid], new_price = new_sl, quantity = i[F.qty])
+            #         is_order_rejected, is_mis_blocked = is_order_rejected_func(order_number, self.broker_session, self.broker_name)
+            #         if is_modified and not is_order_rejected :
+            #             self.database[str(self.date)].update_one({F.entry_orderid : {'$eq' : i[F.entry_orderid]}},{"$set" : {F.exit_price : new_sl, F.exit_price_initial : new_sl, "ltp" : new_ltp}})
+            #             send_message(message = f"SL trailed from {i[F.exit_price]} to {new_sl}\nOrder Id : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nSide : {i[F.option_type]}\nStratagy : {i[F.stratagy]}", stratagy = i[F.stratagy])
 
             if (i[F.exit_orderid_status]== F.open) and (i[F.exit_orderid] not in pending_order_list):
+                # --------   Exit from Hedge Here -----------------------------
+                
+                is_expiry = env.days_to_expiry in [0,1]
+                if is_expiry:
+                    hedge = db_df[(db_df[F.stratagy] == i[F.stratagy] + "_" + F.Hedges) & (db_df[F.option_type] == i[F.option_type])]
+                    
+                    
                 #--------------- Update sl hit ----------------------------
                 sl_price = filled_order[filled_order[F.order_id] == i[F.exit_orderid]].iloc[0][F.price]
                 if i[F.exit_order_execuation_type ] == None : 
@@ -444,7 +305,7 @@ class Checking:
                 elif count < 2 : 
                     tag = i[F.exit_tag] + f"_MOL_{count}2" #MOL = Place Missing order at limit order
                     sl_price = round(i[F.exit_price])
-                    is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = sl_price, trigger_price = sl_price + 0.2, qty = i[F.qty], ticker = i[F.ticker], transaction_type = transaction_type, product_type = i[F.product_type],order_type= "SL", tag = tag)
+                    is_order_placed, order_number, product_type, tag = OrderExecuation(self.broker_name, self.broker_session).place_order(price = sl_price, trigger_price = sl_price - 0.2, qty = i[F.qty], ticker = i[F.ticker], transaction_type = transaction_type, product_type = i[F.product_type],order_type= "SL", tag = tag)
                     
                     if is_order_placed : 
                         self.database[str(self.date)].update_one({F.exit_orderid: i[F.exit_orderid]}, {"$set": {F.exit_orderid: order_number, F.exit_order_count : count + 1}})
