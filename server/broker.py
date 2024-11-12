@@ -212,7 +212,7 @@ class Socket_handling:
                     future_tickers = future_tickers[future_tickers['index'] == index]
                 
             else:
-                index = 'BANKNIFTY'
+                index = 'NIFTY'
                 option_tickers = option_tickers[option_tickers['index'] == index]
                 future_tickers = future_tickers[future_tickers['index'] == index]
                 
