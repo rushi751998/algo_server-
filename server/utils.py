@@ -225,6 +225,7 @@ class env_variables:
     thread_list = []
     socket_open = False
     logger = None #setup_daily_logger(True)
+    days_to_expire = None
     lot_size : int
     selling_lots : int
     hedge_lots : int

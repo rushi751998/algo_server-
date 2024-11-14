@@ -51,17 +51,18 @@ def placing(current_time, broker_name, broker_session):
     is_set_hedge_cost = set_hedge_cost(broker_name)    
     # fifty_per_qty, fifty_per_price, re_entry_qty, re_entry_price, wait_trade_qty, wait_trade_price, hedge_qty = get_qty_option_price(broker_name)
     # print(env.index,re_entry_qty, re_entry_price)
-    RISK1 = 50
-    RISK2 = 40
+    RISK1 = 40
+    RISK2 = 35
     qty = 50
+    
+    if env.days_to_expire in [0,1]:
+        qty = 100
     
     if current_time == env.FS_FIRST:
         for i in range(env.qty_partation_loop):
             # i = 2
             ce_thread = Thread(name = f'CE_{F.FS_FIRST}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.CE, 'option_price' : RISK1, F.loop_no : i, F.stratagy : F.FS_FIRST, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
             pe_thread = Thread(name = f'PE_{F.FS_FIRST}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.PE, 'option_price' : RISK1, F.loop_no : i, F.stratagy : F.FS_FIRST, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
-            # env.thread_list.append(ce_thread)
-            # env.thread_list.append(pe_thread)
             ce_thread.start()
             time.sleep(1)
             pe_thread.start()
@@ -73,21 +74,18 @@ def placing(current_time, broker_name, broker_session):
             # i = 2
             ce_thread = Thread(name = f'CE_{F.FS_SECOND}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.CE, 'option_price' : RISK1, F.loop_no : i, F.stratagy : F.FS_SECOND, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
             pe_thread = Thread(name = f'PE_{F.FS_SECOND}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.PE, 'option_price' : RISK1, F.loop_no : i, F.stratagy : F.FS_SECOND, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
-            # env.thread_list.append(ce_thread)
-            # env.thread_list.append(pe_thread)
             ce_thread.start()
             time.sleep(1)
             pe_thread.start()
             ce_thread.join()
             pe_thread.join()
             
-    elif current_time == env.Buy_Hedges:
+    elif current_time == env.Buy_Hedges and  env.days_to_expire in [0,1]:
+        qty = 400
         for i in range(env.qty_partation_loop):
             # i = 15
             ce_thread = Thread(name = f'CE_{F.HEDGES}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.CE, 'option_price' : 2, F.loop_no : i, F.stratagy : F.HEDGES, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
             pe_thread = Thread(name = f'PE_{F.HEDGES}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.PE, 'option_price' : 2, F.loop_no : i, F.stratagy : F.HEDGES, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
-            # env.thread_list.append(ce_thread)
-            # env.thread_list.append(pe_thread)
             ce_thread.start()
             time.sleep(1)
             pe_thread.start()
@@ -99,8 +97,6 @@ def placing(current_time, broker_name, broker_session):
             i = 5
             ce_thread = Thread(name = f'CE_{F.FS_THIRD}_{i}_Thread', target = order_placer, kwargs = {F.option_type: F.CE, 'option_price' : RISK2, F.loop_no : i, F.stratagy : F.FS_THIRD, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
             pe_thread = Thread(name = f'PE_{F.FS_THIRD}_{i}_Thread', target = order_placer, kwargs = {F.option_type: F.PE, 'option_price' : RISK2, F.loop_no : i, F.stratagy : F.FS_THIRD, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
-            # env.thread_list.append(ce_thread)
-            # env.thread_list.append(pe_thread)
             ce_thread.start()
             time.sleep(1)
             pe_thread.start()
@@ -112,8 +108,6 @@ def placing(current_time, broker_name, broker_session):
             i = 2
             ce_thread = Thread(name = f'CE_{F.FS_FOURTH}_{i}_Thread', target=order_placer, kwargs = {F.option_type: F.CE, 'option_price' : RISK2, F.loop_no : i, F.stratagy : F.FS_FOURTH, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
             pe_thread = Thread(name = f'PE_{F.FS_FOURTH}_{i}_Thread', target=order_placer, kwargs = {F.option_type: F.PE, 'option_price' : RISK2, F.loop_no : i, F.stratagy : F.FS_FOURTH, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
-            # env.thread_list.append(ce_thread)
-            # env.thread_list.append(pe_thread)
             ce_thread.start()
             time.sleep(1)
             pe_thread.start()
@@ -125,8 +119,6 @@ def placing(current_time, broker_name, broker_session):
             # i = 2
             ce_thread = Thread(name = f'CE_{F.FS_FIFTH}_{i}_Thread',target=order_placer, kwargs = {F.option_type : F.CE, 'option_price' : RISK2, F.loop_no : i, F.stratagy : F.FS_FIFTH, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
             pe_thread = Thread(name = f'PE_{F.FS_FIFTH}_{i}_Thread',target=order_placer, kwargs = {F.option_type : F.PE, 'option_price' : RISK2, F.loop_no : i, F.stratagy : F.FS_FIFTH, F.exit_percent : 25, F.qty : qty, F.transaction_type : F.Sell, F.broker_name : broker_name, F.broker_session : broker_session})
-            # env.thread_list.append(ce_thread)
-            # env.thread_list.append(pe_thread)
             ce_thread.start()
             time.sleep(1)
             pe_thread.start()

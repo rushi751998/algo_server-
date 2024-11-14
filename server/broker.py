@@ -228,6 +228,7 @@ class Socket_handling:
             with self._lock:
                 env.index = index
                 env.lot_size = int(df.iloc[0]['lotSize'])
+                env.days_to_expire = int(option_tickers.iloc[0]['days_to_expire'])
                 
                 for index,row in df.iterrows():
                     option_chain[row['token']] = {'v':0,'oi':0,'ltp':0,'option_type':row['optionType'],'ticker':row['ticker']}
