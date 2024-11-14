@@ -1,5 +1,6 @@
 .env
 algo_env/
+login/
 test.py
 a.py
 __pycache__
