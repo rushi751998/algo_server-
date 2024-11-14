@@ -449,7 +449,7 @@ class Order_management :
 
             message  = f'Instrument : {env.index}\nTotal PL : {total_pl}\nTotal Drift-Points : {total_drift_points}\nTotal Drift in RS : {total_drift_rs}\nTotal Orders : {total_orders}\nTotal Modifications : {total_modifications}\n{25 * "-"}\nStratagy Wise Report :\n{25 * "-"}\n'
             for index,row in df_stratagy_cal.iterrows():
-                message += (f'Strtatagy : {row[F.stratagy]}\nPL : {round(row["pl"])}\nDrift in Points : {round(row[F.drift_points],2)}\nDrift in RS : {round(row[F.drift_rs])}\nOrders : {row[F.index]}\nModifications  : {(row["total_count"])}\n{25 * "-"}\n')
+                message += (f'Strtatagy : {row[F.stratagy]}\nPL : {(row["pl"])}\nDrift in Points : {(row[F.drift_points])}\nDrift in RS : {(row[F.drift_rs])}\nOrders : {row[F.index]}\nModifications  : {(row["total_count"])}\n{25 * "-"}\n')
 
             # Update to Performance Tracker
             column_sums = df_stratagy_cal.sum()
@@ -476,12 +476,12 @@ class Order_management :
             ls.append(df)
             
         df = pd.concat(ls,axis=0).sort_values(by = 'date')
-        
+        df = df[F.stratagy].str.upper()
         a = df.reset_index()
         a['date'] = pd.to_datetime(df['date'].to_list())
         a['month'] = a['date'].dt.month_name()
         a['year'] = a['date'].dt.year
-        a = a[a['stratagy']!='Total'][['month','year','pl']]
+        a = a[a['stratagy']!='TOTAL'][['month','year','pl']]
         a = a.groupby(by= ['year','month']).sum().reset_index()
         a = a.pivot_table(columns= 'month',index= 'year',values='pl')
         a.columns = a.columns.to_list()
@@ -499,23 +499,25 @@ class Order_management :
             message+=str(row)
         send_message(message)
         
-        df = df.pivot(columns='stratagy',index=['date'],values='pl')[['FS_FIRST', 'FS_SECOND', 'FS_THIRD', 'FS_FOURTH','FS_FIFTH','HEDGES','Total']]
+        df = df.pivot(columns='stratagy',index=['date'],values='pl')[['RE_SECOND', 'RE_THIRD', 'FS_FIRST', 'WNT_FIRST',
+       'RE_FIRST', 'HEDGES', 'FS_SECOND', 'FS_THIRD', 'FS_FOURTH',
+       'FS_FIFTH','TOTAL']]
         df = df.cumsum().round()
 
         """Send ATH DD Report"""
         ath = 0
         dd = []
         for index,row in df.iterrows() :
-            if row['Total'] > ath :
+            if row['TOTAL'] > ath :
                 dd.append(0)
-                ath = row['Total']
+                ath = row['TOTAL']
             else :
-                pl = row['Total'] - ath
+                pl = row['TOTAL'] - ath
                 dd.append(pl)
                 
-        df['drawdown'] = dd
+        df['DD'] = dd
 
-        message = f'ATH : {ath}\n'+f'MAX DD : {(df["drawdown"].min())}\n'+f'Current DD : {dd[-1]}'
+        message = f'ATH : {ath}\n'+f'MAX DD : {(df["DD"].min())}\n'+f'Current DD : {dd[-1]}'
         send_message(message)
 
     def genrate_plot(self):
