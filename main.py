@@ -57,7 +57,7 @@ def placing(current_time, broker_name, broker_session):
     hedge_price = 4
     
     if env.days_to_expire in [0,1]:
-        qty = 300
+        qty = 225
         hedge_price = 2
     
     if current_time == env.FS_FIRST:
