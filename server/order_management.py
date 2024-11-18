@@ -23,7 +23,7 @@ class Order_management :
     def order_place(self,ticker,qty, transaction_type, stratagy, exit_percent, loop_no, price, option_type,):
         tag = f'{stratagy}_{option_type}_{loop_no}'
         print(tag, stratagy)
-        if stratagy in [F.FS_FIRST,F.FS_SECOND,F.FS_THIRD,F.FS_FOURTH,F.FS_FIFTH]:
+        if stratagy in []:
             price = round(price)  
             trigger_price = price + 0.2
             print(price)
@@ -202,7 +202,7 @@ class Order_management :
             elif not is_order_placed :
                     send_message(message = f'Not able to place {stratagy} order \nmessage : {order_number}', emergency = True)
 
-        if stratagy == 0:
+        if stratagy in [F.FS_FIRST,F.FS_SECOND,F.FS_THIRD,F.FS_FOURTH,F.FS_FIFTH]:
             price = round(price * 0.95)
             trigger_price = price + 0.2
             
