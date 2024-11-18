@@ -321,20 +321,7 @@ class Checking:
                 self.database[str(self.date)].update_one({F.entry_orderid : {'$eq':i[F.entry_orderid]}},{"$set" : {F.entry_orderid_status : F.closed ,F.entry_time : self.current_time, F.entry_order_execuation_type : F.limit_order, "ltp" : ltp, F.entry_order_count : count + 1}})
                 #--------------- Place limit sl ----------------------------
                 Order_management(self.broker_name, self.broker_session).place_limit_sl(ticker = i[F.ticker], qty = i[F.qty], transaction_type_ = i[F.transaction_type], avg_price = (i[F.entry_price]), exit_percent = i[F.exit_percent], option_type = i[F.option_type], stratagy= i[F.stratagy],tag = i[F.entry_tag])
-            if (i[F.exit_orderid_status] == F.open):
-                #--------------- Trail sl ----------------------------
-                new_ltp = get_ltp(i[F.token],self.broker_name)
-                points = trailing_points()
-                net_points = (i["ltp"] - new_ltp)//points
-                # print(f'Order id : {i[F.exit_orderid]} New LTP : {new_ltp} old ltp : {i["ltp"]} Points : {points} net_points : {net_points}')
-                if net_points > 0:
-                    new_sl = round(i[F.exit_price] - net_points)
-                    is_modified,order_number,message = OrderExecuation(self.broker_name,self.broker_session).modify_order(order_id = i[F.exit_orderid], new_price = new_sl, quantity = i[F.qty])
-                    is_order_rejected, is_mis_blocked = is_order_rejected_func(order_number, self.broker_session, self.broker_name)
-                    if is_modified and not is_order_rejected :
-                        self.database[str(self.date)].update_one({F.entry_orderid : {'$eq' : i[F.entry_orderid]}},{"$set" : {F.exit_price : new_sl, F.exit_price_initial : new_sl, "ltp" : new_ltp}})
-                        send_message(message = f"SL trailed from {i[F.exit_price]} to {new_sl}\nOrder Id : {i[F.exit_orderid]}\nTicker : {i[F.ticker]}\nSide : {i[F.option_type]}\nStratagy : {i[F.stratagy]}", stratagy = i[F.stratagy])
-
+            
             if (i[F.exit_orderid_status]== F.open) and (i[F.exit_orderid] not in pending_order_list):
                 #--------------- Update sl hit ----------------------------
                 sl_price = filled_order[filled_order[F.order_id] == i[F.exit_orderid]].iloc[0][F.price]
