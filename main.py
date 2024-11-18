@@ -53,10 +53,12 @@ def placing(current_time, broker_name, broker_session):
     # print(env.index,re_entry_qty, re_entry_price)
     RISK1 = 40
     RISK2 = 35
-    qty = 75
+    qty = 150
+    hedge_price = 4
     
     if env.days_to_expire in [0,1]:
-        qty = 125
+        qty = 300
+        hedge_price = 2
     
     if current_time == env.FS_FIRST:
         for i in range(env.qty_partation_loop):
@@ -80,12 +82,12 @@ def placing(current_time, broker_name, broker_session):
             ce_thread.join()
             pe_thread.join()
             
-    elif current_time == env.Buy_Hedges and  env.days_to_expire in [0,1]:
-        qty = 400
+    elif current_time == env.Buy_Hedges:
+        qty = qty*5
         for i in range(env.qty_partation_loop):
             # i = 15
-            ce_thread = Thread(name = f'CE_{F.HEDGES}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.CE, 'option_price' : 2, F.loop_no : i, F.stratagy : F.HEDGES, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
-            pe_thread = Thread(name = f'PE_{F.HEDGES}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.PE, 'option_price' : 2, F.loop_no : i, F.stratagy : F.HEDGES, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
+            ce_thread = Thread(name = f'CE_{F.HEDGES}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.CE, 'option_price' : hedge_price, F.loop_no : i, F.stratagy : F.HEDGES, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
+            pe_thread = Thread(name = f'PE_{F.HEDGES}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.PE, 'option_price' : hedge_price, F.loop_no : i, F.stratagy : F.HEDGES, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
             ce_thread.start()
             time.sleep(1)
             pe_thread.start()
