@@ -65,37 +65,10 @@ class Checking:
 
         if len(self.db_df) > 0:
             try:
-                self.fifty_per_management(self.db_df,pending_order,filled_order,F.FS_FIRST)
+                self.wait_n_trade(self.db_df,pending_order,filled_order,[F.FS_FIRST,F.FS_SECOND,F.FS_THIRD,F.FS_FOURTH,F.FS_FIFTH])
                 # print(f'{self.current_time}---------------- fifty_per_management -  {F.FS_FIRST} ------------------')
             except Exception as e:
                 send_message(message = f'problem in fifty_per_management for : {F.FS_FIRST} \nReason :{e}', emergency = True)
-
-            try:
-                self.fifty_per_management(self.db_df,pending_order,filled_order,F.FS_SECOND)
-                # print(f'{self.current_time}---------------- re_entry_management -  {F.FS_SECOND} ------------------')
-            except Exception as e:
-                send_message(message = f'problem in re_entry_management for : {F.FS_SECOND} \nReason :{e}', emergency = True)
-
-            try:
-                self.fifty_per_management(self.db_df,pending_order,filled_order,F.FS_THIRD)
-                # print(f'{self.current_time}---------------- wait_n_trade -  {F.FS_THIRD} ------------------')
-            except Exception as e:
-                send_message(message = f'problem in wait_n_trade for : {F.FS_THIRD} \nReason :{e}', emergency = True)
-                
-            try:
-                self.fifty_per_management(self.db_df,pending_order,filled_order,F.FS_FOURTH)
-                # print(f'{self.current_time}---------------- re_entry_management -  {F.FS_FOURTH} ------------------')
-            except Exception as e:
-                send_message(message = f'problem in re_entry_management for : {F.FS_FOURTH} \nReason :{e}', emergency = True)
-            
-            try:
-                self.fifty_per_management(self.db_df,pending_order,filled_order,F.FS_FIFTH)
-                # print(f'{self.current_time}---------------- re_entry_management -  {F.FS_FIFTH} ------------------')
-            except Exception as e:
-                send_message(message = f'problem in re_entry_management for : {F.FS_FIFTH} \nReason :{e}', emergency = True)
-
-            except Exception as e:
-                send_message(message = f'problem in check_ltp_above_sl\nReason :{e}', emergency = True)
                 
             try:
                 self.rejected_order_management(self.db_df,pending_order,filled_order)
@@ -337,7 +310,7 @@ class Checking:
     def wait_n_trade(self,db_df,pending_order,filled_order,stratagy):
         # query = {F.stratagy : {'$eq': stratagy}}
         # NineFourtyFive_db = self.database[str(self.date)].find(query)
-        NineFourtyFive_db = db_df[db_df[F.stratagy] == stratagy]
+        NineFourtyFive_db = db_df[db_df[F.stratagy].isin(stratagy)]
         pending_order_list = pending_order[F.order_id].to_list()
 
         for index,i in NineFourtyFive_db.iterrows():
