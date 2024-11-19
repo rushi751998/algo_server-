@@ -53,13 +53,13 @@ def placing(current_time, broker_name, broker_session):
     # print(env.index,re_entry_qty, re_entry_price)
     RISK1 = 40
     RISK2 = 35
-    qty = 150
+    qty = 125
     hedge_price = 4
     
-    if env.days_to_expire in [0,1]:
-        qty = 225
+    if env.days_to_expire in [0]:
+        qty = qty * 2
         hedge_price = 2
-    
+
     if current_time == env.FS_FIRST:
         for i in range(env.qty_partation_loop):
             # i = 2
