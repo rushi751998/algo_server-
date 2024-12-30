@@ -83,7 +83,7 @@ def placing(current_time, broker_name, broker_session):
             pe_thread.join()
             
     elif current_time == env.Buy_Hedges:
-        qty = qty*5
+        qty = qty*3
         for i in range(env.qty_partation_loop):
             # i = 15
             ce_thread = Thread(name = f'CE_{F.HEDGES}_{i}_Thread', target = order_placer, kwargs = {F.option_type : F.CE, 'option_price' : hedge_price, F.loop_no : i, F.stratagy : F.HEDGES, F.exit_percent : 100, F.qty : qty, F.transaction_type : F.Buy, F.broker_name : broker_name, F.broker_session : broker_session})
